@@ -28,8 +28,10 @@ env/
 *.log
 *.tmp
 
-# User settings
-setting.json
+# Ignore all JSON files except setting.json
+*.json
+!setting.json
+
 
 # Build artifacts
 build/
