@@ -1,0 +1,42 @@
+# Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE and editor settings
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Jupyter notebook checkpoints
+*.ipynb_checkpoints/
+
+# Environment and virtualenv
+.env
+.venv/
+venv/
+ENV/
+env/
+
+# Logs and temp files
+*.log
+*.tmp
+
+# User settings
+setting.json
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Uranus-specific
+*.bak
+*.autosave
+uranus.db

@@ -1,0 +1,35 @@
+[project]
+name = "uranus-ide"
+version = "1.0.0"
+description = "A lightweight, extensible Python IDE inspired by Jupyter, built with PyQt5."
+authors = [
+    { name = "Atila Ghashghaie", email = "atila.gh@gmail.com" }
+]
+license = { text = "Custom License by Atila Ghashghaie" }
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "PyQt5>=5.15",
+    "nbformat>=5.9",
+    "pandas>=1.5",
+    "numpy>=1.24"
+]
+
+[project.urls]
+Homepage = "https://github.com/atila1358/uranus"
+Documentation = "https://github.com/atila1358/uranus/wiki"
+Issues = "https://github.com/atila1358/uranus/issues"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project.scripts]
+uranus = "Uranus.core:main"
+
