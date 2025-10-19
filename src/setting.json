@@ -1,0 +1,19 @@
+{
+    "colors": {
+        "Back Ground Color Code": "#E9E4E4",
+        "Back Ground Color MetaData": "#E9E4E4",
+        "Back Ground Color OutPut": "#BFC5C5",
+        "Back Ground Color WorkWindow": "#d9d9d9",
+        "Default Title Color": "#797979",
+        "ForGround Color Code": "#181515",
+        "ForGround Color MetaData": "#0d0e0f",
+        "ForGround Color Output": "#0d0e0f"
+    },
+    "Code Font": "Segoe UI",
+    "Code Font Size": 12,
+    "Meta Font": "Segoe UI",
+    "Meta Font Size": 12,
+    "OutPut Font": "JetBrainsMono",
+    "OutPut Font Size": 10,
+    "last_path": "C:/Users/Tonal/OneDrive/Desktop/prj2"
+}
