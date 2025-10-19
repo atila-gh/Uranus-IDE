@@ -193,6 +193,7 @@ class MainWindow(QMainWindow):
         self.select_folder_btn = QToolButton()
         self.select_folder_btn.setIcon(QIcon(icon_path))
         self.select_folder_btn.setToolTip("Select Project Folder")
+        # self.select_folder_btn.clicked.connect(self.select_project_folder)
         self.select_folder_btn.clicked.connect(self.select_project_folder)
         self.select_folder_btn.setIconSize(QSize(48, 48))
 
@@ -211,7 +212,6 @@ class MainWindow(QMainWindow):
         self.add_file_btn.setToolTip("Add File")
         self.add_file_btn.clicked.connect(self.tree.tree.create_file)
         self.add_file_btn.setIconSize(QSize(32, 32))
-
 
 
         # Top horizontal toolbar
@@ -281,13 +281,10 @@ class MainWindow(QMainWindow):
         Update the class variable `selected_path` when a tree item is clicked.
         """
         # Get the file/folder path from the clicked index
-        path = self.tree.tree.fs_model.filePath(index)
+        MainWindow.selected_path = self.tree.tree.fs_model.filePath(index)
   
 
-        
-        # Update the class variable
-        MainWindow.selected_path = path
-    
+
     def eventFilter(self, source, event):
         if source == self.tree and event.type() == QEvent.KeyPress:
             if event.key() in (Qt.Key_Return, Qt.Key_Enter):
@@ -300,7 +297,6 @@ class MainWindow(QMainWindow):
         return super().eventFilter(source, event)
 
     
-
     def ipynb_format_load_file (self , path):
         if self.debug : print('[MainWindow]->[ipynb_format_load_file]')
         try:
@@ -324,19 +320,27 @@ class MainWindow(QMainWindow):
         self.settings_window = SettingsWindow()
         self.settings_window.show()
 
-    def select_project_folder(self , path = None):
-
+    def select_project_folder(self, path=None):
         folder_path = path or QFileDialog.getExistingDirectory(self, "Select Project Folder")
-        if folder_path:
-            MainWindow.selected_path = folder_path
-            # self.tree.tree.fs_model.setRootPath(folder_path)
-            # self.tree.tree.setRootIndex(self.tree.tree.fs_model.index(folder_path))
-            self.tree.tree.set_root_path(folder_path)
-            self.dock.setWindowTitle(f"Project: {os.path.basename(folder_path)}")
+        if not folder_path:
+            return
 
-            self.setting['last_path'] = folder_path
-            
-            self.save_settings(self.setting)
+        # ثبت مسیر انتخاب‌شده در متغیر کلاس
+        MainWindow.selected_path = folder_path
+
+        # تنظیم مسیر در FileTreeView به‌صورت دستی
+        self.tree.tree.path = folder_path
+        self.tree.tree.project_root = folder_path
+        self.tree.tree.fs_model.setRootPath(folder_path)
+        self.tree.tree.setRootIndex(self.tree.tree.fs_model.index(folder_path))
+        self.tree.tree.pathChanged.emit(folder_path)
+
+        # به‌روزرسانی عنوان داک
+        self.dock.setWindowTitle(f"Project: {os.path.basename(folder_path)}")
+
+        # ذخیره مسیر در تنظیمات
+        self.setting['last_path'] = folder_path
+        self.save_settings(self.setting)
 
     @staticmethod
     def get_setting_path():

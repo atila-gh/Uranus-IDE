@@ -222,8 +222,12 @@ class FileTreeView(QTreeView):
     # ------------------------------------------------------------
     def show_context_menu(self, position: QPoint):
         index = self.indexAt(position)
-        if not index.isValid():
-            return
+        if index.isValid():
+            path = self.fs_model.filePath(index)
+        else:
+            path = self.path  # مسیر جاری
+
+
 
         path = self.fs_model.filePath(index)
         menu = QMenu()
@@ -266,11 +270,11 @@ class FileTreeView(QTreeView):
         """Create a new untitled .ipynb file in the selected folder."""
 
         index = self.currentIndex()
-        if not index.isValid():
-            QMessageBox.warning(self, "Warning", "No item selected.")
-            return
+        if index.isValid():
+            path = self.fs_model.filePath(index)
+        else:
+            path = self.path  # مسیر جاری که در select_project_folder تنظیم شده
 
-        path = self.fs_model.filePath(index)
 
         target_dir = path if os.path.isdir(path) else os.path.dirname(path)
         if not os.path.exists(target_dir):
@@ -298,11 +302,12 @@ class FileTreeView(QTreeView):
 
     def open_item(self, path):
         index = self.currentIndex()
-        if not index.isValid():
-            QMessageBox.warning(self, "Warning", "No item selected.")
-            return
+        if index.isValid():
+            path = self.fs_model.filePath(index)
+        else:
+            path = self.path  # مسیر جاری که در select_project_folder تنظیم شده
 
-        path = self.fs_model.filePath(index)
+        
         try:
             os.startfile(path)
         except Exception as e:
@@ -310,11 +315,10 @@ class FileTreeView(QTreeView):
 
     def delete_item(self):
         index = self.currentIndex()
-        if not index.isValid():
-            QMessageBox.warning(self, "Warning", "No item selected.")
-            return
-
-        path = self.fs_model.filePath(index)
+        if index.isValid():
+            path = self.fs_model.filePath(index)
+        else:
+            path = self.path  # مسیر جاری که در select_project_folder تنظیم شده
 
 
         reply = QMessageBox.question(self, "Delete", f"Are you sure you want to delete?\n{path}")
@@ -336,11 +340,12 @@ class FileTreeView(QTreeView):
 
     def rename_item(self):
         index = self.currentIndex()
-        if not index.isValid():
-            QMessageBox.warning(self, "Warning", "No item selected.")
-            return
+        if index.isValid():
+            path = self.fs_model.filePath(index)
+        else:
+            path = self.path  # مسیر جاری که در select_project_folder تنظیم شده
 
-        path = self.fs_model.filePath(index)
+
         base_dir = os.path.dirname(path)
         old_name = os.path.basename(path)
         new_name, ok = QInputDialog.getText(self, "Rename", "Enter new name:", text=old_name)
@@ -353,11 +358,13 @@ class FileTreeView(QTreeView):
 
     def create_folder(self):
         index = self.currentIndex()
-        if not index.isValid():
-            QMessageBox.warning(self, "Warning", "No item selected.")
-            return
+        if index.isValid():
+            path = self.fs_model.filePath(index)
+        else:
+            path = self.path  # مسیر جاری که در select_project_folder تنظیم شده
 
-        path = self.fs_model.filePath(index)
+
+        
         target_dir = path if os.path.isdir(path) else os.path.dirname(path)
         if target_dir and os.path.exists(target_dir):
             current_dir = target_dir
@@ -406,20 +413,3 @@ class FileTreeView(QTreeView):
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Could not paste:\n{e}")
 
-    # ------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------
-    def set_root_path(self, new_path):
-        self.path = new_path
-        self.project_root = new_path
-        self.fs_model.setRootPath(new_path)
-        self.setRootIndex(self.fs_model.index(new_path))
-        self.pathChanged.emit(new_path)
-   
-
-    # def create_file_selected(self):
-    #     index = self.currentIndex()
-    #     if not index.isValid():
-    #         return
-    #     path = self.fs_model.filePath(index)
-    #     self.create_file(path)
