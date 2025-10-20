@@ -1,15 +1,17 @@
-import re
+import re , importlib
 from PyQt5.QtGui import QFont, QTextCursor
 from PyQt5.QtCore import Qt, pyqtSignal, QThread, QObject , QTimer
-from PyQt5.QtWidgets import QFrame, QHBoxLayout,QSizePolicy, QRadioButton, QButtonGroup, QVBoxLayout
+from PyQt5.QtWidgets import QFrame, QHBoxLayout,QSizePolicy, QRadioButton, QButtonGroup, QVBoxLayout , QLabel, QScrollArea , QApplication
+
 from Uranus.SettingWindow import load_setting
 from Uranus.DocumentEditor import DocumentEditor
 from Uranus.OutputEditor import OutputEditor
 from Uranus.CodeEditor import CodeEditor
 from nbformat.v4 import  new_code_cell, new_markdown_cell
-from PyQt5.QtWidgets import QLabel, QScrollArea
 from Uranus.DataOutputEditor import DataFrameWidget
-import pandas as pd
+from Uranus.ImageOutput import ImageOutput
+
+
 
 class CodeRunner(QObject):
     finished = pyqtSignal(list)
@@ -252,7 +254,6 @@ class Cell(QFrame):
         self.runner.finished.connect(self.thread.deleteLater)
         self.thread.start()
        
-
     def mousePressEvent(self, event):
             if self.debug :print('[Cell->mousePressEvent]')
             self.clicked.emit()
@@ -289,8 +290,9 @@ class Cell(QFrame):
                """)
         if hasattr(self, 'output_data'):
             self.output_data.setStyleSheet("border: 1px solid black; padding: 0px;")
-            self.output_data.table.setStyleSheet("border: 1px solid gray; padding: 0px;")
-            self.output_data.table.horizontalHeader().setStyleSheet("border: 0px solid gray; padding: 0px;")
+            if hasattr(self.output_data, 'table'): # if pandas is installed
+                self.output_data.table.setStyleSheet("border: 1px solid gray; padding: 0px;")
+                self.output_data.table.horizontalHeader().setStyleSheet("border: 0px solid gray; padding: 0px;")
 
     @staticmethod
     def strip_ansi(text):
@@ -341,7 +343,7 @@ class Cell(QFrame):
 
 
             # # Add output toggle and output image
-            self.output_image = OutputEditor()
+            self.output_image = ImageOutput()
             self.toggle_output_button_image.setVisible(False)
             self.main_layout.addWidget(self.toggle_output_button_image)
             self.main_layout.addWidget(self.output_image)
@@ -405,8 +407,9 @@ class Cell(QFrame):
 
         if hasattr(self, 'output_data'):
             self.output_data.setStyleSheet("border: 1px solid black; padding: 0px;")
-            self.output_data.table.setStyleSheet("border: 1px solid gray; padding: 0px;")
-            self.output_data.table.horizontalHeader().setStyleSheet("border: 0px solid gray; padding: 0px;")
+            if hasattr(self.output_data,'table'):
+                self.output_data.table.setStyleSheet("border: 1px solid gray; padding: 0px;")
+                self.output_data.table.horizontalHeader().setStyleSheet("border: 0px solid gray; padding: 0px;")
 
 
     def append_output(self, out):
@@ -425,12 +428,10 @@ class Cell(QFrame):
             # 🖼️ Image
             if out.output_type == "display_data" and editor_target == "output_image":
                 if "image/png" in out.data:
-                    img_html = f'<img src="data:image/png;base64,{out.data["image/png"]}"><br><br>'
 
-                    self.output_image.text_output.insertHtml(img_html)
+                    self.output_image.show_image_from_base64(out.data["image/png"])
                     self.toggle_output_button_image.setVisible(True)
                     self.output_image.setVisible(True)
-                    self.output_image.adjust_height()
                     self.outputs.append(out)
                     return
 
@@ -440,13 +441,21 @@ class Cell(QFrame):
                     # دریافت مجدد ابجکت از طریق شناسه آن
                     obj_id = out.metadata.get("object_ref")
                     obj = self.kernel.object_store.get(obj_id)
-                    # DataFrame
-                    if isinstance(obj, pd.DataFrame):
-                        self.output_data.set_dataframe(obj) # Method for data frame show
-                        self.toggle_output_button_data.setVisible(True)
-                        self.scroll.setVisible(True)
-                        self.outputs.append(out)
+
+
+                    # data Frame Table
+                    try :
+                        import pandas as pd
+                    except ImportError :
                         return
+                    else :
+                        # DataFrame
+                        if isinstance(obj, pd.DataFrame) and importlib.util.find_spec("pandas") is not None:
+                            self.output_data.set_dataframe(obj) # Method for data frame show
+                            self.toggle_output_button_data.setVisible(True)
+                            self.scroll.setVisible(True)
+                            self.outputs.append(out)
+                            return
 
         else :
             # 🔥 Error
@@ -460,7 +469,7 @@ class Cell(QFrame):
 
                 self.toggle_output_button.setVisible(True)
                 self.output_editor.setVisible(True)
-                self.output_editor.adjust_height()
+
 
             # 📤  String (stream)
             elif out.output_type == "stream":
@@ -471,7 +480,6 @@ class Cell(QFrame):
                 cursor.insertText(clean)
                 self.toggle_output_button.setVisible(True)
                 self.output_editor.setVisible(True)
-                self.output_editor.adjust_height()
                 self.outputs.append(out)
                 return
 

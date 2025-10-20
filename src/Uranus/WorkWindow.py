@@ -1,20 +1,36 @@
  
-import os ,base64  ,io ,builtins ,uuid
+import os ,base64  ,io ,builtins ,uuid , importlib
 from PyQt5.QtGui import  QIcon , QKeySequence
-from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject
-from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWidget,
-    QInputDialog , QSpacerItem, QSizePolicy , QScrollArea)
+from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject ,QTimer
+from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWidget ,
+    QInputDialog , QSpacerItem, QSizePolicy , QScrollArea,QDialog, QVBoxLayout, QLineEdit, QPushButton, QLabel, QHBoxLayout)
 
 import nbformat
 from nbformat.v4 import new_notebook, new_output
 from contextlib import redirect_stdout, redirect_stderr
 from IPython.core.interactiveshell import InteractiveShell
-import pandas as pd
+
 from Uranus.Cell import Cell
 
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLineEdit, QPushButton, QLabel, QHBoxLayout
 
 class FindReplaceDialog(QDialog):
+    """
+        A dialog window for performing find and replace operations within a text editor.
+
+        Features:
+        - Allows users to search for specific text within the editor.
+        - Supports single replacement and bulk replacement of matched text.
+        - Displays match count and navigation between matches.
+
+        Parameters:
+        - editor (QPlainTextEdit or QTextEdit): The target editor to operate on.
+        - parent (QWidget): Optional parent widget.
+
+        Usage:
+        This dialog is typically triggered via a shortcut (Ctrl+F) and interacts directly
+        with the editor's text cursor and document model.
+        """
+
     def __init__(self, editor, parent=None):
         super().__init__(parent)
 
@@ -104,9 +120,22 @@ class FindReplaceDialog(QDialog):
         self.editor.setPlainText(new_text)
         cursor.endEditBlock()
 
-
-
 class InputWaiter(QObject): # for Covering Input
+    """
+       A blocking input handler that replaces Python's built-in input() with a GUI dialog.
+
+       Purpose:
+       - Enables synchronous input collection from users during code execution.
+       - Used by IPythonKernel to intercept input() calls and show QInputDialog.
+
+       Attributes:
+       - _prompt (str): The input prompt text.
+       - _value (str): The value entered by the user.
+       - _dialog_parent (QWidget): Parent widget for the input dialog.
+
+       Usage:
+       Called via wait_for_input(prompt), which blocks until user input is received.
+       """
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -125,6 +154,22 @@ class InputWaiter(QObject): # for Covering Input
         self._value = text if ok else ""
 
 class StreamCatcher(io.StringIO): # 2025-10-11 - edited
+    """
+       A stream interceptor that captures stdout/stderr line-by-line and emits structured output.
+
+       Purpose:
+       - Used during code execution to redirect and format console output.
+       - Converts each line into a Jupyter-compatible nbformat output object.
+
+       Parameters:
+       - name (str): Stream name ("stdout" or "stderr").
+       - callback (function): Function to receive each parsed output line.
+
+       Behavior:
+       - Buffers incoming text until newline.
+       - Emits each complete line via callback as nbformat stream output.
+       """
+
     def __init__(self, name, callback):
         super().__init__()
         self._name = name
@@ -141,6 +186,25 @@ class StreamCatcher(io.StringIO): # 2025-10-11 - edited
 
 
 class IPythonKernel:
+    """
+       A lightweight wrapper around IPython's InteractiveShell for executing notebook cells.
+
+       Responsibilities:
+       - Executes code cells and captures stdout, stderr, and display outputs.
+       - Handles input() via InputWaiter.
+       - Converts matplotlib and image outputs to base64 PNG for inline display.
+       - Maps Python objects to appropriate output editors (e.g., table, image, text).
+
+       Attributes:
+       - shell (InteractiveShell): IPython shell instance.
+       - input_waiter (InputWaiter): Handles blocking input dialogs.
+       - object_store (dict): Stores references to large objects for later inspection.
+
+       Methods:
+       - run_cell(code, callback): Executes code and emits outputs via callback.
+       - __uranus_inspect_variables(): Returns a DataFrame of global variables (optional).
+       """
+
     def __init__(self):
         self.shell = InteractiveShell.instance()
         self.input_waiter = InputWaiter()
@@ -151,7 +215,7 @@ class IPythonKernel:
         builtins.input = self.input_waiter.wait_for_input
 
         # 🔧 تزریق backend امن و جایگزینی plt.show() با ذخیره‌سازی فایل
-        if "matplotlib" in code or "plt." in code:
+        if ("matplotlib" in code or "plt." in code) and importlib.util.find_spec("matplotlib") is not None:
             injected = "import matplotlib; matplotlib.use('Agg')\n"
             code = injected + code.replace("plt.show()", "plt.savefig('plot.png')")
 
@@ -165,7 +229,7 @@ class IPythonKernel:
         obj = result.result
         stderr_text = stderr_buffer.getvalue().strip()
 
-        # 🖼️ ارسال تصویر اگر فایل ساخته شده باشد
+        # 🖼️ image
         if os.path.exists("plot.png"):
             try:
                 with open("plot.png", "rb") as f:
@@ -177,9 +241,12 @@ class IPythonKernel:
             except Exception:
                 pass
             finally:
-                os.remove("plot.png")
+                try :
+                     os.remove("plot.png")
+                except Exception:
+                    pass
 
-        # 🔥 خطا
+        # 🔥 error
         if stderr_text:
             tb_lines = stderr_text.splitlines()
             out = new_output(
@@ -191,7 +258,7 @@ class IPythonKernel:
             outputs.append(out)
             callback(out)
 
-        # ⛔ اگر خروجی None بود یا خطا داشت، ادامه نده
+        # ⛔ if None or error stop
         if obj is None or (isinstance(obj, str) and stderr_text):
             return outputs
 
@@ -211,7 +278,7 @@ class IPythonKernel:
 
         editor = EDITOR_MAP.get(full_type)
 
-        # 📊 جدول
+        # 📊 table
         if editor == "output_data":
             obj_id = f"obj_{uuid.uuid4().hex}"
             self.object_store[obj_id] = obj
@@ -224,7 +291,7 @@ class IPythonKernel:
             outputs.append(out)
             callback(out)
 
-        # 🖼️ تصویر — فقط اگر آبجکت خودش قابل ذخیره‌سازی باشه
+        # 🖼️ image
         elif editor == "output_image":
             buf = io.BytesIO()
             try:
@@ -252,32 +319,41 @@ class IPythonKernel:
         return outputs
 
 
-    @staticmethod
-    def __uranus_inspect_variables():
-        data = []
-        for name, value in globals().items():
-            if name.startswith("__") or callable(value):
-                continue
-            data.append({
-                "Variable": name,
-                "Type": type(value).__name__,
-                "Preview": str(value)[:50]
-            })
-        return pd.DataFrame(data)
+
 
 
 class WorkWindow(QWidget):
+    """
+       The main notebook interface for Uranus IDE.
+
+       Responsibilities:
+       - Hosts and manages multiple Cell instances (code/markdown).
+       - Provides toolbars for cell manipulation, execution, and styling.
+       - Integrates with IPythonKernel for backend execution.
+       - Supports undo stack for deleted cells and find/replace dialog.
+
+       Attributes:
+       - cell_widgets (list): List of all Cell instances in the notebook.
+       - focused_cell (Cell): Currently focused cell.
+       - file_path (str): Path to the associated .ipynb file.
+       - content (NotebookNode): Parsed nbformat content (optional).
+       - ipython_kernel (IPythonKernel): Execution backend.
+       - deleted_cells_stack (list): Stack for undoing deleted cells.
+       - outputs (list): List of outputs emitted during execution.
+
+       Methods:
+       - add_cell(): Adds a new cell to the notebook.
+       - run_focused_cell(): Executes the currently focused cell.
+       - ipynb_format_save_file(): Saves notebook content to disk.
+       - load_file(): Loads notebook content from nbformat.
+       - undo_delete_cell(): Restores the last deleted cell.
+       - move_cell_up/down(): Reorders cells.
+       - choose_border_color(): Opens color dialog for cell styling.
+       - open_find_replace(): Opens find/replace dialog.
+       """
 
     focused_cell = None
-    """
-    Main application window for the Uranus notebook.
-    Manages cell creation, deletion, styling, and toolbar actions.
-    CodeWindow
-            
-            |- self.cell_widgets -> List for appending all instance of Cell Class With add_cell() Method [IMPORTANT]
-            |- self.active_cell  -> Current Class Instance of Cell() -> Updated Value in set_active_cell()
-            |- file_path         -> file path that send from ManinWindow Class
-    """
+
 
     def __init__(self, content=None, file_path=None):
         self.debug = False
@@ -359,8 +435,6 @@ class WorkWindow(QWidget):
         # fpr scrolling window more than half of page
         extra_scroll_space = QSpacerItem(20, 400, QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.cell_layout.addItem(extra_scroll_space)
-
-
 
     def setup_top_toolbar_buttons(self):
         if self.debug: print('[WorkWindow->setup_top_toolbar_buttons]')
@@ -718,10 +792,11 @@ class WorkWindow(QWidget):
                         cell = self.add_cell( editor_type='code' , content=c.source ,border_color = bg)
                         for out in c.get('outputs',[]) :
                             cell.append_output(out)
+                        QTimer.singleShot(400, lambda: cell.output_editor.adjust_height())
 
 
                     elif c.cell_type == 'markdown' :
-                         self.add_cell(editor_type='markdown' , content=c.source ,border_color = bg )
+                             self.add_cell(editor_type='markdown' , content=c.source ,border_color = bg )
                          
 
     def move_cell_up(self):
@@ -779,7 +854,6 @@ class WorkWindow(QWidget):
                 self.cell_layout.insertWidget(index + 1, self.focused_cell)
                 self.set_focus(self.focused_cell)
 
-
     def run_all_cells(self):
         """
         Executes all code cells in order.
@@ -797,8 +871,6 @@ class WorkWindow(QWidget):
 
         self.execution_in_progress = False
 
-   
-
     def open_find_replace(self):
         if self.focused_cell and hasattr(self.focused_cell, "editor"):
             editor = self.focused_cell.editor
@@ -807,10 +879,10 @@ class WorkWindow(QWidget):
             dialog = FindReplaceDialog(editor, self)
             dialog.exec_()
 
-if __name__ == "__main__":
-    import sys
-    from PyQt5.QtWidgets import QApplication
-    app = QApplication(sys.argv)
-    window = WorkWindow()
-    window.show()
-    sys.exit(app.exec_())
+# if __name__ == "__main__":
+#     import sys
+#     from PyQt5.QtWidgets import QApplication
+#     app = QApplication(sys.argv)
+#     window = WorkWindow()
+#     window.show()
+#     sys.exit(app.exec_())

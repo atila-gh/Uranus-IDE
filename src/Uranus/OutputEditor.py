@@ -1,6 +1,6 @@
 
 
-from PyQt5.QtGui import QFont,QFontMetrics
+from PyQt5.QtGui import QFont,QFontMetrics, QTextCursor
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QVBoxLayout,QApplication,QWidget, QSizePolicy,QTextEdit
 from Uranus.SettingWindow import load_setting
@@ -87,24 +87,45 @@ class OutputEditor(QWidget):
 
         self.layout.addWidget(self.text_output)
 
+    def adjust_height1(self):
+        layout = self.text_output.document().documentLayout()
+        doc_height = layout.documentSize().height()
+        line_height = QFontMetrics(self.text_output.font()).lineSpacing()
+
+        content_height = int(doc_height) + 2 * line_height
+        final_height = min(content_height, 1000)
+        final_height = max(final_height, 100)
+
+        self.text_output.setMinimumHeight(final_height)
+        self.text_output.setMaximumHeight(final_height)
+
+        # فعال‌سازی اسکرول داخلی اگر ارتفاع زیاد بود
+        self.text_output.setVerticalScrollBarPolicy(
+            Qt.ScrollBarAsNeeded if content_height > 1000 else Qt.ScrollBarAlwaysOff
+        )
+
+        self.text_output.updateGeometry()
 
     def adjust_height(self):
-        #print('[OutputEditor]->[adjust_height]')
+        text = self.text_output.toPlainText()
+        lines = text.splitlines()
+        line_count = max(len(lines), 1)  # min 1 line
+
         line_height = QFontMetrics(self.text_output.font()).lineSpacing()
-        doc_height = self.text_output.document().size().height()
-        new_height = min(int(doc_height) + 2 * line_height, 1000)
-        self.text_output.setMinimumHeight(new_height)
-        self.text_output.setMaximumHeight(new_height)
-        self.text_output.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded if new_height >= 600 else Qt.ScrollBarAlwaysOff)
+        content_height = line_count * line_height + 20
+
+        final_height = min(content_height, 600)
+        final_height = max(final_height, 100)
+
+        self.text_output.setMinimumHeight(final_height)
+        self.text_output.setMaximumHeight(final_height)
+        self.text_output.setVerticalScrollBarPolicy(
+            Qt.ScrollBarAsNeeded if content_height > 600 else Qt.ScrollBarAlwaysOff
+        )
         self.text_output.updateGeometry()
+
 
     def clear(self):
         self.text_output.clear()
         self.setVisible(False)
 
-if __name__ == "__main__":
-    import sys
-    app = QApplication(sys.argv)
-    window = OutputEditor()
-    window.show()
-    sys.exit(app.exec_())

@@ -5,9 +5,8 @@ import subprocess
 # List of required packages
 REQUIRED_PACKAGES = [
     "PyQt5",
-    "pandas",
     "IPython",
-    "matplotlib",
+
     # Add more if needed
 ]
 

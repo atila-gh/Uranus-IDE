@@ -16,7 +16,7 @@ from Uranus.AboutWindow import AboutWindow
 # noinspection PyUnresolvedReferences
 class MainWindow(QMainWindow):
 
-    selected_path = None
+
     open_files = {}  # dict: file_path -> WorkWindow instance
     """
         The main application window for Uranus IDE.
@@ -39,8 +39,7 @@ class MainWindow(QMainWindow):
         - FileTreeView: Custom tree view for filesystem navigation.
         - WorkWindow: Editor container for code and markdown cells.
 
-        Class Variables:
-        - selected_path (str): Currently selected file or folder path.
+        Class Variables:       
         - open_files (dict): Maps file paths to active WorkWindow subwindows.
 
         Usage:
@@ -51,7 +50,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         
-  
+
         self.debug = False
         self.setting = load_setting()
 
@@ -104,7 +103,7 @@ class MainWindow(QMainWindow):
         file_menu.addSeparator()
 
       
-        settings_action = QAction("Option", self)
+        settings_action = QAction("Setting", self)
         settings_action.triggered.connect(self.open_settings_window)
         file_menu.addAction(settings_action)
 
@@ -249,7 +248,7 @@ class MainWindow(QMainWindow):
       
     def on_tree_item_double_clicked(self, index):
         path = self.tree.tree.fs_model.filePath(index)
-        MainWindow.selected_path = path
+
 
         if os.path.isfile(path):
             _, ext = os.path.splitext(path)
@@ -276,14 +275,6 @@ class MainWindow(QMainWindow):
                         sub_window.show()
                         MainWindow.open_files[path] = sub_window
 
-    def on_tree_item_clicked(self, index):
-        """
-        Update the class variable `selected_path` when a tree item is clicked.
-        """
-        # Get the file/folder path from the clicked index
-        MainWindow.selected_path = self.tree.tree.fs_model.filePath(index)
-  
-
 
     def eventFilter(self, source, event):
         if source == self.tree and event.type() == QEvent.KeyPress:
@@ -296,7 +287,7 @@ class MainWindow(QMainWindow):
                         return True
         return super().eventFilter(source, event)
 
-    
+
     def ipynb_format_load_file (self , path):
         if self.debug : print('[MainWindow]->[ipynb_format_load_file]')
         try:
@@ -325,8 +316,6 @@ class MainWindow(QMainWindow):
         if not folder_path:
             return
 
-        # ثبت مسیر انتخاب‌شده در متغیر کلاس
-        MainWindow.selected_path = folder_path
 
         # تنظیم مسیر در FileTreeView به‌صورت دستی
         self.tree.tree.path = folder_path
@@ -335,19 +324,12 @@ class MainWindow(QMainWindow):
         self.tree.tree.setRootIndex(self.tree.tree.fs_model.index(folder_path))
         self.tree.tree.pathChanged.emit(folder_path)
 
-        # به‌روزرسانی عنوان داک
+        # refresh the current path on top of the tree view label
         self.dock.setWindowTitle(f"Project: {os.path.basename(folder_path)}")
 
-        # ذخیره مسیر در تنظیمات
+        # save the last path in setting file
         self.setting['last_path'] = folder_path
         self.save_settings(self.setting)
-
-    @staticmethod
-    def get_setting_path():
-        """Returns absolute path to setting.json inside Uranus/src/"""
-        current_file = os.path.abspath(__file__)  # src/Uranus/SettingWindow.py
-        src_dir = os.path.dirname(os.path.dirname(current_file))  # ← src/
-        return os.path.join(src_dir, "setting.json")
 
 
     def create_project_from_selected_folder(self):
@@ -365,9 +347,12 @@ class MainWindow(QMainWindow):
 
         self.select_project_folder(path = folder_path)
 
+    @staticmethod
+    def save_settings(setting):
+       current_file = os.path.abspath(__file__)  # src/Uranus/SettingWindow.py
+       src_dir = os.path.dirname(os.path.dirname(current_file))  # ← src/
+       path =  os.path.join(src_dir, "setting.json")
 
-    def save_settings(self,setting):
-       path = self.get_setting_path()
        try:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(setting, f, indent=4, ensure_ascii=False)
@@ -379,7 +364,9 @@ class MainWindow(QMainWindow):
         about_window.show()
         self.about_window = about_window
 
-    def on_path_changed(self, path):
+    @staticmethod
+    def on_path_changed(path):
         if os.path.isfile(path):
             path = os.path.dirname(path)
-        MainWindow.selected_path = path
+
+

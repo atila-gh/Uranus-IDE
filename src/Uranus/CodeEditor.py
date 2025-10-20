@@ -3,7 +3,7 @@ from PyQt5.QtGui import  QFont,QFontMetrics,QTextCursor
 from PyQt5.QtCore import Qt,pyqtSignal,QEvent 
 from PyQt5.QtWidgets import QPlainTextEdit,QApplication                        
 
-from Uranus.CodeHighlith import CodeHighlighter
+from Uranus.CodeHighlight import CodeHighlighter
 from Uranus.SettingWindow import load_setting  # اگر در فایل جدا ذخیره شده باشد
 
 class CodeEditor(QPlainTextEdit):

@@ -254,10 +254,11 @@ class CodeHighlighter(QSyntaxHighlighter):
         # الگوهای رشته‌ها (شامل تک‌خطی و چندخطی)
         self.single_quote_pattern = QRegularExpression(r"'([^'\\]|\\.)*'")
         self.double_quote_pattern = QRegularExpression(r'"([^"\\]|\\.)*"')
-        self.triple_single_pattern = QRegularExpression(r"'''(?:.|\\n)*?'''")
-        self.triple_double_pattern = QRegularExpression(r'"""(?:.|\\n)*?"""')
-        self.tri_single = QRegExp("'''")
-        self.tri_double = QRegExp('"""')
+
+        # self.triple_single_pattern = QRegularExpression(r"'''(?:.|\\n)*?'''")
+        # self.triple_double_pattern = QRegularExpression(r'"""(?:.|\\n)*?"""')
+        # self.tri_single = QRegExp("'''")
+        # self.tri_double = QRegExp('"""')
 
         # اضافه به rules برای حالت‌های تک‌خطی
         self.rules.append((QRegExp(r'"[^"\\]*(\\.[^"\\]*)*"'), self.string_format))
@@ -282,20 +283,8 @@ class CodeHighlighter(QSyntaxHighlighter):
 
         # ======= متد هایلایت اصلی =======
 
-    def highlightBlock(self, text):
-        # Normal (single-line) strings
-        for pattern, fmt in self.rules:
-            index = pattern.indexIn(text)
-            while index >= 0:
-                length = pattern.matchedLength()
-                self.setFormat(index, length, fmt)
-                index = pattern.indexIn(text, index + length)
 
-        self.setCurrentBlockState(0)
 
-        # Multiline strings
-        self.match_multiline(text, self.tri_single, self.string_format)
-        self.match_multiline(text, self.tri_double, self.string_format)
 
     def apply_pattern(self, text, pattern, fmt):
         """اعمال رنگ روی رشته‌های تک‌خطی"""
@@ -306,29 +295,42 @@ class CodeHighlighter(QSyntaxHighlighter):
             length = match.capturedLength()
             self.setFormat(start, length, fmt)
 
-    def match_multiline(self, text, delimiter, fmt):
+
+
+
+
+    def highlightBlock(self, text):
+        for pattern, fmt in self.rules:
+            index = pattern.indexIn(text)
+            while index >= 0:
+                length = pattern.matchedLength()
+                self.setFormat(index, length, fmt)
+                index = pattern.indexIn(text, index + length)
+
+        self.setCurrentBlockState(0)
+
+        # رشته‌های چندخطی با """ و '''
+        self.highlight_multiline_quotes(text, '"""')
+        self.highlight_multiline_quotes(text, "'''")
+
+
+
+
+
+
+
+    def highlight_multiline_quotes(self, text, quote):
         start = 0
-
-        if self.previousBlockState() == 1 and delimiter.pattern() == "'''":
-            start = 0
-        elif self.previousBlockState() == 2 and delimiter.pattern() == '"""':
-            start = 0
-        else:
-            start = delimiter.indexIn(text)
-
-        while start >= 0:
-            end = delimiter.indexIn(text, start + 3)
-            if end == -1:
-                # No closing delimiter → continue highlighting next block
-                if delimiter.pattern() == "'''":
-                    self.setCurrentBlockState(1)
-                else:
-                    self.setCurrentBlockState(2)
-                length = len(text) - start
-                self.setFormat(start, length, fmt)
-                return
+        while True:
+            start_index = text.find(quote, start)
+            if start_index == -1:
+                break
+            end_index = text.find(quote, start_index + len(quote))
+            if end_index == -1:
+                # اگر بسته پیدا نشد، تا آخر خط رنگی کن
+                self.setFormat(start_index, len(text) - start_index, self.string_format)
+                break
             else:
-                # Found closing delimiter
-                length = end - start + 3
-                self.setFormat(start, length, fmt)
-                start = delimiter.indexIn(text, end + 3)
+                length = end_index + len(quote) - start_index
+                self.setFormat(start_index, length, self.string_format)
+                start = end_index + len(quote)

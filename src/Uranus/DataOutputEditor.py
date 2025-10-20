@@ -1,5 +1,5 @@
 
-import pandas as pd
+
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableView
 from PyQt5.QtCore import Qt, QAbstractTableModel
 
@@ -27,7 +27,12 @@ class DataFrameModel(QAbstractTableModel):
 
     def __init__(self, df=None, parent=None):
         super().__init__(parent)
-        self._df = df if df is not None else pd.DataFrame()
+        try :
+            import pandas as pd
+        except ImportError :
+            return
+        else :
+            self._df = df if df is not None else pd.DataFrame()
 
     def rowCount(self, parent=None):
         return len(self._df)
@@ -72,11 +77,13 @@ class DataFrameWidget(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        # self.setMinimumHeight(200)
-        #self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.MinimumExpanding)
+
+        try :
+            import pandas as pd
+        except ImportError:
+            return
+
         self.setStyleSheet("background:white;")
-
-
 
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
@@ -92,9 +99,14 @@ class DataFrameWidget(QWidget):
         self.model = DataFrameModel()
         self.table.setModel(self.model)
 
-    def set_dataframe(self, df: pd.DataFrame = None):
+    def set_dataframe(self, df = None):
         """تنظیم یا پاک کردن DataFrame"""
-        self.model = DataFrameModel(df)
-        self.table.setModel(self.model)
+        try :
+            import pandas as pd
+        except ImportError:
+            return None
+        else :
+            self.model = DataFrameModel(df)
+            self.table.setModel(self.model)
 
 
