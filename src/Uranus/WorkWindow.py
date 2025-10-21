@@ -1,5 +1,5 @@
  
-import os ,base64  ,io ,builtins ,uuid , importlib
+import os ,base64  ,io ,builtins ,uuid , importlib , markdown2
 from PyQt5.QtGui import  QIcon , QKeySequence
 from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject ,QTimer
 from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWidget ,
@@ -319,9 +319,6 @@ class IPythonKernel:
         return outputs
 
 
-
-
-
 class WorkWindow(QWidget):
     """
        The main notebook interface for Uranus IDE.
@@ -604,22 +601,31 @@ class WorkWindow(QWidget):
                                 Executes the current cell and displays the output.
                                 """)
 
-    def add_cell(self,editor_type = None,content=None , border_color=None):
+    def add_cell(self, editor_type=None, content=None, border_color=None, origin="uranus"):
         """
         Adds a new cell at the end of the notebook.
         """
-        if self.debug :print('[WorkWindow->add_cell]')
+        if self.debug:
+            print('[WorkWindow->add_cell]')
+
         # create an object of cell class with type of editor if exist
-        cell = Cell(editor_type, content , border_color , kernel = self.ipython_kernel , notify_done=self.execution_done )
+        cell = Cell(
+            editor_type,
+            content,
+            border_color,
+            kernel=self.ipython_kernel,
+            notify_done=self.execution_done,
+            origin=origin  # ← فقط این خط اضافه شده
+        )
+
         # Mouse Event Handler
-        cell.clicked.connect(lambda c=cell : self.set_focus(c))
-        cell.doc_editor_clicked.connect(lambda c=cell : self.set_focus(c))
-        cell.doc_editor_editor_clicked.connect(lambda c=cell : self.set_focus(c))
+        cell.clicked.connect(lambda c=cell: self.set_focus(c))
+        cell.doc_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+        cell.doc_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
 
-
-        self.cell_widgets.append(cell)   # cell append to list of cells
-        self.cell_layout.addWidget(cell) # for showing cell add cell to layout
-        self.set_focus(cell)
+        self.cell_widgets.append(cell)  # cell append to list of cells
+        self.cell_layout.addWidget(cell)  # for showing cell add cell to layout
+        self.set_focus(cell)  # set cell focused
 
         return cell
 
@@ -652,45 +658,54 @@ class WorkWindow(QWidget):
         """
         Inserts a new cell above the currently active cell.
         """
-        if self.debug :print('[WorkWindow->add_cell_above]')
-        if not self.cell_widgets :
-            self.add_cell()
+        if self.debug:
+            print('[WorkWindow->add_cell_above]')
+
+        if not self.cell_widgets:
+            self.add_cell(origin="uranus")  # ← اضافه‌شده
 
         elif self.focused_cell:
-            index = self.cell_widgets.index(self.focused_cell) # شماره اندیس نمونه جاری کلاس را در لیست نمونه های کلاس باز میگرداند
-            cell = Cell( kernel = self.ipython_kernel , notify_done=self.execution_done )
-            # Mouse Event Handler
-            cell.clicked.connect(lambda  c=cell : self.set_focus(c)) # فعال کردن ارسال سیگنال روی هرجای سلول ساخته شده
-            cell.doc_editor_clicked.connect(lambda c=cell : self.set_focus(c))
-            cell.doc_editor_editor_clicked.connect(lambda c=cell : self.set_focus(c))
+            index = self.cell_widgets.index(self.focused_cell)
+            cell = Cell(
+                kernel=self.ipython_kernel,
+                notify_done=self.execution_done,
+                origin="uranus"  # ← اضافه‌شده
+            )
 
-            self.cell_widgets.insert(index,cell)
+            cell.clicked.connect(lambda c=cell: self.set_focus(c))
+            cell.doc_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+            cell.doc_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+
+            self.cell_widgets.insert(index, cell)
             self.cell_layout.insertWidget(index, cell)
-
-            self.set_focus(cell) # set New Cell focused
+            self.set_focus(cell)
 
     # Connected to a Button 2
     def add_cell_below(self):
         """
         Inserts a new cell below the currently active cell.
         """
-        if self.debug :print('[WorkWindow->add_cell_below]')
+        if self.debug:
+            print('[WorkWindow->add_cell_below]')
+
         if not self.cell_widgets:
-            self.add_cell()
+            self.add_cell(origin="uranus")  # ← اضافه‌شده
 
-        elif self.focused_cell :
+        elif self.focused_cell:
             index = self.cell_widgets.index(self.focused_cell)
-            cell = Cell( kernel = self.ipython_kernel , notify_done=self.execution_done)
-            # Mouse Event Handler
-            cell.clicked.connect(lambda  c=cell : self.set_focus(c)) # فعال کردن ارسال سیگنال روی هرجای سلول ساخته شده
-            cell.doc_editor_clicked.connect(lambda c=cell : self.set_focus(c))
-            cell.doc_editor_editor_clicked.connect(lambda c=cell : self.set_focus(c))
+            cell = Cell(
+                kernel=self.ipython_kernel,
+                notify_done=self.execution_done,
+                origin="uranus"  # ← اضافه‌شده
+            )
 
+            cell.clicked.connect(lambda c=cell: self.set_focus(c))
+            cell.doc_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+            cell.doc_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
 
-            self.cell_widgets.insert(index + 1,cell)
+            self.cell_widgets.insert(index + 1, cell)
             self.cell_layout.insertWidget(index + 1, cell)
-
-            self.set_focus(cell) # set New Cell Focused
+            self.set_focus(cell)
 
     # Connected to a Button 3
     def delete_active_cell(self):
@@ -698,8 +713,8 @@ class WorkWindow(QWidget):
         Deletes the currently active cell from the notebook and stores it for multistep undo.
         """
         content = None
-        if self.debug: print('[WorkWindow->delete_active_cell]')
-        
+        if self.debug:
+            print('[WorkWindow->delete_active_cell]')
 
         if self.focused_cell and self.cell_widgets:
             index = self.cell_widgets.index(self.focused_cell)
@@ -716,7 +731,8 @@ class WorkWindow(QWidget):
                     "index": index,
                     "cell_type": self.focused_cell.editor_type,
                     "source": content,
-                    "color": self.focused_cell.border_color
+                    "color": self.focused_cell.border_color,
+                    "origin": self.focused_cell.origin  # ← فقط این خط اضافه شده
                 })
 
             # حذف سلول از رابط کاربری و لیست
@@ -759,45 +775,57 @@ class WorkWindow(QWidget):
 
     # Connected to Save File Button
     # gather all cell_widgets contents and build an ipynb file (SAVE FILE)
-    def ipynb_format_save_file(self,path = None):
-        if not path : path = self.file_path
-        nb = new_notebook()
-        for i in self.cell_widgets :
-            if i.editor_type == 'code' :
-                nb.cells.append(i.get_nb_code_cell())
-
-            elif i.editor_type == 'markdown':
-                nb.cells .append (i.get_nb_markdown_cell())
-        try :
-            with open(path, "w", encoding="utf-8") as f:
-                nbformat.write(nb, f)
-
-        except TypeError :
-            with open('last_save_file.ipynb', "w", encoding="utf-8") as f:
-                nbformat.write(nb, f)
-
-
-    def load_file (self,file_content):
-            if self.debug :print('[WorkWindow->load_file]')
-            if not file_content :               
-                self.add_cell()
-            else :
-
-                self.cell_widgets = []
-                for  c in file_content.cells:                    
-
-                    bg = c['metadata'].get('bg' , '#000000') # get cell title color
-
-                    if c.cell_type == 'code' :
-                        cell = self.add_cell( editor_type='code' , content=c.source ,border_color = bg)
-                        for out in c.get('outputs',[]) :
-                            cell.append_output(out)
-                        QTimer.singleShot(400, lambda: cell.output_editor.adjust_height())
+    def ipynb_format_save_file(self):
+        """
+        Converts all cells into nbformat-compatible structure and saves to disk.
+        """
+        if self.debug:
+            print('[WorkWindow->ipynb_format_save_file]')
+        cells = []
+        for cell in self.cell_widgets:
+            if cell.editor_type == "code":
+                cells.append(cell.get_nb_code_cell())
+            elif cell.editor_type == "markdown":
+                cells.append(cell.get_nb_markdown_cell())
+        nb = nbformat.v4.new_notebook()
+        nb["cells"] = cells
+        if self.file_path:
+            try:
+                with open(self.file_path, "w", encoding="utf-8") as f:
+                    nbformat.write(nb, f)
+            except Exception as e:
+                from PyQt5.QtWidgets import QMessageBox
+                QMessageBox.warning(self, "Save Error", f"Could not save file:\n{e}")
 
 
-                    elif c.cell_type == 'markdown' :
-                             self.add_cell(editor_type='markdown' , content=c.source ,border_color = bg )
-                         
+
+    def load_file(self, content):
+        if not content:
+            self.add_cell(origin="uranus")  # ← اضافه‌شده
+            return
+
+        self.cell_widgets.clear()
+
+        for cell_data in content["cells"]:
+            cell_type = cell_data["cell_type"]
+            source = cell_data.get("source")
+            source_text = ''.join(source)
+            metadata = cell_data.get("metadata", {})
+            border_color = metadata.get("bg")
+
+            if cell_type == "code":
+                self.add_cell("code", content=source, border_color=border_color, origin="uranus")
+
+            elif cell_type == "markdown":
+                uranus_meta = metadata.get("uranus", {})
+                origin = uranus_meta.get("origin")
+
+                if origin != "uranus":
+                    html = markdown2.markdown(source_text)
+                    cell = self.add_cell("markdown", content=html, border_color=border_color, origin="jupyter")
+                    cell.editor.editor.setReadOnly(True)
+                else:
+                    cell = self.add_cell("markdown", content=source_text, border_color=border_color, origin="uranus")
 
     def move_cell_up(self):
         if self.debug: print('[WorkWindow->move_cell_up]')
@@ -814,26 +842,33 @@ class WorkWindow(QWidget):
 
     def undo_delete_cell(self):
         """
-        Restores the most recently deleted cell from the undo stack.
+        Restores the last deleted cell.
         """
-        if self.debug: print('[WorkWindow->undo_delete_cell]')
+        if self.debug:
+            print('[WorkWindow->undo_delete_cell]')
+
         if not self.deleted_cells_stack:
             return
 
-        data = self.deleted_cells_stack.pop()
+        cell_info = self.deleted_cells_stack.pop()
+        index = cell_info["index"]
+        cell_type = cell_info["cell_type"]
+        source = cell_info["source"]
+        color = cell_info["color"]
 
         cell = Cell(
-            editor_type=data["cell_type"],
-            content=data["source"],
-            border_color=data["color"],
+            editor_type=cell_type,
+            content=source,
+            border_color=color,
             kernel=self.ipython_kernel,
-            notify_done=self.execution_done
+            notify_done=self.execution_done,
+            origin="uranus"  # ← فقط این خط اضافه شده
         )
+
         cell.clicked.connect(lambda c=cell: self.set_focus(c))
         cell.doc_editor_clicked.connect(lambda c=cell: self.set_focus(c))
         cell.doc_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
 
-        index = min(data["index"], len(self.cell_widgets))
         self.cell_widgets.insert(index, cell)
         self.cell_layout.insertWidget(index, cell)
         self.set_focus(cell)

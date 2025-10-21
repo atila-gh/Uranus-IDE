@@ -11,7 +11,11 @@ requires-python = ">=3.8"
 dependencies = [
     "PyQt5>=5.15",
     "IPython>=8.0",
-    "nbformat>=5.9"
+    "nbformat>=5.9", 
+    "markdown2>=2.4",
+    "html2text>=2020.1.16"
+
+
 ]
 
 [project.urls]

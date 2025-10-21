@@ -3,8 +3,7 @@
 import os , base64
 from PyQt5.QtGui import QIcon, QTextCharFormat, QFont, QFontMetrics, QTextImageFormat, QTextCursor, QColor , QMouseEvent
 from PyQt5.QtCore import  QSize , QEvent ,pyqtSignal, QBuffer, Qt
-from PyQt5.QtWidgets import (QDialog, QToolBar, QDialogButtonBox, QLabel, QWidget, QVBoxLayout, QTextEdit,QAction
-
+from PyQt5.QtWidgets import (QDialog, QToolBar, QDialogButtonBox, QLabel, QWidget, QVBoxLayout, QTextEdit,QAction , QScrollArea
 , QFileDialog, QMessageBox, QSlider, QComboBox, QHBoxLayout, QPushButton)
 from Uranus.SettingWindow import load_setting
 
@@ -88,40 +87,25 @@ class DocumentEditor(QWidget):
         """
 
     def __init__(self, parent=None):
-        # print('[DocumentEditor->__init__]')
         super().__init__(parent)
 
-        # setting
+        # Load settings
         setting = load_setting()
         bg_meta = setting['colors']['Back Ground Color MetaData']
         fg_meta = setting['colors']['ForGround Color MetaData']
         metadata_font = setting['Meta Font']
         metadata_font_size = setting['Meta Font Size']
-        self.tab_size = 4 # the tab size
-
+        self.tab_size = 4
         self.readonly_mode = False
-
-
-
-        # Internal Frame for toolbar and editor
-        self.editor_frame = QWidget()
-        self.editor_layout = QVBoxLayout(self.editor_frame)
-        self.editor_layout.setContentsMargins(0, 0, 0, 0)
-        self.editor_layout.setSpacing(0)
 
         # Toolbar
         self.toolbar = QToolBar()
         self.toolbar.setIconSize(QSize(16, 16))
 
-
         # Editor
         self.editor = RichTextEditor()
         self.editor.setAcceptRichText(True)
-        self.editor.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.editor.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.editor.setFont(QFont(metadata_font, metadata_font_size))
-
-
         self.editor.setStyleSheet(f"""
             QTextEdit {{
                 background-color: {bg_meta};
@@ -138,20 +122,32 @@ class DocumentEditor(QWidget):
         self.editor.doubleClicked.connect(self.activate_edit_mode)
         self.editor.clicked.connect(self.clicked.emit)
 
+        # ScrollArea for editor
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setFrameShape(QScrollArea.NoFrame)
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.scroll_area.setWidget(self.editor)
 
-
+        # Internal layout
+        self.editor_frame = QWidget()
+        self.editor_layout = QVBoxLayout(self.editor_frame)
+        self.editor_layout.setContentsMargins(0, 0, 0, 0)
+        self.editor_layout.setSpacing(0)
         self.editor_layout.addWidget(self.toolbar)
-        self.editor_layout.addWidget(self.editor)
+        self.editor_layout.addWidget(self.scroll_area)
 
-
-        # main_layout
+        # Main layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         layout.addWidget(self.editor_frame)
 
-
+        # Font and tab setup
         self.set_font_and_size(metadata_font, metadata_font_size)
+
+        # Toolbar setup
         self.setup_toolbar()
 
 
@@ -503,33 +499,45 @@ class DocumentEditor(QWidget):
         buttons.rejected.connect(dialog.reject)
         dialog.exec()
 
+   
     def adjust_height_document_editor(self):
-        #print('[DocumentEditor->adjust_height_document_editor]')
-
         font_metrics = QFontMetrics(self.editor.font())
         line_height = font_metrics.lineSpacing()
 
         doc = self.editor.document()
         layout = doc.documentLayout()
-        height = 0
+        content_height = 0
+
         for i in range(doc.blockCount()):
             block = doc.findBlockByNumber(i)
-            height += layout.blockBoundingRect(block).height()
+            content_height += layout.blockBoundingRect(block).height()
 
         padding = line_height
         toolbar_height = 30 if self.toolbar.isVisible() else 0
         margin = 0
 
-        # if editor is empty define constant value
+        # اگر ادیتور خالی بود، مقدار پیش‌فرض بده
         if not self.editor.toPlainText().strip():
-            height = 72 - padding - toolbar_height - margin
+            content_height = line_height * 3  # حداقل ۳ خط
 
-        new_height = int(height + padding + toolbar_height + margin)
+        new_height = int(content_height + padding + toolbar_height + margin)
 
-        self.setMinimumHeight(new_height)
-        self.setMaximumHeight(new_height)
+        if self.readonly_mode:
+            min_lines = 3
+            min_height = line_height * min_lines + toolbar_height + padding
+            new_height = int(max(content_height + padding + toolbar_height + margin, min_height))
+            self.setMinimumHeight(int(new_height))
+            self.setMaximumHeight(int(new_height))
+        else:
+            # حالت ویرایش: حداقل ۳ خط، حداکثر ۸۰۰ پیکسل
+            min_height = line_height * 3 + toolbar_height + padding
+            max_height = 800
+            final_height = int(max(min_height, min(new_height, max_height)))
+            self.setMinimumHeight(int(final_height))
+            self.setMaximumHeight(int(final_height))
+
         self.updateGeometry()
-   
+
 
     def mousePressEvent(self, event):
        
@@ -552,6 +560,9 @@ class DocumentEditor(QWidget):
         self.editor.setReadOnly(False)
         self.editor.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.editor.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+
+
         self.editor.setStyleSheet(self.editor.styleSheet().replace("border: none;", "border: 1px solid #444;"))
         self.editor.setFocus()
         self.adjust_height_document_editor()

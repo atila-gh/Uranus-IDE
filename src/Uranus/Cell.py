@@ -1,4 +1,4 @@
-import re , importlib
+import re , importlib , html2text
 from PyQt5.QtGui import QFont, QTextCursor
 from PyQt5.QtCore import Qt, pyqtSignal, QThread, QObject , QTimer
 from PyQt5.QtWidgets import QFrame, QHBoxLayout,QSizePolicy, QRadioButton, QButtonGroup, QVBoxLayout , QLabel, QScrollArea , QApplication
@@ -64,7 +64,7 @@ class Cell(QFrame):
         - border_color: Optional color for the cell border.
         - kernel: IPythonKernel instance for code execution.
         - notify_done: Callback function to notify when execution finishes.
-        - load_condition: Optional flag for conditional loading logic.
+        
 
         Signals:
         - clicked(): Emitted when the cell is clicked.
@@ -83,25 +83,22 @@ class Cell(QFrame):
         """
 
     def __init__(self, editor_type=None, content=None, border_color=None,
-             kernel=None, notify_done=None, load_condition=False):
+             kernel=None, notify_done=None , origin = 'uranus'):
         super().__init__()
         self.debug = False
         if self.debug: print('[Cell->init]')
 
 
         self.outputs = []
+        self.origin = origin
         self.editor_type = editor_type
         self.notify_done = notify_done
-        self.load_condition = load_condition
         self.content = content
         self.border_color = border_color
         self.editor = None
         self.kernel = kernel
         self.cells_content = []
         self.execution_lock = True  # activate the lock in start of Processing
-        
-
-
 
         # Load settings
         setting = load_setting()
@@ -225,7 +222,7 @@ class Cell(QFrame):
             self.main_layout.addLayout(radio_layout)
 
             self.radio_code.toggled.connect(lambda checked: self.initialize_editor("code") if checked else None)
-            self.radio_doc.toggled.connect(lambda checked: self.initialize_editor("markdown") if checked else None)
+            self.radio_doc.toggled.connect(lambda checked: self.initialize_editor("markdown" , original = True) if checked else None)
 
         elif self.editor_type == 'code':
             self.initialize_editor("code", content=self.content, border_color=self.border_color)
@@ -299,7 +296,7 @@ class Cell(QFrame):
         ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
         return ansi_escape.sub('', text)
 
-    def initialize_editor(self, editor_type, content=None, border_color=None):
+    def initialize_editor(self, editor_type, content=None, border_color=None , original = False ):
         """
         Initializes the editor based on the selected cell type.
         Removes the type selector and inserts the appropriate editor.
@@ -359,7 +356,6 @@ class Cell(QFrame):
             if content:
                 self.editor.setPlainText(content)
             self.set_color(border_color)
-
             self.editor.adjust_height_code()
             self.editor.textChanged.connect(self.editor.adjust_height_code)
             self.editor.setFocus()
@@ -374,13 +370,11 @@ class Cell(QFrame):
             self.editor.editor.doubleClicked.connect(lambda: self.doc_editor_editor_clicked.emit(self))
             if content:
                 self.editor.editor.setHtml(content)
+                self.editor.activate_readonly_mode()
             self.set_color(border_color)                    
             
             self.editor.editor.textChanged.connect(self.editor.adjust_height_document_editor)
-            QTimer.singleShot(5, self.editor.adjust_height_document_editor) # adjust after cell rendering
-     
-
-
+            QTimer.singleShot(0, self.editor.adjust_height_document_editor) # adjust after cell rendering
             self.editor.editor.setFocus(True)
 
     def border_focus(self,state):
@@ -496,14 +490,49 @@ class Cell(QFrame):
             self.line_number.setText(f"Line: {line} | Chr: {column}")
 
     def get_nb_code_cell(self):
-        cell = new_code_cell(source=self.editor.toPlainText())
+        code = self.editor.toPlainText()
+        cell = new_code_cell(source=code)
+
         cell.outputs = self.outputs
         cell.execution_count = 1
-        cell['metadata']['bg'] = self.border_color # Save Title Color
+        cell['metadata']['bg'] = self.border_color
+        cell['metadata']['uranus'] = {
+            "origin": self.origin  # ← اضافه‌شده
+        }
+
         return cell
 
     def get_nb_markdown_cell(self):
-        cell = new_markdown_cell(source=self.editor.editor.toHtml())
-        cell['metadata']['bg'] = self.border_color
+        """
+        Converts the current cell's content to a Jupyter-compatible Markdown cell.
+        If origin is not 'uranus', HTML is converted to Markdown using html2text.
+        Otherwise, raw HTML is preserved as source.
+        """
+
+        html = self.editor.editor.toHtml()
+
+        if self.origin != "uranus":
+            # تبدیل HTML به Markdown به‌صورت درون‌تابعی
+
+            converter = html2text.HTML2Text()
+            converter.ignore_links = False
+            converter.body_width = 0  # جلوگیری از شکستن خطوط
+            markdown = converter.handle(html)
+
+            cell = new_markdown_cell(source=markdown)
+            cell['metadata']['bg'] = self.border_color
+            cell['metadata']['uranus'] = {
+                "origin": "jupyter",
+                "edited": True  # ← اضافه‌شده
+            }
+        else:
+            cell = new_markdown_cell(source=html)
+            cell['metadata']['bg'] = self.border_color
+            cell['metadata']['uranus'] = {
+                "origin": "uranus"
+            }
+
         return cell
+
+
 

@@ -27,7 +27,7 @@ def check_and_install(packages):
         try:
             subprocess.check_call([sys.executable, "-m", "pip", "install", *missing])
             print("✅ Installation successful.")
-        except Exception as e:
+        except Exception :
             print("❌ Automatic installation failed.")
             print("Please install the missing packages manually:")
             print(f"pip install {' '.join(missing)}")
