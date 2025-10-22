@@ -255,10 +255,7 @@ class CodeHighlighter(QSyntaxHighlighter):
         self.single_quote_pattern = QRegularExpression(r"'([^'\\]|\\.)*'")
         self.double_quote_pattern = QRegularExpression(r'"([^"\\]|\\.)*"')
 
-        # self.triple_single_pattern = QRegularExpression(r"'''(?:.|\\n)*?'''")
-        # self.triple_double_pattern = QRegularExpression(r'"""(?:.|\\n)*?"""')
-        # self.tri_single = QRegExp("'''")
-        # self.tri_double = QRegExp('"""')
+       
 
         # اضافه به rules برای حالت‌های تک‌خطی
         self.rules.append((QRegExp(r'"[^"\\]*(\\.[^"\\]*)*"'), self.string_format))
@@ -274,6 +271,12 @@ class CodeHighlighter(QSyntaxHighlighter):
 
 
         # ======= متد کمکی برای ساخت استایل کامنت =======
+    
+    
+    
+    
+    
+    
     @staticmethod
     def _make_comment_format():
         fmt = QTextCharFormat()
@@ -281,10 +284,7 @@ class CodeHighlighter(QSyntaxHighlighter):
         fmt.setFontItalic(True)
         return fmt
 
-        # ======= متد هایلایت اصلی =======
-
-
-
+     
 
     def apply_pattern(self, text, pattern, fmt):
         """اعمال رنگ روی رشته‌های تک‌خطی"""
@@ -294,9 +294,6 @@ class CodeHighlighter(QSyntaxHighlighter):
             start = match.capturedStart()
             length = match.capturedLength()
             self.setFormat(start, length, fmt)
-
-
-
 
 
     def highlightBlock(self, text):
@@ -309,28 +306,4 @@ class CodeHighlighter(QSyntaxHighlighter):
 
         self.setCurrentBlockState(0)
 
-        # رشته‌های چندخطی با """ و '''
-        self.highlight_multiline_quotes(text, '"""')
-        self.highlight_multiline_quotes(text, "'''")
-
-
-
-
-
-
-
-    def highlight_multiline_quotes(self, text, quote):
-        start = 0
-        while True:
-            start_index = text.find(quote, start)
-            if start_index == -1:
-                break
-            end_index = text.find(quote, start_index + len(quote))
-            if end_index == -1:
-                # اگر بسته پیدا نشد، تا آخر خط رنگی کن
-                self.setFormat(start_index, len(text) - start_index, self.string_format)
-                break
-            else:
-                length = end_index + len(quote) - start_index
-                self.setFormat(start_index, length, self.string_format)
-                start = end_index + len(quote)
+       
