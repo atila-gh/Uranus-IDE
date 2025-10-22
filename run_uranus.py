@@ -6,6 +6,10 @@ import subprocess
 REQUIRED_PACKAGES = [
     "PyQt5",
     "IPython",
+    "nbformat",
+    "markdown2",
+    "html2text"
+    
 
     # Add more if needed
 ]
