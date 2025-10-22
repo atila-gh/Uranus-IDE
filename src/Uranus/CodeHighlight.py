@@ -198,8 +198,8 @@ class CodeHighlighter(QSyntaxHighlighter):
 
 
         # Library functions (NumPy, Pandas, etc.)
-        library_function_format = QTextCharFormat()
-        library_function_format.setForeground(QColor("#990000"))  # قهوه‌ای-قرمز
+        # library_function_format = QTextCharFormat()
+        # library_function_format.setForeground(QColor("#990000"))  # قهوه‌ای-قرمز
         #library_function_format.setFontWeight(QFont.Bold)
 
         # Strings
@@ -214,7 +214,7 @@ class CodeHighlighter(QSyntaxHighlighter):
         comment_format = QTextCharFormat()
         comment_format.setForeground(QColor("#797676"))   # خاکستری
         comment_format.setFontItalic(True)
-
+        
 
         # Structure Format
         structure_format = QTextCharFormat()
@@ -241,8 +241,8 @@ class CodeHighlighter(QSyntaxHighlighter):
             self.rules.append((QRegExp(r"\b" + bi + r"\b"), builtin_format))
 
 
-        for li in library_functions:
-            self.rules.append((QRegExp(r"\b" + li + r"\b"), library_function_format))
+        # for li in library_functions:
+        #     self.rules.append((QRegExp(r"\b" + li + r"\b"), library_function_format))
 
         for word in structure_keywords:
             self.rules.append((QRegExp(r"\b" + word + r"\b"), structure_format))
@@ -256,13 +256,12 @@ class CodeHighlighter(QSyntaxHighlighter):
         self.double_quote_pattern = QRegularExpression(r'"([^"\\]|\\.)*"')
 
        
-
         # اضافه به rules برای حالت‌های تک‌خطی
         self.rules.append((QRegExp(r'"[^"\\]*(\\.[^"\\]*)*"'), self.string_format))
         self.rules.append((QRegExp(r"'[^'\\]*(\\.[^'\\]*)*'"), self.string_format))
 
         # کامنت‌ها
-        self.rules.append((QRegExp(r"#.*"), self._make_comment_format()))
+        self.rules.append((QRegExp(r"#.*"), comment_format))
 
         # اعداد
         self.rules.append((QRegExp(r"\b\d+(\.\d+)?\b"), number_format))
@@ -270,32 +269,7 @@ class CodeHighlighter(QSyntaxHighlighter):
 
 
 
-        # ======= متد کمکی برای ساخت استایل کامنت =======
-    
-    
-    
-    
-    
-    
-    @staticmethod
-    def _make_comment_format():
-        fmt = QTextCharFormat()
-        fmt.setForeground(QColor("#797676"))
-        fmt.setFontItalic(True)
-        return fmt
-
-     
-
-    def apply_pattern(self, text, pattern, fmt):
-        """اعمال رنگ روی رشته‌های تک‌خطی"""
-        it = pattern.globalMatch(text)
-        while it.hasNext():
-            match = it.next()
-            start = match.capturedStart()
-            length = match.capturedLength()
-            self.setFormat(start, length, fmt)
-
-
+    # this method is Override QtGui Standard Method dont Touch This 
     def highlightBlock(self, text):
         for pattern, fmt in self.rules:
             index = pattern.indexIn(text)
