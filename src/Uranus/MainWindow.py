@@ -192,7 +192,7 @@ class MainWindow(QMainWindow):
         self.select_folder_btn = QToolButton()
         self.select_folder_btn.setIcon(QIcon(icon_path))
         self.select_folder_btn.setToolTip("Select Project Folder")
-        # self.select_folder_btn.clicked.connect(self.select_project_folder)
+        
         self.select_folder_btn.clicked.connect(self.select_project_folder)
         self.select_folder_btn.setIconSize(QSize(48, 48))
 

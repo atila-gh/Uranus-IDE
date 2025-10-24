@@ -206,16 +206,17 @@ class FileTreeView(QTreeView):
             self.paste_item(path)
         elif event.key() == Qt.Key_F2:
             self.rename_item()
-        elif event.key() in (Qt.Key_Return, Qt.Key_Enter):
-            if os.path.isdir(path):
+            if os.path.exists(path) and os.path.isdir(path):
                 if self.isExpanded(index):
                     self.collapse(index)
                 else:
                     self.expand(index)
             else:
-                super().keyPressEvent(event)
+                # مسیر وجود ندارد → فقط اینتر بزن بدون ورود
+                pass
         else:
             super().keyPressEvent(event)
+
 
     # ------------------------------------------------------------
     # Context Menu
@@ -413,3 +414,24 @@ class FileTreeView(QTreeView):
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Could not paste:\n{e}")
 
+    
+    
+    
+    def mousePressEvent(self, event):
+        index = self.indexAt(event.pos())
+
+        if not index.isValid():
+            # کلیک روی فضای خالی درخت فایل
+
+            # 1. پاک‌کردن انتخاب فعلی
+            self.clearSelection()
+            self.setCurrentIndex(QModelIndex())
+
+            # 2. تنظیم مسیر جاری به ریشه پروژه
+            self.path = self.project_root
+            self.pathChanged.emit(self.project_root)
+
+        # 3. ادامهٔ رفتار پیش‌فرض برای کلیک‌های معتبر
+        super().mousePressEvent(event)
+        
+        
