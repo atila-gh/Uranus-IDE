@@ -346,8 +346,8 @@ class DocumentEditor(QWidget):
 
 
         self.toolbar.addSeparator()
-
-
+        
+        
         # Color choose button and its functions
         def show_color_dialog():
             dialog = QDialog(self)
@@ -398,6 +398,30 @@ class DocumentEditor(QWidget):
         color_action = QAction(QIcon(icon_path), "Text Color", self)
         self.toolbar.addAction(color_action)
         color_action.triggered.connect(apply_text_color)
+        
+        
+
+        self.toolbar.addSeparator()
+        
+        
+        
+            
+    
+         # Text RTL / LTR
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "rtl.png")
+        rtl_action = QAction(QIcon(icon_path), "RTL Action", self)
+        rtl_action.setToolTip("Force Right-to-Left direction for selected text")
+        rtl_action.triggered.connect(lambda: self.apply_direction_to_selection(Qt.RightToLeft))
+        self.toolbar.addAction(rtl_action)
+        
+        
+          # Text RTL / LTR
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "ltr.png")
+        ltr_action = QAction(QIcon(icon_path), "LTR Action", self)
+        ltr_action.setToolTip("Force Left-to-Right direction for selected text")
+        ltr_action.triggered.connect(lambda: self.apply_direction_to_selection(Qt.LeftToRight))
+        self.toolbar.addAction(ltr_action)
+
     
 
 
@@ -639,3 +663,31 @@ class DocumentEditor(QWidget):
 
         return super().eventFilter(obj, event)
 
+
+
+    def apply_direction_to_selection(self, direction: Qt.LayoutDirection):
+        cursor = self.editor.textCursor()
+
+        # اگر چیزی انتخاب نشده بود، فقط روی بلاک جاری اعمال کن
+        if not cursor.hasSelection():
+            block = cursor.block()
+            temp_cursor = QTextCursor(block)
+            block_format = temp_cursor.blockFormat()
+            block_format.setLayoutDirection(direction)
+            temp_cursor.mergeBlockFormat(block_format)
+            return
+
+        # اگر انتخاب وجود دارد، روی همهٔ بلاک‌ها اعمال کن
+        start = min(cursor.selectionStart(), cursor.selectionEnd())
+        end = max(cursor.selectionStart(), cursor.selectionEnd())
+
+        doc = self.editor.document()
+        block = doc.findBlock(start)
+        end_block = doc.findBlock(end)
+
+        while block.isValid() and block.position() <= end_block.position():
+            temp_cursor = QTextCursor(block)
+            block_format = temp_cursor.blockFormat()
+            block_format.setLayoutDirection(direction)
+            temp_cursor.mergeBlockFormat(block_format)
+            block = block.next()
