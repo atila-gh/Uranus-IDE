@@ -48,7 +48,7 @@ sys.path.insert(0, src_path)
 
 # Launch Uranus
 print("🚀 Launching Uranus IDE...")
-from Uranus.Core import main
+from Uranus.core import main
 main()
 
 
