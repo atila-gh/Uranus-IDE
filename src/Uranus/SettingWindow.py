@@ -9,22 +9,22 @@ from PyQt5.QtCore import Qt
 
 DEFAULT_SETTINGS = {
     "colors": {
-        "Back Ground Color Code": "#E9E4E4",
-        "Back Ground Color MetaData": '#E9E4E4',
-        "Back Ground Color OutPut": "#BFC5C5",
+        "Back Ground Color Code": "#ffffff",
+        "Back Ground Color MetaData": '#ffffff',
+        "Back Ground Color OutPut": "#ffffff",
         "Back Ground Color WorkWindow": "#d9d9d9",
-        "Default Title Color": "#797979",
+        "Default Title Color": "#A09F9F",
         "ForGround Color Code": "#181515",
         "ForGround Color MetaData": "#0d0e0f",
         "ForGround Color Output" : "#0d0e0f"
 
     },
-    "Code Font": "Segoe UI",
-    "Code Font Size": 12,
+    "Code Font": "Space Mono",
+    "Code Font Size": 13,
     "Meta Font": "Segoe UI",
     "Meta Font Size": 12 ,
     "OutPut Font": "JetBrainsMono",
-    "OutPut Font Size": 10 ,
+    "OutPut Font Size": 12 ,
     'last_path' : ''
 }
 

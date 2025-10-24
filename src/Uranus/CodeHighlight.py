@@ -43,7 +43,7 @@ class CodeHighlighter(QSyntaxHighlighter):
         # دسته‌بندی کلمات
         # ==========================
 
-        structure_keywords = ["def", "class"]
+        structure_keywords = ["def", "class" ,"self"]
 
         keywords = [
                     "False", "None", "True", "and", "as", "assert", "async", "await",
@@ -172,7 +172,7 @@ class CodeHighlighter(QSyntaxHighlighter):
 
         # Keywords
         keyword_format = QTextCharFormat()
-        keyword_format.setForeground(QColor("#0066CC"))   # آبی تیره
+        keyword_format.setForeground(QColor("#008000"))   # آبی تیره
         #keyword_format.setFontWeight(QFont.Bold)
 
         # Builtins
@@ -187,7 +187,7 @@ class CodeHighlighter(QSyntaxHighlighter):
 
         # Exceptions
         exception_format = QTextCharFormat()
-        exception_format.setForeground(QColor("#CC0000")) # قرمز
+        exception_format.setForeground(QColor("#AA0000")) # قرمز
         #exception_format.setFontWeight(QFont.Bold)
 
         # Modules
@@ -202,9 +202,10 @@ class CodeHighlighter(QSyntaxHighlighter):
         # library_function_format.setForeground(QColor("#990000"))  # قهوه‌ای-قرمز
         #library_function_format.setFontWeight(QFont.Bold)
 
+
         # Strings
         string_format = QTextCharFormat()
-        string_format.setForeground(QColor("#CC6600"))    # قهوه‌ای روشن
+        string_format.setForeground(QColor("#BA2121"))    # قهوه‌ای روشن
 
         # Numbers
         number_format = QTextCharFormat()
@@ -212,14 +213,21 @@ class CodeHighlighter(QSyntaxHighlighter):
 
         # Comments
         comment_format = QTextCharFormat()
-        comment_format.setForeground(QColor("#797676"))   # خاکستری
+        comment_format.setForeground(QColor("#353333"))
         comment_format.setFontItalic(True)
+        comment_format.setFont(QFont("Ubuntu Mono", 13))
         
+
 
         # Structure Format
         structure_format = QTextCharFormat()
         structure_format.setForeground(QColor("#267f99"))  # آبی-سبز
         structure_format.setFontWeight(QFont.Bold)
+        
+        # Decorator Formats
+        decorator_format = QTextCharFormat()
+        decorator_format.setForeground(QColor("#AA22FF"))  # بنفش روشن
+        decorator_format.setFontItalic(True)
 
 
         # ==========================
@@ -265,12 +273,16 @@ class CodeHighlighter(QSyntaxHighlighter):
 
         # اعداد
         self.rules.append((QRegExp(r"\b\d+(\.\d+)?\b"), number_format))
+        
+        # دکوراتور 
+        self.rules.append((QRegExp(r"^@\w+(\(.*\))?"), decorator_format))
 
 
 
 
     # this method is Override QtGui Standard Method dont Touch This 
-    def highlightBlock(self, text):
+    def highlightBlock(self, text):      
+
         for pattern, fmt in self.rules:
             index = pattern.indexIn(text)
             while index >= 0:
@@ -279,5 +291,5 @@ class CodeHighlighter(QSyntaxHighlighter):
                 index = pattern.indexIn(text, index + length)
 
         self.setCurrentBlockState(0)
-
-       
+        
+    

@@ -87,26 +87,9 @@ class OutputEditor(QWidget):
 
         self.layout.addWidget(self.text_output)
 
-    def adjust_height1(self):
-        layout = self.text_output.document().documentLayout()
-        doc_height = layout.documentSize().height()
-        line_height = QFontMetrics(self.text_output.font()).lineSpacing()
-
-        content_height = int(doc_height) + 2 * line_height
-        final_height = min(content_height, 1000)
-        final_height = max(final_height, 100)
-
-        self.text_output.setMinimumHeight(final_height)
-        self.text_output.setMaximumHeight(final_height)
-
-        # فعال‌سازی اسکرول داخلی اگر ارتفاع زیاد بود
-        self.text_output.setVerticalScrollBarPolicy(
-            Qt.ScrollBarAsNeeded if content_height > 1000 else Qt.ScrollBarAlwaysOff
-        )
-
-        self.text_output.updateGeometry()
 
     def adjust_height(self):
+        
         text = self.text_output.toPlainText()
         lines = text.splitlines()
         line_count = max(len(lines), 1)  # min 1 line

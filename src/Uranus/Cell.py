@@ -463,6 +463,7 @@ class Cell(QFrame):
 
                 self.toggle_output_button.setVisible(True)
                 self.output_editor.setVisible(True)
+                self.output_editor.adjust_height()
 
 
             # 📤  String (stream)
@@ -475,6 +476,7 @@ class Cell(QFrame):
                 self.toggle_output_button.setVisible(True)
                 self.output_editor.setVisible(True)
                 self.outputs.append(out)
+                self.output_editor.adjust_height()                
                 return
 
         self.outputs.append(out)
