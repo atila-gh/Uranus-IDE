@@ -322,7 +322,7 @@ class Cell(QFrame):
             # Add editor to layout
             self.main_layout.addWidget(self.editor)
 
-            #Add output toggle and output table
+            # Add output toggle and output table
 
             # Data Frame Table
             self.output_data = DataFrameWidget()

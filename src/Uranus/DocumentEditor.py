@@ -100,7 +100,7 @@ class DocumentEditor(QWidget):
 
         # Toolbar
         self.toolbar = QToolBar()
-        self.toolbar.setIconSize(QSize(16, 16))
+        self.toolbar.setIconSize(QSize(20, 20))
 
         # Editor
         self.editor = RichTextEditor()
@@ -112,7 +112,7 @@ class DocumentEditor(QWidget):
                 color: {fg_meta};
                 font-family: {metadata_font};
                 font-size: {metadata_font_size}pt;
-                border: 1px solid #444;
+                border: none;
                 padding: 6px;
                 selection-background-color: #264f78;
                 selection-color: #ffffff;
@@ -128,7 +128,10 @@ class DocumentEditor(QWidget):
         self.scroll_area.setFrameShape(QScrollArea.NoFrame)
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.scroll_area.setStyleSheet("QScrollArea { border: 1px solid #444; padding: 3px; }"
+)
         self.scroll_area.setWidget(self.editor)
+        
 
         # Internal layout
         self.editor_frame = QWidget()
@@ -137,6 +140,7 @@ class DocumentEditor(QWidget):
         self.editor_layout.setSpacing(0)
         self.editor_layout.addWidget(self.toolbar)
         self.editor_layout.addWidget(self.scroll_area)
+       
 
         # Main layout
         layout = QVBoxLayout(self)
@@ -194,9 +198,7 @@ class DocumentEditor(QWidget):
                 self.editor.setFocus()
             return wrapped
 
-        # Bold - Deactivate
-        icon_path = os.path.join(os.path.dirname(__file__), "image", "bold.png")
-        bold_action = QAction(QIcon(icon_path), "Bold", self)
+
 
         def toggle_bold():
             cursor = self.editor.textCursor() # Return Cursor Position
@@ -213,12 +215,16 @@ class DocumentEditor(QWidget):
                 fmt.setFontWeight(QFont.Normal if fmt.fontWeight() == QFont.Bold else QFont.Bold)
                 self.editor.setCurrentCharFormat(fmt)
 
-            bold_action.triggered.connect(wrap(toggle_bold))
-            self.toolbar.addAction(bold_action)
-
-        # Italic - Deactivate
-        icon_path = os.path.join(os.path.dirname(__file__), "image", "italic.png")
-        italic_action = QAction(QIcon(icon_path), "Italic", self)
+           
+            
+            
+        # Bold - Deactivate
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "bold.png")
+        bold_action = QAction(QIcon(icon_path), "Bold", self)
+        bold_action.triggered.connect(wrap(toggle_bold))
+        self.toolbar.addAction(bold_action)
+        self.toolbar.addSeparator()
+        
 
         def toggle_italic():
             cursor = self.editor.textCursor()
@@ -240,12 +246,17 @@ class DocumentEditor(QWidget):
                 fmt.setFontItalic(not fmt.fontItalic())
                 self.editor.setCurrentCharFormat(fmt)
 
-            italic_action.triggered.connect(wrap(toggle_italic))
-            self.toolbar.addAction(italic_action)
+            
+        # Italic - Deactivate
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "italic.png")
+        italic_action = QAction(QIcon(icon_path), "Italic", self)
+        italic_action.triggered.connect(wrap(toggle_italic))
+        self.toolbar.addAction(italic_action)
 
-        # Underline - Deactivate
-        icon_path = os.path.join(os.path.dirname(__file__), "image", "underline.png")
-        underline_action = QAction(QIcon(icon_path), "Underline", self)
+        self.toolbar.addSeparator()
+
+        
+
 
         def toggle_underline():
             cursor = self.editor.textCursor()
@@ -266,35 +277,28 @@ class DocumentEditor(QWidget):
                 fmt.setFontUnderline(not fmt.fontUnderline())
                 self.editor.setCurrentCharFormat(fmt)
 
-            underline_action.triggered.connect(wrap(toggle_underline))
-            self.toolbar.addAction(underline_action)
+            
+
+        # Underline - Deactivate
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "underline.png")
+        underline_action = QAction(QIcon(icon_path), "Underline", self)
+        underline_action.triggered.connect(wrap(toggle_underline))
+        self.toolbar.addAction(underline_action)
+        self.toolbar.addSeparator()
+
+        
 
 
 
-        # Text alignment
-        icon_path = os.path.join(os.path.dirname(__file__), "image", "text_direction.png")
-        align = QAction(QIcon(icon_path), "Change Align", self)
-        self.toolbar.addAction(align)
-
-        def toggle_alignment():
-            cursor = self.editor.textCursor()
-            block_format = cursor.blockFormat()
-            if block_format.alignment() == Qt.AlignLeft:
-                block_format.setAlignment(Qt.AlignRight)
-            else:
-                block_format.setAlignment(Qt.AlignLeft)
-            cursor.setBlockFormat(block_format)
-            self.editor.setTextCursor(cursor)
-            self.editor.setFocus()
-
-        align.triggered.connect(wrap(toggle_alignment))
-        self.toolbar.addAction(align)
+        
 
         # Center Align
         icon_path = os.path.join(os.path.dirname(__file__), "image", "center.png")
         align_center = QAction(QIcon(icon_path), "Center", self)
         align_center.triggered.connect(wrap(lambda: self.editor.setAlignment(Qt.AlignCenter)))
         self.toolbar.addAction(align_center)
+        
+        self.toolbar.addSeparator()
 
         # Justify Text
         icon_path = os.path.join(os.path.dirname(__file__), "image", "justify.png")
@@ -309,12 +313,16 @@ class DocumentEditor(QWidget):
         image_action = QAction(QIcon(icon_path), "Insert Image", self)
         image_action.triggered.connect(wrap(self.insert_image))
         self.toolbar.addAction(image_action)
+        
+        self.toolbar.addSeparator()
 
         # Resize image
         icon_path = os.path.join(os.path.dirname(__file__), "image", "resize.png")
         resize_action = QAction(QIcon(icon_path), "Resize Image", self)
         resize_action.triggered.connect(wrap(self.resize_selected_image))
         self.toolbar.addAction(resize_action)
+        
+        self.toolbar.addSeparator()
 
 
         # Heading selector: applies font size and weight
@@ -385,7 +393,6 @@ class DocumentEditor(QWidget):
 
                 # ✅ انتقال کرسر به انتهای انتخاب برای جلوگیری از override
                 cursor.clearSelection()
-                cursor.movePosition(QTextCursor.End)
                 self.editor.setTextCursor(cursor)
 
                 # ✅ بازگرداندن رنگ جاری قبلی
@@ -404,8 +411,27 @@ class DocumentEditor(QWidget):
         self.toolbar.addSeparator()
         
         
+        def toggle_alignment():
+            cursor = self.editor.textCursor()
+            block_format = cursor.blockFormat()
+            if block_format.alignment() == Qt.AlignLeft:
+                block_format.setAlignment(Qt.AlignRight)
+            else:
+                block_format.setAlignment(Qt.AlignLeft)
+            cursor.setBlockFormat(block_format)
+            self.editor.setTextCursor(cursor)
+            self.editor.setFocus()
         
-            
+        # Text alignment
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "text_direction.png")
+        align = QAction(QIcon(icon_path), "Change Align", self)
+        align.triggered.connect(wrap(toggle_alignment))
+        self.toolbar.addAction(align)
+        
+
+        self.toolbar.addSeparator()
+        
+          
     
          # Text RTL / LTR
         icon_path = os.path.join(os.path.dirname(__file__), "image", "rtl.png")
@@ -573,7 +599,7 @@ class DocumentEditor(QWidget):
         self.readonly_mode = True
         self.toolbar.hide()
         self.editor.setReadOnly(True)
-        self.editor.setStyleSheet(self.editor.styleSheet() + " QTextEdit { border: none; }")
+        #self.editor.setStyleSheet(self.editor.styleSheet() + " QTextEdit { border: none; }")
         self.editor.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.editor.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.adjust_height_document_editor()
@@ -584,10 +610,7 @@ class DocumentEditor(QWidget):
         self.editor.setReadOnly(False)
         self.editor.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.editor.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-
-
-
-        self.editor.setStyleSheet(self.editor.styleSheet().replace("border: none;", "border: 1px solid #444;"))
+        #self.editor.setStyleSheet(self.editor.styleSheet().replace("border: none;", "border: 1px solid #444;"))
         self.editor.setFocus()
         self.adjust_height_document_editor()
 

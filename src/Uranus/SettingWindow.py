@@ -13,7 +13,7 @@ DEFAULT_SETTINGS = {
         "Back Ground Color MetaData": '#ffffff',
         "Back Ground Color OutPut": "#ffffff",
         "Back Ground Color WorkWindow": "#d9d9d9",
-        "Default Title Color": "#A09F9F",
+        "Default Title Color": "#BEBDBD",
         "ForGround Color Code": "#181515",
         "ForGround Color MetaData": "#0d0e0f",
         "ForGround Color Output" : "#0d0e0f"

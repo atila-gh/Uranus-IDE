@@ -154,7 +154,7 @@ class FileTreeView(QTreeView):
         # Apply model
         self.setModel(self.fs_model)
         self.setRootIndex(self.fs_model.index(self.path))
-        self.setIconSize(QSize(24, 24))
+        self.setIconSize(QSize(32, 32))
         self.fs_model.setReadOnly(False)
         self.setEditTriggers(QTreeView.EditKeyPressed | QTreeView.SelectedClicked)
 
