@@ -153,7 +153,7 @@ class MainWindow(QMainWindow):
 
         # ----------------------------- LEFT TOOLBAR -----------------------------
         # Toggle Dock Button Icon
-        icon_path = os.path.join(os.path.dirname(__file__), "image", "file_tree.png")
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "File_Tree.png")
         self.toggle_btn = QToolButton()
         self.toggle_btn.setIcon(QIcon(icon_path))
         self.toggle_btn.setToolTip("Show File Explorer")

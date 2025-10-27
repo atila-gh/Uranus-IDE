@@ -577,7 +577,7 @@ class WorkWindow(QWidget):
 
         # Delete active cell
         btn_delete = QToolButton()
-        icon_path = os.path.join(os.path.dirname(__file__), "image", "delete_Page.png")
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "delete_page.png")
         btn_delete.setIcon(QIcon(icon_path))
         btn_delete.setToolTip("Delete active cell")
         btn_delete.clicked.connect(self.delete_active_cell)
