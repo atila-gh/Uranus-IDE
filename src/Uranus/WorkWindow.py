@@ -797,8 +797,6 @@ class WorkWindow(QWidget):
                 from PyQt5.QtWidgets import QMessageBox
                 QMessageBox.warning(self, "Save Error", f"Could not save file:\n{e}")
 
-
-
     def load_file(self, content):
         if not content:
             self.add_cell(origin="uranus")  # ← اضافه‌شده

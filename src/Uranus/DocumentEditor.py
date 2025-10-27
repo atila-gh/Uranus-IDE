@@ -222,6 +222,7 @@ class DocumentEditor(QWidget):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "bold.png")
         bold_action = QAction(QIcon(icon_path), "Bold", self)
         bold_action.triggered.connect(wrap(toggle_bold))
+        bold_action.setCheckable(True)
         self.toolbar.addAction(bold_action)
         self.toolbar.addSeparator()
         
@@ -237,7 +238,6 @@ class DocumentEditor(QWidget):
 
                 fmt = QTextCharFormat()
                 fmt.setFontItalic(not is_italic)
-
                 cursor.mergeCharFormat(fmt)
 
 
@@ -250,7 +250,9 @@ class DocumentEditor(QWidget):
         # Italic - Deactivate
         icon_path = os.path.join(os.path.dirname(__file__), "image", "italic.png")
         italic_action = QAction(QIcon(icon_path), "Italic", self)
-        italic_action.triggered.connect(wrap(toggle_italic))
+        italic_action.toggled.connect(wrap(toggle_italic))
+        italic_action.setCheckable(True)
+            
         self.toolbar.addAction(italic_action)
 
         self.toolbar.addSeparator()
@@ -282,7 +284,9 @@ class DocumentEditor(QWidget):
         # Underline - Deactivate
         icon_path = os.path.join(os.path.dirname(__file__), "image", "underline.png")
         underline_action = QAction(QIcon(icon_path), "Underline", self)
-        underline_action.triggered.connect(wrap(toggle_underline))
+      
+        underline_action.toggled.connect(wrap(toggle_underline))
+        underline_action.setCheckable(True)
         self.toolbar.addAction(underline_action)
         self.toolbar.addSeparator()
 
