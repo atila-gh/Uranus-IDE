@@ -85,7 +85,7 @@ class Cell(QFrame):
     def __init__(self, editor_type=None, content=None, border_color=None,
              kernel=None, notify_done=None , origin = 'uranus'):
         super().__init__()
-        self.debug = False
+        self.debug = True
         if self.debug: print('[Cell->init]')
 
 
@@ -251,10 +251,18 @@ class Cell(QFrame):
         self.runner.finished.connect(self.thread.deleteLater)
         self.thread.start()
        
-    def mousePressEvent(self, event):
-            if self.debug :print('[Cell->mousePressEvent]')
-            self.clicked.emit()
-            super().mousePressEvent(event)
+    def mousePressEvent(self, event):      
+
+        if self.debug :print('[Cell->mousePressEvent]')
+        if not hasattr(self,'d_editor') :             
+            cursor = self.editor.textCursor()
+            line = cursor.blockNumber() + 1       
+            column = cursor.positionInBlock() + 1 
+            self.update_line_char_update(line,column) 
+            
+         
+        self.clicked.emit()
+        super().mousePressEvent(event)
 
     def toggle_output_data(self):
 
@@ -363,49 +371,21 @@ class Cell(QFrame):
 
         elif editor_type == "markdown":
             # Create markdown editor
-            self.editor = DocumentEditor()
-            self.main_layout.addWidget(self.editor)
-            self.editor.clicked.connect(lambda: self.doc_editor_clicked.emit(self))
-            self.editor.editor.clicked.connect(lambda: self.doc_editor_clicked.emit(self))
-            self.editor.editor.doubleClicked.connect(lambda: self.doc_editor_editor_clicked.emit(self))
+            self.d_editor = DocumentEditor()
+            self.main_layout.addWidget(self.d_editor)
+            self.d_editor.clicked.connect(lambda: self.doc_editor_clicked.emit(self))
+            self.d_editor.editor.clicked.connect(lambda: self.doc_editor_clicked.emit(self))
+            self.d_editor.editor.doubleClicked.connect(lambda: self.doc_editor_editor_clicked.emit(self))
             if content:
-                self.editor.editor.setHtml(content)
-                self.editor.activate_readonly_mode()
+                self.d_editor.editor.setHtml(content)
+                self.d_editor.activate_readonly_mode()
             self.set_color(border_color)                    
             
-            self.editor.editor.textChanged.connect(self.editor.adjust_height_document_editor)
-            QTimer.singleShot(0, self.editor.adjust_height_document_editor) # adjust after cell rendering
-            self.editor.editor.setFocus(True)
+            self.d_editor.editor.textChanged.connect(self.d_editor.adjust_height_document_editor)
+            QTimer.singleShot(0, self.d_editor.adjust_height_document_editor) # adjust after cell rendering
+            self.d_editor.editor.setFocus(True)
 
-    def border_focus(self,state):
-        if self.debug :print('[Cell->border_focus]')
-        self.border_color = self.border_color or self.bg_border_color_default
-        if state :
-           self.setStyleSheet(f"""
-               QFrame {{
-                   border: 5px solid {self.border_color};
-                   border-radius: 5px;
-                   background-color: {self.bg_main_window};
-                   padding: 6px;
-               }}""")
-
-
-        else :
-            self.setStyleSheet(f"""
-                           QFrame {{
-                               border: 2px solid {self.border_color};
-                               border-radius: 5px;
-                               background-color: {self.bg_main_window};
-                               padding: 6px;
-                           }}""")
-
-        if hasattr(self, 'output_data'):
-            self.output_data.setStyleSheet("border: 1px solid black; padding: 0px;")
-            if hasattr(self.output_data,'table'):
-                self.output_data.table.setStyleSheet("border: 1px solid gray; padding: 0px;")
-                self.output_data.table.horizontalHeader().setStyleSheet("border: 0px solid gray; padding: 0px;")
-
-
+   
     def append_output(self, out):
         editor = self.output_editor.text_output
         cursor = editor.textCursor()
@@ -511,7 +491,7 @@ class Cell(QFrame):
         Otherwise, raw HTML is preserved as source.
         """
 
-        html = self.editor.editor.toHtml()
+        html = self.d_editor.editor.toHtml()
 
         if self.origin != "uranus":
             # تبدیل HTML به Markdown به‌صورت درون‌تابعی

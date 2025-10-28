@@ -629,15 +629,49 @@ class WorkWindow(QWidget):
 
         return cell
 
+     
+        
+        
     def set_focus(self, cell):
         if self.debug:print('[WorkWindow->set_focus]')
 
+        # UnFocus Last Cell
         if self.focused_cell and cell is not self.focused_cell and len(self.cell_widgets) > 1 :
-             self.focused_cell.border_focus(False)
-
+            self.focused_cell.border_color = self.focused_cell.border_color or self.focused_cell.bg_border_color_default
+            self.focused_cell.setStyleSheet(f"""
+                           QFrame {{
+                               border: 2px solid {self.focused_cell.border_color};
+                               border-radius: 5px;
+                               background-color: {self.focused_cell.bg_main_window};
+                               padding: 6px;
+                           }}""")     
+            
+            
+            if hasattr(self.focused_cell, 'output_data'):
+                self.focused_cell.output_data.setStyleSheet("border: 1px solid black; padding: 0px;")
+                if hasattr(self.focused_cell.output_data,'table'):
+                    self.focused_cell.output_data.table.setStyleSheet("border: 1px solid gray; padding: 0px;")
+                    self.focused_cell.output_data.table.horizontalHeader().setStyleSheet("border: 0px solid gray; padding: 0px;")
+                
+        
+        # Focus Current Cell  
         self.focused_cell = cell
         self.run_btn.setEnabled(isinstance(cell, Cell) and not self.execution_in_progress)
-        cell.border_focus(True)
+        #cell.border_focus(True)
+        cell.border_color = cell.border_color or cell.bg_border_color_default
+        cell.setStyleSheet(f"""
+               QFrame {{
+                   border: 5px solid {cell.border_color};
+                   border-radius: 5px;
+                   background-color: {cell.bg_main_window};
+                   padding: 6px;
+               }}""")
+        
+        if hasattr(cell, 'output_data'):
+            cell.output_data.setStyleSheet("border: 1px solid black; padding: 0px;")
+            if hasattr(cell.output_data,'table'):
+                cell.output_data.table.setStyleSheet("border: 1px solid gray; padding: 0px;")
+                cell.output_data.table.horizontalHeader().setStyleSheet("border: 0px solid gray; padding: 0px;")
 
     # Run a Single Cell
     def run_focused_cell(self) :
@@ -723,7 +757,7 @@ class WorkWindow(QWidget):
             if self.focused_cell.editor_type == 'code':
                 content = self.focused_cell.editor.toPlainText()
             elif self.focused_cell.editor_type == 'markdown':
-                content = self.focused_cell.editor.editor.toHtml()
+                content = self.focused_cell.d_editor.editor.toHtml()
 
             # ذخیره اطلاعات در پشته
             if self.focused_cell.editor_type in ('code', 'markdown'):
@@ -821,7 +855,7 @@ class WorkWindow(QWidget):
                 if origin != "uranus":
                     html = markdown2.markdown(source_text)
                     cell = self.add_cell("markdown", content=html, border_color=border_color, origin="jupyter")
-                    cell.editor.editor.setReadOnly(True)
+                    cell.d_editor.editor.setReadOnly(True)
                 else:
                     cell = self.add_cell("markdown", content=source_text, border_color=border_color, origin="uranus")
 
@@ -904,13 +938,20 @@ class WorkWindow(QWidget):
 
         self.execution_in_progress = False
 
-    def open_find_replace(self):
-        if self.focused_cell and hasattr(self.focused_cell, "editor"):
-            editor = self.focused_cell.editor
-            if hasattr(editor, "editor"):  # برای DocumentEditor
-                editor = editor.editor
-            dialog = FindReplaceDialog(editor, self)
-            dialog.exec_()
+    def open_find_replace(self):       
+        
+        
+        if self.focused_cell :
+            if hasattr(self.focused_cell, "editor"): # for Code Editor
+                editor = self.focused_cell.editor
+                dialog = FindReplaceDialog(editor, self)
+                dialog.exec_()
+
+                
+            elif hasattr(self.focused_cell, "d_editor"):  # for  DocumentEditor
+                editor = self.focused_cell.d_editor.editor
+                dialog = FindReplaceDialog(editor, self)
+                dialog.exec_()
 
 # if __name__ == "__main__":
 #     import sys
