@@ -85,7 +85,7 @@ class Cell(QFrame):
     def __init__(self, editor_type=None, content=None, border_color=None,
              kernel=None, notify_done=None , origin = 'uranus'):
         super().__init__()
-        self.debug = True
+        self.debug = False
         if self.debug: print('[Cell->init]')
 
 

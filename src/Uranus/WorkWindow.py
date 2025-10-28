@@ -352,7 +352,7 @@ class WorkWindow(QWidget):
     focused_cell = None
 
 
-    def __init__(self, content=None, file_path=None):
+    def __init__(self, content=None, file_path=None , status = None):
         self.debug = False
         if self.debug: print('[WorkWindow]->[__init__]')
 
@@ -365,6 +365,7 @@ class WorkWindow(QWidget):
         self.content = content
         self.execution_in_progress = False
         self.outputs = []
+        self.mainwindow_statusbar = status
 
         self.deleted_cells_stack = []
 
@@ -442,7 +443,7 @@ class WorkWindow(QWidget):
         btn_save.setIcon(QIcon(icon_path))
         btn_save.setToolTip("""
                             <b>Save File</b><br>
-                            <span style='color:gray;'>Shortcut: <kbd>F2</kbd></span><br>
+                            <span style='color:gray;'>Shortcut: <kbd>Ctrl+S</kbd></span><br>
                             Save the current File in Specific Location.
                             """)
 
@@ -450,8 +451,8 @@ class WorkWindow(QWidget):
         btn_save.clicked.connect(self.ipynb_format_save_file)
         self.top_toolbar.addWidget(btn_save)
         self.top_toolbar.addSeparator()  # فاصله یا خط نازک بین دکمه‌ها
-        # Define ShortCut F2
-        shortcut_save = QShortcut(QKeySequence("F2"), self)
+        # Define ShortCut ctrl+s
+        shortcut_save = QShortcut(QKeySequence("Ctrl+s"), self)
         shortcut_save.setContext(Qt.ApplicationShortcut)
         shortcut_save.activated.connect(self.ipynb_format_save_file)
 
@@ -462,31 +463,31 @@ class WorkWindow(QWidget):
         btn_move_up.setIcon(QIcon(icon_path))
         btn_move_up.setToolTip("""
                             <b>Move Cell Up</b><br>
-                            <span style='color:gray;'>Shortcut: <kbd>F3</kbd></span><br>
+                            <span style='color:gray;'>Shortcut: <kbd>F7</kbd></span><br>
                             Move Focused Cell Up.
                             """)
         btn_move_up.clicked.connect(self.move_cell_up)
         self.top_toolbar.addWidget(btn_move_up)
-        # Define ShortCut F3
-        shortcut_move_up = QShortcut(QKeySequence("F3"), self)
+        # Define ShortCut F7
+        shortcut_move_up = QShortcut(QKeySequence("F7"), self)
         shortcut_move_up.setContext(Qt.ApplicationShortcut)
         shortcut_move_up.activated.connect(self.move_cell_up)
 
 
-        # Move Sell Botton
+        # Move Sell Bottom
         btn_move_down = QToolButton()
         icon_path = os.path.join(os.path.dirname(__file__), "image", "move_down.png")  
         btn_move_down.setIcon(QIcon(icon_path))
         btn_move_down.setToolTip("""
                             <b>Move Cell Down</b><br>
-                            <span style='color:gray;'>Shortcut: <kbd>F4</kbd></span><br>
+                            <span style='color:gray;'>Shortcut: <kbd>F8</kbd></span><br>
                             Move Focused Cell Down.
                             """)
         btn_move_down.clicked.connect(self.move_cell_down)
         self.top_toolbar.addWidget(btn_move_down)
 
         # Define ShortCut F4
-        shortcut_move_down = QShortcut(QKeySequence("F4"), self)
+        shortcut_move_down = QShortcut(QKeySequence("F8"), self)
         shortcut_move_down.setContext(Qt.ApplicationShortcut)
         shortcut_move_down.activated.connect(self.move_cell_down)
 
@@ -508,8 +509,7 @@ class WorkWindow(QWidget):
         btn_run_all = QToolButton()
 
         icon_path = os.path.join(os.path.dirname(__file__), "image", "run_all.png")
-        btn_run_all.setIcon(QIcon(icon_path))
-        btn_run_all.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        btn_run_all.setIcon(QIcon(icon_path))        
         btn_run_all.setToolTip("Run all code cells")
         btn_run_all.clicked.connect(self.run_all_cells)
         self.top_toolbar.addWidget(btn_run_all)
@@ -523,8 +523,13 @@ class WorkWindow(QWidget):
                             <b>Undo Delete</b><br>
                             Restore the last deleted cell.
                             """)
+        
         btn_undo.clicked.connect(self.undo_delete_cell)
         self.top_toolbar.addWidget(btn_undo)
+        
+       
+
+
 
         # # Memory Variable List
         # memory = QToolButton()
@@ -548,13 +553,13 @@ class WorkWindow(QWidget):
         btn_up.setIcon(QIcon(icon_path))
         btn_up.setToolTip("""
                             <b>Add Cell Above</b><br>
-                            <span style='color:gray;'>Shortcut: <kbd>F7</kbd></span>
+                            <span style='color:gray;'>Shortcut: <kbd>F2</kbd></span>
                             """)
         btn_up.clicked.connect(self.add_cell_above)
         self.toolbar.addWidget(btn_up)
 
-        # Define ShortCut F7
-        shortcut_add_cell_above = QShortcut(QKeySequence("F7"), self)
+        # Define ShortCut F2
+        shortcut_add_cell_above = QShortcut(QKeySequence("F2"), self)
         shortcut_add_cell_above.setContext(Qt.ApplicationShortcut)
         shortcut_add_cell_above.activated.connect(self.add_cell_above)
 
@@ -564,13 +569,13 @@ class WorkWindow(QWidget):
         btn_down.setIcon(QIcon(icon_path))
         btn_down.setToolTip("""
                             <b>Add Cell Below</b><br>
-                            <span style='color:gray;'>Shortcut: <kbd>F8</kbd></span>
+                            <span style='color:gray;'>Shortcut: <kbd>F3</kbd></span>
                             """)
         btn_down.clicked.connect(self.add_cell_below)
         self.toolbar.addWidget(btn_down)
 
-        # Define ShortCut F8
-        shortcut_add_cell_below = QShortcut(QKeySequence("F8"), self)
+        # Define ShortCut F3
+        shortcut_add_cell_below = QShortcut(QKeySequence("F3"), self)
         shortcut_add_cell_below.setContext(Qt.ApplicationShortcut)
         shortcut_add_cell_below.activated.connect(self.add_cell_below)
 
@@ -628,10 +633,8 @@ class WorkWindow(QWidget):
         self.set_focus(cell)  # set cell focused
 
         return cell
-
-     
-        
-        
+ 
+         
     def set_focus(self, cell):
         if self.debug:print('[WorkWindow->set_focus]')
 
@@ -830,6 +833,8 @@ class WorkWindow(QWidget):
             except Exception as e:
                 from PyQt5.QtWidgets import QMessageBox
                 QMessageBox.warning(self, "Save Error", f"Could not save file:\n{e}")
+            else :
+                self.mainwindow_statusbar.showMessage('Saved To : '+self.file_path)
 
     def load_file(self, content):
         if not content:

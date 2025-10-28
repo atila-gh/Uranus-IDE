@@ -2,6 +2,8 @@ import sys
 import os
 import subprocess
 
+sys.stdout.reconfigure(encoding='utf-8')
+
 # List of required packages
 REQUIRED_PACKAGES = [
     "PyQt5",

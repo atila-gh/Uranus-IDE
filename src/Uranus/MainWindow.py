@@ -68,6 +68,7 @@ class MainWindow(QMainWindow):
         
 
         # Set up the status bar
+        self.mainwindow_statusbar = self.statusBar()
         self.statusBar().showMessage("Ready")
         self.statusBar().setStyleSheet("QStatusBar { border-top: 1px solid gray; }")
 
@@ -266,7 +267,7 @@ class MainWindow(QMainWindow):
                         self.ipynb_format_load_file(path)
                         
                     else:
-                        work_widget = WorkWindow(file_path=path)
+                        work_widget = WorkWindow(file_path=path , status = self.mainwindow_statusbar )
                         sub_window = self.mdi_area.addSubWindow(work_widget)
 
 
@@ -302,7 +303,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Error", f"Unexpected error:\n{e}")
 
         # Make Instance Object
-        work_widget = WorkWindow(file_path=path , content = nb)
+        work_widget = WorkWindow(file_path=path , content = nb , status = self.mainwindow_statusbar)
         sub_window = self.mdi_area.addSubWindow(work_widget)
         sub_window.show()
         MainWindow.open_files[path] = sub_window

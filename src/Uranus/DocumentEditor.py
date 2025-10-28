@@ -121,6 +121,7 @@ class DocumentEditor(QWidget):
         self.editor.installEventFilter(self)
         self.editor.doubleClicked.connect(self.activate_edit_mode)
         self.editor.clicked.connect(self.clicked.emit)
+        self.editor.cursorPositionChanged.connect(self.update_heading_combo)
 
         # ScrollArea for editor
         self.scroll_area = QScrollArea()
@@ -168,7 +169,7 @@ class DocumentEditor(QWidget):
         self.editor.setCurrentCharFormat(self.default_format)
         # define tabsize after define font
         font_metrics = QFontMetrics(self.editor.font())
-        tab_width = font_metrics.horizontalAdvance(' ') * self.tab_size  # ۴ فاصله
+        tab_width = font_metrics.horizontalAdvance(' ') * self.tab_size 
         self.editor.setTabStopDistance(tab_width)
 
     def keyPressEvent(self, event):
@@ -342,19 +343,25 @@ class DocumentEditor(QWidget):
             char_fmt.setFontPointSize(sizes[index])
             char_fmt.setFontWeight(weights[index])
 
-            cursor.mergeCharFormat(char_fmt)
-            self.editor.setTextCursor(cursor)
+            if cursor.hasSelection():
+                cursor.mergeCharFormat(char_fmt)
+                # 🔁 بازنشانی فرمت کرسر بعد از انتخاب
+                cursor.clearSelection()
+                self.editor.setTextCursor(cursor)
+                self.editor.setCurrentCharFormat(QTextCharFormat())  # بازنشانی کامل
+            else:
+                self.editor.setCurrentCharFormat(char_fmt)
 
-        heading_combo = QComboBox()
-        heading_combo.addItems(["Normal", "Heading 2", "Heading 3", "Heading 4"])
-        heading_combo.setToolTip("Heading style")
+        self.heading_combo = QComboBox()
+        self.heading_combo.addItems(["Normal", "Heading 2", "Heading 3", "Heading 4"])
+        self.heading_combo.setToolTip("Heading style")
         # adjust the lenght of Comobox
-        font_metrics = heading_combo.fontMetrics()
-        max_width = max(font_metrics.width(heading_combo.itemText(i)) for i in range(heading_combo.count()))
-        heading_combo.setMinimumWidth(max_width + 100)  # 20px padding
+        font_metrics = self.heading_combo.fontMetrics()
+        max_width = max(font_metrics.width(self.heading_combo.itemText(i)) for i in range(self.heading_combo.count()))
+        self.heading_combo.setMinimumWidth(max_width + 100)  # 20px padding
 
-        heading_combo.currentIndexChanged.connect(apply_heading)  # ✅ بدون wrap
-        self.toolbar.addWidget(heading_combo)
+        self.heading_combo.currentIndexChanged.connect(apply_heading)  # ✅ بدون wrap
+        self.toolbar.addWidget(self.heading_combo)
 
 
         self.toolbar.addSeparator()
@@ -453,8 +460,6 @@ class DocumentEditor(QWidget):
         self.toolbar.addAction(ltr_action)
 
     
-
-
     def insert_image(self):
         """
         Opens file dialog and inserts selected image into the editor.
@@ -718,3 +723,20 @@ class DocumentEditor(QWidget):
             block_format.setLayoutDirection(direction)
             temp_cursor.mergeBlockFormat(block_format)
             block = block.next()
+    
+    
+    
+    def update_heading_combo(self):
+        cursor = self.editor.textCursor()
+        fmt = cursor.charFormat()
+        size = fmt.fontPointSize()
+
+        # تطبیق اندازه با heading‌ها
+        if size == 22:
+            self.heading_combo.setCurrentIndex(1)  # Heading 2
+        elif size == 18:
+            self.heading_combo.setCurrentIndex(2)  # Heading 3
+        elif size == 16:
+            self.heading_combo.setCurrentIndex(3)  # Heading 4
+        else:
+            self.heading_combo.setCurrentIndex(0)  # Normal
