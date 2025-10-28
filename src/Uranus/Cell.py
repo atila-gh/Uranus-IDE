@@ -100,6 +100,7 @@ class Cell(QFrame):
         self.cells_content = []
         self.execution_lock = True  # activate the lock in start of Processing
 
+
         # Load settings
         setting = load_setting()
         self.bg_main_window = setting["colors"]["Back Ground Color WorkWindow"]
@@ -237,7 +238,7 @@ class Cell(QFrame):
             return
 
         code = self.editor.toPlainText()
-        self.output_editor.clear()
+        #self.output_editor.clear()
         self.outputs = []
 
         self.runner = CodeRunner(self.kernel, code)
@@ -329,37 +330,6 @@ class Cell(QFrame):
             self.editor.clicked.connect(lambda: self.code_editor_clicked.emit(self))
             # Add editor to layout
             self.main_layout.addWidget(self.editor)
-
-            # Add output toggle and output table
-
-            # Data Frame Table
-            self.output_data = DataFrameWidget()
-            # Scroll Widget
-            self.scroll = QScrollArea()
-            self.scroll.setWidgetResizable(True)
-            self.scroll.setWidget(self.output_data)
-            
-            self.scroll.setStyleSheet("border: none; background: transparent;")
-            self.scroll.setVisible(False)
-            self.toggle_output_button_data.setVisible(False)
-
-            self.main_layout.addWidget(self.toggle_output_button_data)
-            self.main_layout.addWidget(self.scroll)
-
-
-            # # Add output toggle and output image
-            self.output_image = ImageOutput()
-            self.toggle_output_button_image.setVisible(False)
-            self.main_layout.addWidget(self.toggle_output_button_image)
-            self.main_layout.addWidget(self.output_image)
-
-
-            # Add output toggle and output editor
-            self.output_editor = OutputEditor()
-            self.toggle_output_button.setVisible(False)
-            self.main_layout.addWidget(self.toggle_output_button)
-            self.main_layout.addWidget(self.output_editor)
-
             # Apply content and styling
             if content:
                 self.editor.setPlainText(content)
@@ -387,20 +357,19 @@ class Cell(QFrame):
 
    
     def append_output(self, out):
-        editor = self.output_editor.text_output
-        cursor = editor.textCursor()
-        cursor.movePosition(QTextCursor.End)
-        cursor.insertBlock()
-
-
-        self.output_editor.setVisible(False)
-        self.output_image.setVisible(False)
-        self.scroll.setVisible(False)
+        if hasattr(self,'output_editor'):
+            pass
+            
+            
 
         if out.output_type == 'display_data':
             editor_target = out.metadata.get("editor", "")
             # 🖼️ Image
             if out.output_type == "display_data" and editor_target == "output_image":
+                if not hasattr(self,'output_image'):
+                    self.create_output_image()
+                    
+                    
                 if "image/png" in out.data:
 
                     self.output_image.show_image_from_base64(out.data["image/png"])
@@ -411,11 +380,13 @@ class Cell(QFrame):
 
             # 📊 Table
             elif out.output_type == "display_data" and editor_target == "output_data":
+                if not hasattr(self,'output_data') :
+                    self.create_output_data()
+                    
                 if "text/html" in out.data:
                     # دریافت مجدد ابجکت از طریق شناسه آن
                     obj_id = out.metadata.get("object_ref")
                     obj = self.kernel.object_store.get(obj_id)
-
 
                     # data Frame Table
                     try :
@@ -434,12 +405,16 @@ class Cell(QFrame):
         else :
             # 🔥 Error
             if out.output_type == "error" :
+                if not hasattr(self,'output_editor') :
+                    self.create_output_editor() # Output Editor Define for Cell 
+                    
+                
                 for line in out.traceback:
                     clean_line = self.strip_ansi(line.rstrip())
 
                     if "site-packages" in clean_line or "interactiveshell.py" in clean_line or "exec(code_obj" in clean_line :
                         continue
-                    cursor.insertText(clean_line + "\n")
+                    self.cursor.insertText(clean_line + "\n")
 
                 self.toggle_output_button.setVisible(True)
                 self.output_editor.setVisible(True)
@@ -448,11 +423,13 @@ class Cell(QFrame):
 
             # 📤  String (stream)
             elif out.output_type == "stream":
-
+                if not hasattr(self,'output_editor') :
+                    self.create_output_editor() # Output Editor Define for Cell
+                
                 clean = self.strip_ansi(out.text).strip()
                 if  clean.startswith("Out[") and "]: " in clean:
                    clean = clean.split(':')[1]
-                cursor.insertText(clean)
+                self.cursor.insertText(clean)
                 self.toggle_output_button.setVisible(True)
                 self.output_editor.setVisible(True)
                 self.outputs.append(out)
@@ -515,6 +492,40 @@ class Cell(QFrame):
             }
 
         return cell
+    
+    
+    def create_output_editor (self):
+        self.output_editor = OutputEditor()
+        self.toggle_output_button.setVisible(False)
+        self.main_layout.addWidget(self.toggle_output_button)
+        self.main_layout.addWidget(self.output_editor)
+        editor_temp = self.output_editor.text_output
+        self.cursor = editor_temp.textCursor()
+        self.cursor.movePosition(QTextCursor.End)
+        self.cursor.insertBlock()
+        self.output_editor.setVisible(False)
+       
+      
+        
+    
+    def create_output_image(self):
+        self.output_image = ImageOutput()
+        self.toggle_output_button_image.setVisible(False)
+        self.main_layout.addWidget(self.toggle_output_button_image)
+        self.main_layout.addWidget(self.output_image)
+        
 
+    def create_output_data(self):
+        self.output_data = DataFrameWidget()
+        #Scroll Widget
+        self.scroll = QScrollArea()
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setWidget(self.output_data)            
+        self.scroll.setStyleSheet("border: none; background: transparent;")
+        self.scroll.setVisible(False)
+        self.toggle_output_button_data.setVisible(False)
+        self.main_layout.addWidget(self.toggle_output_button_data)
+        self.main_layout.addWidget(self.scroll)
+        
 
 

@@ -837,6 +837,8 @@ class WorkWindow(QWidget):
                 self.mainwindow_statusbar.showMessage('Saved To : '+self.file_path)
 
     def load_file(self, content):
+        import time
+        s1 = time.time()
         if not content:
             self.add_cell(origin="uranus")  # ← اضافه‌شده
             return
@@ -863,7 +865,9 @@ class WorkWindow(QWidget):
                     cell.d_editor.editor.setReadOnly(True)
                 else:
                     cell = self.add_cell("markdown", content=source_text, border_color=border_color, origin="uranus")
-
+        print('elapsed time : ', time.time()-s1)
+   
+   
     def move_cell_up(self):
         if self.debug: print('[WorkWindow->move_cell_up]')
         if self.focused_cell and self.cell_widgets:
