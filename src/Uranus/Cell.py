@@ -83,13 +83,13 @@ class Cell(QFrame):
         """
 
     def __init__(self, editor_type=None, content=None, border_color=None,
-             kernel=None, notify_done=None , origin = 'uranus'):
+             kernel=None, notify_done=None , origin = 'uranus' , outputs=None):
         super().__init__()
         self.debug = False
         if self.debug: print('[Cell->init]')
 
 
-        self.outputs = []
+        self.outputs = outputs or []
         self.origin = origin
         self.editor_type = editor_type
         self.notify_done = notify_done
@@ -238,7 +238,8 @@ class Cell(QFrame):
             return
 
         code = self.editor.toPlainText()
-        #self.output_editor.clear()
+        if hasattr(self,'output_editor'):
+                self.output_editor.clear()        
         self.outputs = []
 
         self.runner = CodeRunner(self.kernel, code)
@@ -337,6 +338,12 @@ class Cell(QFrame):
             self.editor.adjust_height_code()
             self.editor.textChanged.connect(self.editor.adjust_height_code)
             self.editor.setFocus()
+            
+            if self.outputs:
+                self.inject_outputs(self.outputs)
+
+
+            
 
 
         elif editor_type == "markdown":
@@ -436,11 +443,30 @@ class Cell(QFrame):
         code = self.editor.toPlainText()
         cell = new_code_cell(source=code)
 
-        cell.outputs = self.outputs
+        # 🎯 فقط خروجی‌های قابل ذخیره‌سازی
+        filtered_outputs = []
+        for out in self.outputs:
+            if out.output_type == "stream":
+                filtered_outputs.append(out)
+
+            elif out.output_type == "error":
+                filtered_outputs.append(out)
+
+            elif out.output_type == "display_data":
+                editor_target = out.metadata.get("editor", "")
+                if editor_target == "output_image" and "image/png" in out.data:
+                    filtered_outputs.append(out)
+
+            # ⛔ خروجی‌های جدول یا تعاملی ذخیره نمی‌شن
+            # elif editor_target == "output_data": → حذف
+
+        cell.outputs = filtered_outputs
         cell.execution_count = 1
+
+        # 📎 متادیتا
         cell['metadata']['bg'] = self.border_color
         cell['metadata']['uranus'] = {
-            "origin": self.origin  # ← اضافه‌شده
+            "origin": self.origin
         }
 
         return cell

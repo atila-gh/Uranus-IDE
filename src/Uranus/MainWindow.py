@@ -1,8 +1,9 @@
 import json , nbformat , os
 from PyQt5 import sip
-from PyQt5.QtWidgets import  QMainWindow, QWidget, QVBoxLayout, QToolBar, QToolButton, QDockWidget  , QMessageBox , QMdiArea, QAction , QFileDialog
+from PyQt5.QtWidgets import  QMainWindow, QWidget, QVBoxLayout, QToolBar, QToolButton, QDockWidget  , QMessageBox , QMdiArea, QAction , QFileDialog ,QMessageBox
 from PyQt5.QtGui import QIcon 
 from PyQt5.QtCore import Qt, QSize , QEvent
+
 
 from Uranus.utils import FileTreeView , FileTreePanel
  # Make sure your FileTreeView is updated as below
@@ -102,6 +103,26 @@ class MainWindow(QMainWindow):
         file_menu.addAction(new_folder_action)
 
         file_menu.addSeparator()
+        
+        open_file = QAction("Open File", self)      
+        open_file.setShortcut("Ctrl+O") 
+        open_file.triggered.connect(self.open_ipynb_file)
+        file_menu.addAction(open_file)
+        
+        file_menu.addSeparator()        
+        
+        save_action = QAction("Save", self)
+        save_action.setShortcut("Ctrl+S")
+        save_action.triggered.connect(self.trigger_save_on_active_workwindow)
+        file_menu.addAction(save_action)
+
+ 
+        save_as = QAction("Save As", self)   
+        save_as.setShortcut("Ctrl+Shift+S")     
+        save_as.triggered.connect(self.save_as_file)
+        file_menu.addAction(save_as)
+        
+        file_menu.addSeparator() 
 
       
         settings_action = QAction("Setting", self)
@@ -125,6 +146,14 @@ class MainWindow(QMainWindow):
         redo_action = QAction("Redo", self)
         redo_action.setShortcut("Ctrl+Y")
         edit_menu.addAction(redo_action)
+       
+        file_menu.addSeparator()
+
+        find_action = QAction("Find", self)
+        find_action.setShortcut("Ctrl+F")
+        find_action.triggered.connect(self.trigger_find_on_active_workwindow)
+        edit_menu.addAction(find_action)
+
 
          # --- Window Menu ---
         window_menu = menubar.addMenu("Window")
@@ -370,4 +399,86 @@ class MainWindow(QMainWindow):
         if os.path.isfile(path):
             path = os.path.dirname(path)
 
+    def save_as_file(self):
+        """
+        Prompts the user to choose a new file path and delegates saving to the active WorkWindow.
+        """
+        
 
+        active_subwindow = self.mdi_area.activeSubWindow()
+        if not active_subwindow:
+            QMessageBox.warning(self, "No Active File", "No notebook is currently open.")
+            return
+
+        work_widget = active_subwindow.widget()
+        if not isinstance(work_widget, WorkWindow):
+            QMessageBox.warning(self, "Invalid Window", "Active window is not a notebook.")
+            return
+
+        new_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save As",
+            work_widget.file_path or "",
+            "Jupyter Notebook (*.ipynb)"
+        )
+
+        if not new_path:
+            return
+
+        try:
+            work_widget.file_path = new_path
+            work_widget.ipynb_format_save_file()
+        except Exception as e:
+            QMessageBox.warning(self, "Save Error", f"Could not save file:\n{e}")
+        else:
+            self.statusBar().showMessage("Saved As: " + new_path)
+            
+            
+            
+    def open_ipynb_file(self):
+        """
+        Opens a file dialog to select a .ipynb file and loads it into a new WorkWindow.
+        Only accepts valid Jupyter Notebook files.
+        """
+       
+
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Open Notebook",
+            "",
+            "Jupyter Notebook (*.ipynb)"
+        )
+
+        if not path:
+            return  # کاربر لغو کرده
+
+        if not os.path.isfile(path) or not path.lower().endswith(".ipynb"):
+            QMessageBox.warning(self, "Invalid File", "Selected file is not a valid .ipynb notebook.")
+            return
+
+        # بررسی اینکه آیا قبلاً باز شده
+        existing_subwindow = MainWindow.open_files.get(path)
+        if existing_subwindow and not sip.isdeleted(existing_subwindow):
+            self.mdi_area.setActiveSubWindow(existing_subwindow)
+            return
+
+        # بارگذاری فایل
+        self.ipynb_format_load_file(path)
+        
+        
+    def trigger_save_on_active_workwindow(self):
+        active_subwindow = self.mdi_area.activeSubWindow()
+        
+        if not active_subwindow:
+            return
+        work_widget = active_subwindow.widget()
+        if hasattr(work_widget, "ipynb_format_save_file"):
+            work_widget.ipynb_format_save_file()
+
+    def trigger_find_on_active_workwindow(self):
+        active_subwindow = self.mdi_area.activeSubWindow()
+        if not active_subwindow:
+            return
+        work_widget = active_subwindow.widget()
+        if hasattr(work_widget, "find_replace"):
+            work_widget.find_replace()

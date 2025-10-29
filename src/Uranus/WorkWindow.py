@@ -5,7 +5,7 @@ from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject ,QTimer
 from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWidget ,
     QInputDialog , QSpacerItem, QSizePolicy , QScrollArea,QDialog, QVBoxLayout, QLineEdit, QPushButton, QLabel, QHBoxLayout)
 
-import nbformat
+import nbformat 
 from nbformat.v4 import new_notebook, new_output
 from contextlib import redirect_stdout, redirect_stderr
 from IPython.core.interactiveshell import InteractiveShell
@@ -346,7 +346,7 @@ class WorkWindow(QWidget):
        - undo_delete_cell(): Restores the last deleted cell.
        - move_cell_up/down(): Reorders cells.
        - choose_border_color(): Opens color dialog for cell styling.
-       - open_find_replace(): Opens find/replace dialog.
+       - find_replace(): Opens find/replace dialog.
        """
 
     focused_cell = None
@@ -422,9 +422,9 @@ class WorkWindow(QWidget):
 
 
         #ShortCut For Find and Replace
-        shortcut_find = QShortcut(QKeySequence("Ctrl+F"), self)
-        shortcut_find.setContext(Qt.ApplicationShortcut)
-        shortcut_find.activated.connect(self.open_find_replace)
+        # shortcut_find = QShortcut(QKeySequence("Ctrl+F"), self)
+        # shortcut_find.setContext(Qt.ApplicationShortcut)
+        # shortcut_find.activated.connect(self.find_replace)
 
 
         # --- Load initial content ---
@@ -452,9 +452,9 @@ class WorkWindow(QWidget):
         self.top_toolbar.addWidget(btn_save)
         self.top_toolbar.addSeparator()  # فاصله یا خط نازک بین دکمه‌ها
         # Define ShortCut ctrl+s
-        shortcut_save = QShortcut(QKeySequence("Ctrl+s"), self)
-        shortcut_save.setContext(Qt.ApplicationShortcut)
-        shortcut_save.activated.connect(self.ipynb_format_save_file)
+        #shortcut_save = QShortcut(QKeySequence("Ctrl+s"), self)
+        # shortcut_save.setContext(Qt.ApplicationShortcut)
+        # shortcut_save.activated.connect(self.ipynb_format_save_file)
 
 
         # Move Cell Up
@@ -606,7 +606,7 @@ class WorkWindow(QWidget):
                                 Executes the current cell and displays the output.
                                 """)
 
-    def add_cell(self, editor_type=None, content=None, border_color=None, origin="uranus"):
+    def add_cell(self, editor_type=None, content=None, border_color=None, origin="uranus" , outputs = None):
         """
         Adds a new cell at the end of the notebook.
         """
@@ -620,7 +620,8 @@ class WorkWindow(QWidget):
             border_color,
             kernel=self.ipython_kernel,
             notify_done=self.execution_done,
-            origin=origin  # ← فقط این خط اضافه شده
+            origin=origin  ,
+            outputs=outputs
         )
 
         # Mouse Event Handler
@@ -630,7 +631,7 @@ class WorkWindow(QWidget):
 
         self.cell_widgets.append(cell)  # cell append to list of cells
         self.cell_layout.addWidget(cell)  # for showing cell add cell to layout
-        self.set_focus(cell)  # set cell focused
+        # self.set_focus(cell)  # set cell focused
 
         return cell
  
@@ -681,7 +682,8 @@ class WorkWindow(QWidget):
         if self.debug :print('[WorkWindow]->[run_focused_cell]')
 
        
-        if isinstance(self.focused_cell, Cell) and not self.execution_in_progress:
+        if isinstance(self.focused_cell, Cell) and not self.execution_in_progress:           
+           
             self.execution_in_progress = True
             self.run_btn.setEnabled(False)
             self.focused_cell.run() # focused_cell is an instance of Cell Class that is focused
@@ -836,36 +838,49 @@ class WorkWindow(QWidget):
             else :
                 self.mainwindow_statusbar.showMessage('Saved To : '+self.file_path)
 
+    
+   
+   
     def load_file(self, content):
-        import time
-        s1 = time.time()
-        if not content:
-            self.add_cell(origin="uranus")  # ← اضافه‌شده
+        if self.debug:
+            print('[WorkWindow->load_file]')
+
+        if not content or not isinstance(content.cells, list):
             return
 
+        self.content = content
         self.cell_widgets.clear()
 
-        for cell_data in content["cells"]:
-            cell_type = cell_data["cell_type"]
-            source = cell_data.get("source")
-            source_text = ''.join(source)
+        for cell_data in content.cells:
+            editor_type = "code" if cell_data.cell_type == "code" else "markdown"
+            source = cell_data.source
             metadata = cell_data.get("metadata", {})
             border_color = metadata.get("bg")
+            origin = metadata.get("uranus", {}).get("origin", "uranus")
 
-            if cell_type == "code":
-                self.add_cell("code", content=source, border_color=border_color, origin="uranus")
+            outputs = None
+            if editor_type == "code" and hasattr(cell_data, "outputs"):
+                outputs = [
+                    out for out in cell_data.outputs
+                    if out.output_type in ("stream", "error") or (
+                        out.output_type == "display_data" and out.metadata.get("editor") == "output_image"
+                    )
+                ]
 
-            elif cell_type == "markdown":
-                uranus_meta = metadata.get("uranus", {})
-                origin = uranus_meta.get("origin")
+            self.add_cell(
+                editor_type=editor_type,
+                content=source,
+                border_color=border_color,
+                origin=origin,
+                outputs=outputs
+            )
 
-                if origin != "uranus":
-                    html = markdown2.markdown(source_text)
-                    cell = self.add_cell("markdown", content=html, border_color=border_color, origin="jupyter")
-                    cell.d_editor.editor.setReadOnly(True)
-                else:
-                    cell = self.add_cell("markdown", content=source_text, border_color=border_color, origin="uranus")
-        print('elapsed time : ', time.time()-s1)
+        # تمرکز روی آخرین سلول
+        if self.cell_widgets:
+            self.set_focus(self.cell_widgets[-1])
+
+        # فضای اضافه برای اسکرول
+        self.cell_layout.addItem(QSpacerItem(20, 400, QSizePolicy.Minimum, QSizePolicy.Fixed))
    
    
     def move_cell_up(self):
@@ -947,7 +962,7 @@ class WorkWindow(QWidget):
 
         self.execution_in_progress = False
 
-    def open_find_replace(self):       
+    def find_replace(self):       
         
         
         if self.focused_cell :
@@ -962,6 +977,45 @@ class WorkWindow(QWidget):
                 dialog = FindReplaceDialog(editor, self)
                 dialog.exec_()
 
+
+    def save_as_file(self):
+        """
+        Prompts the user to choose a new file path and saves the notebook content there.
+        Updates self.file_path and status bar message.
+        """
+        from PyQt5.QtWidgets import QFileDialog, QMessageBox
+
+        new_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save As",
+            self.file_path or "",
+            "Jupyter Notebook (*.ipynb)"
+        )
+
+        if not new_path:
+            return  # کاربر لغو کرده
+
+        cells = []
+        for cell in self.cell_widgets:
+            if cell.editor_type == "code":
+                cells.append(cell.get_nb_code_cell())
+            elif cell.editor_type == "markdown":
+                cells.append(cell.get_nb_markdown_cell())
+
+        nb = nbformat.v4.new_notebook()
+        nb["cells"] = cells
+
+        try:
+            with open(new_path, "w", encoding="utf-8") as f:
+                nbformat.write(nb, f)
+        except Exception as e:
+            QMessageBox.warning(self, "Save Error", f"Could not save file:\n{e}")
+        else:
+            self.file_path = new_path
+            self.mainwindow_statusbar.showMessage("Saved As: " + new_path)
+
+
+    
 # if __name__ == "__main__":
 #     import sys
 #     from PyQt5.QtWidgets import QApplication
