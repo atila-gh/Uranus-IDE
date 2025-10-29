@@ -208,7 +208,7 @@ class Cell(QFrame):
         # Type selector
         font = QFont("Technology", 16)
         self.radio_code = QRadioButton("Code")
-        self.radio_doc = QRadioButton("MarkDown")
+        self.radio_doc = QRadioButton("Document")
         self.radio_code.setFont(font)
         self.radio_doc.setFont(font)
 
@@ -355,89 +355,73 @@ class Cell(QFrame):
             QTimer.singleShot(0, self.d_editor.adjust_height_document_editor) # adjust after cell rendering
             self.d_editor.editor.setFocus(True)
 
-   
+    
+
     def append_output(self, out):
-        if hasattr(self,'output_editor'):
-            pass
-            
-            
-
-        if out.output_type == 'display_data':
+        if out.output_type == "display_data":
             editor_target = out.metadata.get("editor", "")
+            
             # 🖼️ Image
-            if out.output_type == "display_data" and editor_target == "output_image":
-                if not hasattr(self,'output_image'):
+            if editor_target == "output_image" and "image/png" in out.data:
+                if not hasattr(self, 'output_image'):
                     self.create_output_image()
-                    
-                    
-                if "image/png" in out.data:
+                self.output_image.show_image_from_base64(out.data["image/png"])
+                self.toggle_output_button_image.setVisible(True)
+                self.output_image.setVisible(True)
+                self.outputs.append(out)  # ✅ ذخیره مجاز
 
-                    self.output_image.show_image_from_base64(out.data["image/png"])
-                    self.toggle_output_button_image.setVisible(True)
-                    self.output_image.setVisible(True)
-                    self.outputs.append(out)
-                    return
-
-            # 📊 Table
-            elif out.output_type == "display_data" and editor_target == "output_data":
-                if not hasattr(self,'output_data') :
+            # 📊 Table 
+            elif editor_target == "output_data" and "text/html" in out.data:
+                if not hasattr(self, 'output_data'):
                     self.create_output_data()
-                    
-                if "text/html" in out.data:
-                    # دریافت مجدد ابجکت از طریق شناسه آن
-                    obj_id = out.metadata.get("object_ref")
-                    obj = self.kernel.object_store.get(obj_id)
+                obj_id = out.metadata.get("object_ref")
+                obj = self.kernel.object_store.get(obj_id)
+                try:
+                    import pandas as pd
+                except ImportError:
+                    return
+                else:
+                    if isinstance(obj, pd.DataFrame):
+                        self.output_data.set_dataframe(obj)
+                        self.toggle_output_button_data.setVisible(True)
+                        self.scroll.setVisible(True)
+                        return  
 
-                    # data Frame Table
-                    try :
-                        import pandas as pd
-                    except ImportError :
-                        return
-                    else :
-                        # DataFrame
-                        if isinstance(obj, pd.DataFrame) and importlib.util.find_spec("pandas") is not None:
-                            self.output_data.set_dataframe(obj) # Method for data frame show
-                            self.toggle_output_button_data.setVisible(True)
-                            self.scroll.setVisible(True)
-                            self.outputs.append(out)
-                            return
+        elif out.output_type == "error":
+            if not hasattr(self, 'output_editor'):
+                self.create_output_editor()
+            editor = self.output_editor.text_output
+            cursor = editor.textCursor()
+            cursor.movePosition(QTextCursor.End)
+            
+            for line in out.traceback:
+                clean_line = self.strip_ansi(line.rstrip())
+                if "site-packages" in clean_line or "interactiveshell.py" in clean_line or "exec(code_obj" in clean_line:
+                    continue
+                cursor.insertText(clean_line)
+                cursor.insertBlock()
+            self.toggle_output_button.setVisible(True)
+            self.output_editor.setVisible(True)
+            self.output_editor.adjust_height()
+            self.outputs.append(out)  
 
-        else :
-            # 🔥 Error
-            if out.output_type == "error" :
-                if not hasattr(self,'output_editor') :
-                    self.create_output_editor() # Output Editor Define for Cell 
-                    
-                
-                for line in out.traceback:
-                    clean_line = self.strip_ansi(line.rstrip())
-
-                    if "site-packages" in clean_line or "interactiveshell.py" in clean_line or "exec(code_obj" in clean_line :
-                        continue
-                    self.cursor.insertText(clean_line + "\n")
-
-                self.toggle_output_button.setVisible(True)
-                self.output_editor.setVisible(True)
-                self.output_editor.adjust_height()
-
-
-            # 📤  String (stream)
-            elif out.output_type == "stream":
-                if not hasattr(self,'output_editor') :
-                    self.create_output_editor() # Output Editor Define for Cell
-                
-                clean = self.strip_ansi(out.text).strip()
-                if  clean.startswith("Out[") and "]: " in clean:
-                   clean = clean.split(':')[1]
-                self.cursor.insertText(clean)
-                self.toggle_output_button.setVisible(True)
-                self.output_editor.setVisible(True)
-                self.outputs.append(out)
-                self.output_editor.adjust_height()                
-                return
-
-        self.outputs.append(out)
-
+        elif out.output_type == "stream":
+            if not hasattr(self, 'output_editor'):
+                self.create_output_editor()
+            editor = self.output_editor.text_output
+            cursor = editor.textCursor()
+            cursor.movePosition(QTextCursor.End)
+            
+            clean = self.strip_ansi(out.text)
+            for line in clean.splitlines():
+                cursor.insertText(line)
+                cursor.insertBlock()
+            self.toggle_output_button.setVisible(True)
+            self.output_editor.setVisible(True)
+            self.output_editor.adjust_height()
+            self.outputs.append(out)  
+    
+    
     def finalize(self):
         if self.thread :
             self.thread.quit()
@@ -499,15 +483,10 @@ class Cell(QFrame):
         self.toggle_output_button.setVisible(False)
         self.main_layout.addWidget(self.toggle_output_button)
         self.main_layout.addWidget(self.output_editor)
-        editor_temp = self.output_editor.text_output
-        self.cursor = editor_temp.textCursor()
-        self.cursor.movePosition(QTextCursor.End)
-        self.cursor.insertBlock()
+        
         self.output_editor.setVisible(False)
        
-      
-        
-    
+          
     def create_output_image(self):
         self.output_image = ImageOutput()
         self.toggle_output_button_image.setVisible(False)
@@ -528,4 +507,45 @@ class Cell(QFrame):
         self.main_layout.addWidget(self.scroll)
         
 
+    def inject_outputs(self, outputs):
+        for out in outputs:
+            if out.output_type == "display_data":
+                editor_target = out.metadata.get("editor", "")
+                if editor_target == "output_image" and "image/png" in out.data:
+                    if not hasattr(self, 'output_image'):
+                        self.create_output_image()
+                    self.output_image.show_image_from_base64(out.data["image/png"])
+                    self.toggle_output_button_image.setVisible(True)
+                    self.output_image.setVisible(True)
 
+            elif out.output_type == "error":
+                if not hasattr(self, 'output_editor'):
+                    self.create_output_editor()
+                editor = self.output_editor.text_output
+                cursor = editor.textCursor()
+                cursor.movePosition(QTextCursor.End)
+                for line in out.traceback:
+                    clean_line = self.strip_ansi(line.rstrip())
+                    if "site-packages" in clean_line or "interactiveshell.py" in clean_line or "exec(code_obj" in clean_line:
+                        continue
+                    cursor.insertText(clean_line)
+                    cursor.insertBlock()
+                self.toggle_output_button.setVisible(True)
+                self.output_editor.setVisible(True)
+                self.output_editor.adjust_height()
+
+            elif out.output_type == "stream":
+                if not hasattr(self, 'output_editor'):
+                    self.create_output_editor()
+                editor = self.output_editor.text_output
+                cursor = editor.textCursor()
+                cursor.movePosition(QTextCursor.End)
+                clean = self.strip_ansi(out.text)
+                for line in clean.splitlines():
+                    cursor.insertText(line)
+                    cursor.insertBlock()
+                self.toggle_output_button.setVisible(True)
+                self.output_editor.setVisible(True)
+                self.output_editor.adjust_height()
+
+        self.outputs = outputs
