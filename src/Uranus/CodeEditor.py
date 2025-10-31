@@ -3,8 +3,13 @@ from PyQt5.QtGui import  QFont,QFontMetrics,QTextCursor
 from PyQt5.QtCore import Qt,pyqtSignal,QEvent 
 from PyQt5.QtWidgets import QPlainTextEdit,QApplication                        
 
-from Uranus.CodeHighlight import CodeHighlighter
-from Uranus.SettingWindow import load_setting  # اگر در فایل جدا ذخیره شده باشد
+try :
+    from Uranus.CodeHighlight import CodeHighlighter
+    from Uranus.SettingWindow import load_setting  
+except ImportError :
+    from CodeHighlight import CodeHighlighter
+    from SettingWindow import load_setting  
+    
 
 class CodeEditor(QPlainTextEdit):
     cursorPositionInfo = pyqtSignal(int, int)   # سیگنال ارسال شماره خط و کاراکتر 
@@ -87,7 +92,7 @@ class CodeEditor(QPlainTextEdit):
                 column += tab_size - (column % tab_size)
             else:
                 column += 1
-        return column + 1  # برای شمارش از 1
+        return column + 1  
 
     def eventFilter(self, obj, event):
         if obj == self and event.type() == QEvent.KeyPress:
@@ -99,14 +104,15 @@ class CodeEditor(QPlainTextEdit):
 
         
         def delayed_emit():
-            QApplication.processEvents()  # اعمال کامل تغییرات
+            QApplication.processEvents() 
             _cursor = self.textCursor()
             line = _cursor.blockNumber() + 1
             column = self.get_visual_column(_cursor, self.tab_size)
             self.cursorPositionInfo.emit(line, column)
         
         cursor = self.textCursor()
-        selected_text = cursor.selectedText()  # متن انتخاب شده
+        selected_text = cursor.selectedText()  
+        
 
         # # ---------- Tab / Shift+Tab for selected block ----------
         
@@ -209,13 +215,39 @@ class CodeEditor(QPlainTextEdit):
             return
 
         
-
-        # ---------- quote  and double quote control ----------
+        #---------- quote and double quote control ----------
         if event.text() in ["'", '"'] and not cursor.hasSelection():
             quote = event.text()
-            cursor.insertText(f"{quote}{quote}")
-            cursor.movePosition(QTextCursor.Left, QTextCursor.MoveAnchor, 1)
-            self.setTextCursor(cursor)
+            cursor = self.textCursor()
+            block_text = cursor.block().text()
+            pos_in_block = cursor.positionInBlock()
+
+            # بررسی تعداد کوتیشن‌های پشت سر کرسر
+            count_behind = 0
+            i = pos_in_block - 1
+            while i >= 0 and block_text[i] == quote:
+                count_behind += 1
+                i -= 1
+
+            if count_behind == 0:
+                # حالت ۱: هیچ کوتیشن پشت کرسر نیست → درج دو تا و کرسر وسط
+                cursor.insertText(f"{quote}{quote}")
+                cursor.movePosition(QTextCursor.Left, QTextCursor.MoveAnchor, 1)
+                self.setTextCursor(cursor)
+                
+
+            elif count_behind == 1:
+                # حالت ۲: یک کوتیشن پشت کرسر → فقط کرسر جلو بره
+                cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor, 1)
+                self.setTextCursor(cursor)
+                
+
+            elif count_behind == 2:
+                # حالت ۳: دو کوتیشن پشت کرسر → یک کوتیشن اضافه کن، سه تا جلو، کرسر وسط
+                cursor.insertText(quote)  # اضافه کردن سومین کوتیشن پشت سر
+                cursor.insertText(f"{quote*3}")  # سه تا جلوی کرسر
+                cursor.movePosition(QTextCursor.Left, QTextCursor.MoveAnchor, 3)
+                self.setTextCursor(cursor)
             delayed_emit()
             return
 
@@ -228,20 +260,20 @@ class CodeEditor(QPlainTextEdit):
             return
 
         # ------------- Comment Line Enter Control -----------
-        if event.key() in (Qt.Key_Return, Qt.Key_Enter):            
+        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
             cursor = self.textCursor()
             block_text = cursor.block().text()
             pos_in_block = cursor.positionInBlock()
 
-            # اگر خط با # شروع شده باشد
             if block_text.strip().startswith("#"):
-                if pos_in_block != 0:             
-                    # کرسر در میانه یا انتهای خط است → برو آخر خط، بعد اینتر
+                if pos_in_block != 0:
                     cursor.movePosition(QTextCursor.EndOfBlock)
                     self.setTextCursor(cursor)
-                super().keyPressEvent(event)  # اجرای اینتر واقعی
+                
 
-                delayed_emit()    
+        
+                super().keyPressEvent(event)  # اینتر واقعی برای خطوط غیرکامنت
+                delayed_emit()
                 return
       
         # ---------- Wrap selected text in parentheses ----------
@@ -391,9 +423,11 @@ class CodeEditor(QPlainTextEdit):
 
 
         # ---------- Default ----------
-        super().keyPressEvent(event)
-        
+        super().keyPressEvent(event)        
         delayed_emit()
+        self.highlighter.triple_quote_ranges = self.highlighter.find_triple_quote_blocks()
+        self.highlighter.rehighlight()
+        return
 
     def adjust_height_code(self):
         # print('[CodeEditor->adjust_height_code]')

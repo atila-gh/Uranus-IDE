@@ -279,10 +279,55 @@ class CodeHighlighter(QSyntaxHighlighter):
 
 
 
+    def line_index_to_offset(self, lines, line_num, char_index):
+        res = sum(len(lines[i]) + 1 for i in range(line_num)) + char_index  # +1 for \n
+        return res
+    
+    
+
+    def find_triple_quote_blocks(self):
+       
+        full_text = self.document().toPlainText()
+        lines = full_text.split('\n')
+        quote_types = ["'''", '"""']
+        results = []
+        in_block = False
+        quote_char = None
+        start_line = start_index = None
+
+        for i, line in enumerate(lines):
+            if not in_block:
+                for qt in quote_types:
+                    if qt in line:
+                        idx = line.find(qt)
+                        end_idx = line.find(qt, idx + 3)
+                        if end_idx != -1:
+                            # triple opens and closes in same line
+                            start_offset = self.line_index_to_offset(lines, i, idx)
+                            end_offset = self.line_index_to_offset(lines, i, end_idx + 3)
+                            results.append((start_offset, end_offset))
+                        else:
+                            in_block = True
+                            quote_char = qt
+                            start_line, start_index = i, idx
+                        break
+            else:
+                if quote_char in line:
+                    idx = line.find(quote_char)
+                    if idx != -1:
+                        start_offset = self.line_index_to_offset(lines, start_line, start_index)
+                        end_offset = self.line_index_to_offset(lines, i, idx + 3)
+                        results.append((start_offset, end_offset))
+                        in_block = False
+                        quote_char = None
+                        start_line = start_index = None
+
+        return results  # فقط بلاک‌های کامل
+
+
 
     # this method is Override QtGui Standard Method dont Touch This 
-    def highlightBlock(self, text):      
-
+    def highlightBlock(self, text):
         for pattern, fmt in self.rules:
             index = pattern.indexIn(text)
             while index >= 0:
@@ -291,5 +336,19 @@ class CodeHighlighter(QSyntaxHighlighter):
                 index = pattern.indexIn(text, index + length)
 
         self.setCurrentBlockState(0)
+
+        # 🔹 رنگی‌سازی رشته‌های چندخطی
+        block_start = self.currentBlock().position()
+        block_end = block_start + len(text)
+
+        if not hasattr(self, "triple_quote_ranges"):
+            self.triple_quote_ranges = self.find_triple_quote_blocks()
+
+        for start_offset, end_offset in self.triple_quote_ranges:
+            if end_offset < block_start or start_offset > block_end:
+                continue
+            start = max(start_offset, block_start) - block_start
+            end = min(end_offset, block_end) - block_start
+            self.setFormat(start, end - start, self.string_format)
+            
         
-    
