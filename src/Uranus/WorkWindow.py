@@ -1,15 +1,14 @@
  
 import os ,base64  ,io ,builtins ,uuid , importlib , markdown2
 from PyQt5.QtGui import  QIcon , QKeySequence
-from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject ,QTimer
+from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject ,QTimer,QEventLoop
 from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWidget ,
-    QInputDialog , QSpacerItem, QSizePolicy , QScrollArea,QDialog, QVBoxLayout, QLineEdit, QPushButton, QLabel, QHBoxLayout)
+    QInputDialog , QSpacerItem, QSizePolicy , QScrollArea,QDialog, QVBoxLayout, QLineEdit, QPushButton, QLabel, QHBoxLayout , QFileDialog, QMessageBox)
 
 import nbformat 
 from nbformat.v4 import new_notebook, new_output
 from contextlib import redirect_stdout, redirect_stderr
 from IPython.core.interactiveshell import InteractiveShell
-
 from Uranus.Cell import Cell
 
 
@@ -506,13 +505,13 @@ class WorkWindow(QWidget):
 
         self.top_toolbar.addSeparator()  
 
-        btn_run_all = QToolButton()
+        self.btn_run_all = QToolButton()
 
         icon_path = os.path.join(os.path.dirname(__file__), "image", "run_all.png")
-        btn_run_all.setIcon(QIcon(icon_path))        
-        btn_run_all.setToolTip("Run all code cells")
-        btn_run_all.clicked.connect(self.run_all_cells)
-        self.top_toolbar.addWidget(btn_run_all)
+        self.btn_run_all.setIcon(QIcon(icon_path))        
+        self.btn_run_all.setToolTip("Run all code cells")
+        self.btn_run_all.clicked.connect(self.run_all_cells)
+        self.top_toolbar.addWidget(self.btn_run_all)
 
 
         # Undo Cell Button
@@ -631,7 +630,7 @@ class WorkWindow(QWidget):
 
         self.cell_widgets.append(cell)  # cell append to list of cells
         self.cell_layout.addWidget(cell)  # for showing cell add cell to layout
-        # self.set_focus(cell)  # set cell focused
+        self.set_focus(cell)  # set cell focused
 
         return cell
  
@@ -659,9 +658,8 @@ class WorkWindow(QWidget):
                 
         
         # Focus Current Cell  
-        self.focused_cell = cell
-        self.run_btn.setEnabled(isinstance(cell, Cell) and not self.execution_in_progress)
-        #cell.border_focus(True)
+        self.focused_cell = cell       
+        
         cell.border_color = cell.border_color or cell.bg_border_color_default
         cell.setStyleSheet(f"""
                QFrame {{
@@ -677,17 +675,24 @@ class WorkWindow(QWidget):
                 cell.output_data.table.setStyleSheet("border: 1px solid gray; padding: 0px;")
                 cell.output_data.table.horizontalHeader().setStyleSheet("border: 0px solid gray; padding: 0px;")
 
-    # Run a Single Cell
-    def run_focused_cell(self) :
-        if self.debug :print('[WorkWindow]->[run_focused_cell]')
+    def run_focused_cell(self):
+        if not self.focused_cell:
+            return
 
-       
-        if isinstance(self.focused_cell, Cell) and not self.execution_in_progress:           
-           
-            self.execution_in_progress = True
-            self.run_btn.setEnabled(False)
-            self.focused_cell.run() # focused_cell is an instance of Cell Class that is focused
+        # 🔒 غیرفعال کردن دکمه‌ها
+        self.run_btn.setEnabled(False)
+        self.btn_run_all.setEnabled(False)
 
+        # اتصال پایان اجرا به فعال‌سازی دکمه‌ها
+        def on_done():
+            print("[run_focused_cell] execution finished")
+            self.run_btn.setEnabled(True)
+            self.btn_run_all.setEnabled(True)
+
+        self.focused_cell.notify_done = on_done
+        self.focused_cell.run()
+            
+     
     def execution_done(self):
         self.execution_in_progress = False
         self.set_focus(self.focused_cell)
@@ -838,14 +843,13 @@ class WorkWindow(QWidget):
             else :
                 self.mainwindow_statusbar.showMessage('Saved To : '+self.file_path)
 
-    
-   
    
     def load_file(self, content):
         if self.debug:
             print('[WorkWindow->load_file]')
 
         if not content or not isinstance(content.cells, list):
+            self.add_cell(origin='uranus')
             return
 
         self.content = content
@@ -945,22 +949,23 @@ class WorkWindow(QWidget):
                 self.cell_layout.insertWidget(index + 1, self.focused_cell)
                 self.set_focus(self.focused_cell)
 
-    def run_all_cells(self):
-        """
-        Executes all code cells in order.
-        """
-        if self.debug: print('[WorkWindow->run_all_cells]')
-        if self.execution_in_progress:
-            return  # جلوگیری از اجرای همزمان
 
-        self.execution_in_progress = True
-        self.outputs.clear()
+    def run_all_cells(self):
+        print('[WorkWindow->run_all_cells]')
+
+        # 🔒 غیرفعال کردن دکمه‌ها
+        self.run_btn.setEnabled(False)
+        self.btn_run_all.setEnabled(False)
 
         for cell in self.cell_widgets:
             if cell.editor_type == "code":
-                cell.run()
+                self.set_focus(cell)
+                self.run_cell_blocking(cell)
 
-        self.execution_in_progress = False
+        # ✅ فعال کردن دکمه‌ها بعد از پایان کامل
+        self.run_btn.setEnabled(True)
+        self.btn_run_all.setEnabled(True)
+
 
     def find_replace(self):       
         
@@ -983,7 +988,7 @@ class WorkWindow(QWidget):
         Prompts the user to choose a new file path and saves the notebook content there.
         Updates self.file_path and status bar message.
         """
-        from PyQt5.QtWidgets import QFileDialog, QMessageBox
+        
 
         new_path, _ = QFileDialog.getSaveFileName(
             self,
@@ -1014,7 +1019,16 @@ class WorkWindow(QWidget):
             self.file_path = new_path
             self.mainwindow_statusbar.showMessage("Saved As: " + new_path)
 
+    def run_cell_blocking(self, cell):
+        loop = QEventLoop()
 
+        def on_done():
+            print("[run_cell_blocking] cell finished")
+            loop.quit()
+
+        cell.notify_done = on_done
+        cell.run()
+        loop.exec_()
     
 # if __name__ == "__main__":
 #     import sys

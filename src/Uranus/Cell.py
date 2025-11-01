@@ -430,10 +430,11 @@ class Cell(QFrame):
     
     
     def finalize(self):
-        if self.thread :
+        if self.thread:
             self.thread.quit()
             self.thread.wait()
-        self.notify_done()
+        if callable(self.notify_done):
+            self.notify_done()
 
     def update_line_char_update(self, line, column):
 
