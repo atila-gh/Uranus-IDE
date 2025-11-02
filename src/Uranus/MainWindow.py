@@ -66,12 +66,14 @@ class MainWindow(QMainWindow):
         # MDI Area: central widget to hold multiple WorkWindows
         self.mdi_area = QMdiArea()
         self.setCentralWidget(self.mdi_area)
+        self.mdi_area.subWindowActivated.connect(self.sync_working_directory)
         
 
         # Set up the status bar
         self.mainwindow_statusbar = self.statusBar()
         self.statusBar().showMessage("Ready")
         self.statusBar().setStyleSheet("QStatusBar { border-top: 1px solid gray; }")
+        
 
         # Initialize UI components
         self.init_ui()
@@ -360,6 +362,8 @@ class MainWindow(QMainWindow):
         # save the last path in setting file
         self.setting['last_path'] = folder_path
         self.save_settings(self.setting)
+        os.chdir(folder_path)
+
 
 
     def create_project_from_selected_folder(self):
@@ -482,3 +486,22 @@ class MainWindow(QMainWindow):
         work_widget = active_subwindow.widget()
         if hasattr(work_widget, "find_replace"):
             work_widget.find_replace()
+            
+            
+    def sync_working_directory(self, subwindow):
+        """
+        Syncs the system working directory with the active WorkWindow's file path.
+        Called whenever the active subwindow changes.
+        """
+        if not subwindow:
+            return
+
+        widget = subwindow.widget()
+        if hasattr(widget, "file_path") and widget.file_path:
+            folder = os.path.dirname(widget.file_path)
+            if os.path.exists(folder):
+                try:
+                    os.chdir(folder)                    
+                    self.statusBar().showMessage('[Current Folder] '+folder)
+                except Exception as e:
+                    print(f"⚠️ Failed to set working directory: {e}")

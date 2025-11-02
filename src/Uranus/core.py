@@ -23,13 +23,10 @@ def install_fonts():
         return
 
     font_files = [
-        "JetBrainsMono-Light.ttf",
-        "JetBrainsMono-Medium.ttf",
-        "FiraCode-VariableFont_wght.ttf",
-        "ShareTechMono-Regular.ttf",
+        "JetBrainsMono-Light.ttf",          
         "Technology.ttf",
         "SpaceMono-Regular.ttf",
-        "UbuntuMono-Regular.ttf"
+       
     ]
 
     existing_fonts = set(QFontDatabase().families())

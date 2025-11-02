@@ -145,6 +145,11 @@ class FileTreeView(QTreeView):
         # Set initial path
         self.path = setting.get('last_path', os.getcwd())
         self.project_root = self.path
+        try : 
+            os.chdir(self.project_root)
+        except OSError : 
+            print('[Project Path Folder Not Found ]')
+
 
         # Configure model
         self.fs_model = QFileSystemModel()
@@ -212,7 +217,7 @@ class FileTreeView(QTreeView):
                 else:
                     self.expand(index)
             else:
-                # مسیر وجود ندارد → فقط اینتر بزن بدون ورود
+             
                 pass
         else:
             super().keyPressEvent(event)
@@ -300,6 +305,8 @@ class FileTreeView(QTreeView):
         if index.isValid():
             self.setCurrentIndex(index)
             self.edit(index)
+            
+            
 
     def open_item(self, path):
         index = self.currentIndex()
@@ -311,6 +318,8 @@ class FileTreeView(QTreeView):
         
         try:
             os.startfile(path)
+            os.chdir(path)
+
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Could not open:\n{e}")
 

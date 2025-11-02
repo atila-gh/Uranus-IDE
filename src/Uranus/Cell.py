@@ -362,8 +362,6 @@ class Cell(QFrame):
             QTimer.singleShot(0, self.d_editor.adjust_height_document_editor) # adjust after cell rendering
             self.d_editor.editor.setFocus(True)
 
-    
-
     def append_output(self, out):
         if out.output_type == "display_data":
             editor_target = out.metadata.get("editor", "")
@@ -427,7 +425,6 @@ class Cell(QFrame):
             self.output_editor.setVisible(True)
             self.output_editor.adjust_height()
             self.outputs.append(out)  
-    
     
     def finalize(self):
         if self.thread:
@@ -503,8 +500,7 @@ class Cell(QFrame):
             }
 
         return cell
-    
-    
+        
     def create_output_editor (self):
         self.output_editor = OutputEditor()
         self.toggle_output_button.setVisible(False)
@@ -512,15 +508,13 @@ class Cell(QFrame):
         self.main_layout.addWidget(self.output_editor)
         
         self.output_editor.setVisible(False)
-       
-          
+           
     def create_output_image(self):
         self.output_image = ImageOutput()
         self.toggle_output_button_image.setVisible(False)
         self.main_layout.addWidget(self.toggle_output_button_image)
         self.main_layout.addWidget(self.output_image)
-        
-
+    
     def create_output_data(self):
         self.output_data = DataFrameWidget()
         #Scroll Widget
@@ -529,11 +523,11 @@ class Cell(QFrame):
         self.scroll.setWidget(self.output_data)            
         self.scroll.setStyleSheet("border: none; background: transparent;")
         self.scroll.setVisible(False)
+        self.scroll.setFixedHeight(500)  
         self.toggle_output_button_data.setVisible(False)
         self.main_layout.addWidget(self.toggle_output_button_data)
         self.main_layout.addWidget(self.scroll)
-        
-
+     
     def inject_outputs(self, outputs):
         for out in outputs:
             if out.output_type == "display_data":

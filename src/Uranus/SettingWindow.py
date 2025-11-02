@@ -23,8 +23,8 @@ DEFAULT_SETTINGS = {
     "Code Font Size": 13,
     "Meta Font": "Segoe UI",
     "Meta Font Size": 12 ,
-    "OutPut Font": "JetBrainsMono",
-    "OutPut Font Size": 12 ,
+    "OutPut Font": "Space Mono",
+    "OutPut Font Size": 10 ,
     'last_path' : ''
 }
 

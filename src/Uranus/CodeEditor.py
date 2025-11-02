@@ -87,12 +87,13 @@ class CodeEditor(QPlainTextEdit):
     def get_visual_column(cursor, tab_size=4):
         block_text = cursor.block().text()
         column = 0
-        for i in range(cursor.positionInBlock()):
+        limit = min(cursor.positionInBlock(), len(block_text))
+        for i in range(limit):
             if block_text[i] == '\t':
                 column += tab_size - (column % tab_size)
             else:
                 column += 1
-        return column + 1  
+        return column + 1
 
     def eventFilter(self, obj, event):
         if obj == self and event.type() == QEvent.KeyPress:

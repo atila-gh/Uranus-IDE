@@ -4,6 +4,14 @@ Uranus is a lightweight, extensible Python IDE inspired by Jupyter. It supports 
 
 > 🔥 **Uranus IDE is the first modular Python IDE with full RTL support across all editing modes.**
 
+## Uranus Images
+
+![Uranus IDE Sample Image By Atila Ghashaghie - آتیلا قشقایی](https://raw.githubusercontent.com/atila-gh/Uranus/main/docs/images/Uranus-IDE (1).png)
+![Uranus IDE Sample Image By Atila Ghashaghie - آتیلا قشقایی](https://raw.githubusercontent.com/atila-gh/Uranus/main/docs/images/Uranus-IDE (2).png)
+![Uranus IDE Sample Image By Atila Ghashaghie - آتیلا قشقایی](https://raw.githubusercontent.com/atila-gh/Uranus/main/docs/images/Uranus-IDE (3).png)
+![Uranus IDE Sample Image By Atila Ghashaghie - آتیلا قشقایی](https://raw.githubusercontent.com/atila-gh/Uranus/main/docs/images/Uranus-IDE (4).png)
+![Uranus IDE Sample Image By Atila Ghashaghie - آتیلا قشقایی](https://raw.githubusercontent.com/atila-gh/Uranus/main/docs/images/Uranus-IDE (5).png)
+
 ## Features
 
 - 🧠 Code and Markdown cells with live execution

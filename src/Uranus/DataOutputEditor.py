@@ -1,7 +1,8 @@
 
 
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableView
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableView,QHeaderView
 from PyQt5.QtCore import Qt, QAbstractTableModel
+from PyQt5.QtGui import QFont
 
 class DataFrameModel(QAbstractTableModel):
     """
@@ -91,7 +92,24 @@ class DataFrameWidget(QWidget):
         self.table.setAlternatingRowColors(True)
         self.table.setSortingEnabled(True)
         self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.horizontalHeader().setMinimumHeight(24)
+       
+        header_font = QFont("Segoe UI", 10, QFont.Bold)
+        self.table.horizontalHeader().setFont(header_font)
+        
+        # self.table.horizontalHeader().setMinimumHeight(40)
+        # self.table.horizontalHeader().setFixedHeight(40) 
+        
+        self.table.horizontalHeader().setStyleSheet("""
+                                                        QHeaderView::section {
+                                                            padding: 4px;
+                                                            font-weight: bold;
+                                                            background-color: #f0f0f0;
+                                                            border: 1px solid #ccc;
+                                                        }
+                                                    """)
+
+        
+       
 
         self.layout.addWidget(self.table)
         self.setLayout(self.layout)

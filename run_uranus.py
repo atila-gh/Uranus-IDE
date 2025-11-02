@@ -5,24 +5,22 @@ import subprocess
 sys.stdout.reconfigure(encoding='utf-8')
 
 # List of required packages
-REQUIRED_PACKAGES = [
-    "PyQt5",
-    "IPython",
-    "nbformat",
-    "markdown2",
-    "html2text"
-    
-
-    # Add more if needed
-]
+REQUIRED_PACKAGES = {
+    "PyQt5": "PyQt5",
+    "IPython": "IPython",
+    "nbformat": "nbformat",
+    "markdown2": "markdown2",
+    "html2text": "html2text",
+    "Pillow": "PIL", 
+}
 
 def check_and_install(packages):
     missing = []
-    for pkg in packages:
+    for pkg_name, module_name in packages.items():
         try:
-            __import__(pkg)
+            __import__(module_name)
         except ImportError:
-            missing.append(pkg)
+            missing.append(pkg_name)
 
     if missing:
         print("🔧 Missing required packages:")
@@ -33,7 +31,7 @@ def check_and_install(packages):
         try:
             subprocess.check_call([sys.executable, "-m", "pip", "install", *missing])
             print("✅ Installation successful.")
-        except Exception :
+        except Exception:
             print("❌ Automatic installation failed.")
             print("Please install the missing packages manually:")
             print(f"pip install {' '.join(missing)}")
