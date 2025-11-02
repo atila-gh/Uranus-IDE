@@ -72,8 +72,22 @@ Uranus is a lightweight, extensible Python IDE inspired by Jupyter. It supports 
 - ✅ Custom file explorer with inline editing
 - ✅ Project creation and metadata management
 
-## Installation
+## Installation and Run Project After GitHub Cloning 
 
+1- Go to Project Folder  -> Uranus-IDE\
 ```bash
 pip install -r requirements.txt
-python core.py
+python uranus.py
+```
+## Installation and Run With pip install from Pypi.org
+1 - go to cmd or terminal
+```bash
+pip install Uranus-IDE
+```
+2 after finishing just type in termainal or cmd 
+```bash
+uranus
+```
+
+
+
