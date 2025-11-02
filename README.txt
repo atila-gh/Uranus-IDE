@@ -30,7 +30,7 @@ Uranus/
 This project is licensed under a custom license by Atila Ghashghaie.
 See LICENSE for full terms and restrictions.
 ✉️ Contact
-    Developed by Atila Ghashghaie
+    Developed by Atila Ghashghaie - آتیلا قشقایی
     📧 atila.gh@gmail.com
         WWW.puyeshmashin.ir
         https://github.com/atila-gh

@@ -26,5 +26,5 @@ python src/Uranus/core.py
     Developed by Atila Ghashghaie
     📧 atila.gh@gmail.com
         WWW.puyeshmashin.ir
-        https://github.com/atila1358
+        https://github.com/atila-gh
 

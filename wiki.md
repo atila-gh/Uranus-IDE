@@ -1,5 +1,55 @@
 # Uranus IDE — Multilingual, RTL-Friendly Python Environment
 
+<h2 align="center">Uranus IDE Screenshots</h2>
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/atila-gh/Uranus-IDE/main/docs/images/Uranus-IDE-1.png"
+           alt="Uranus IDE main interface by Atila Ghashghaie - آتیلا قشقایی "
+           title="Uranus IDE - Main Interface by Atila Ghashghaie - آتیلا قشقایی "
+           width="300"><br>
+      <em>Screenshot 1</em>
+    </td>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/atila-gh/Uranus-IDE/main/docs/images/Uranus-IDE-2.png"
+           alt="Uranus IDE code editor by Atila Ghashghaie - آتیلا قشقایی "
+           title="Uranus IDE - Code Editor by Atila Ghashghaie - آتیلا قشقایی "
+           width="300"><br>
+      <em>Screenshot 2</em>
+    </td>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/atila-gh/Uranus-IDE/main/docs/images/Uranus-IDE-3.png"
+           alt="Uranus IDE settings panel by Atila Ghashghaie - آتیلا قشقایی "
+           title="Uranus IDE - Settings Panel by Atila Ghashghaie - آتیلا قشقایی i"
+           width="300"><br>
+      <em>Screenshot 3</em>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/atila-gh/Uranus-IDE/main/docs/images/Uranus-IDE-4.png"
+           alt="Uranus IDE file explorer by Atila Ghashghaie - آتیلا قشقایی "
+           title="Uranus IDE - File Explorer by Atila Ghashghaie - آتیلا قشقایی "
+           width="300"><br>
+      <em>Screenshot 4</em>
+    </td>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/atila-gh/Uranus-IDE/main/docs/images/Uranus-IDE-5.png"
+           alt="Uranus IDE project manager by Atila Ghashghaie - آتیلا قشقایی "
+           title="Uranus IDE - Project Manager by Atila Ghashghaie - آتیلا قشقایی "
+           width="300"><br>
+      <em>Screenshot 5</em>
+    </td>
+    <td></td>
+  </tr>
+</table>
+
+<p align="center">
+  Screenshots from Uranus IDE — created and developed by <strong>Atila Ghashghaie - آتیلا قشقایی </strong>.
+</p>
+
+
 **Uranus IDE** is a lightweight, extensible Python development environment inspired by Jupyter and built with PyQt5. It offers a modular, cell-based interface for writing, executing, and documenting Python code — with full support for multilingual workflows and right-to-left (RTL) languages.
 
 ---
