@@ -420,11 +420,7 @@ class WorkWindow(QWidget):
         final_layout.addLayout(horizontal_layout)
 
 
-        #ShortCut For Find and Replace
-        # shortcut_find = QShortcut(QKeySequence("Ctrl+F"), self)
-        # shortcut_find.setContext(Qt.ApplicationShortcut)
-        # shortcut_find.activated.connect(self.find_replace)
-
+       
 
         # --- Load initial content ---
         self.load_file(self.content)
@@ -450,11 +446,7 @@ class WorkWindow(QWidget):
         btn_save.clicked.connect(self.ipynb_format_save_file)
         self.top_toolbar.addWidget(btn_save)
         self.top_toolbar.addSeparator()  # فاصله یا خط نازک بین دکمه‌ها
-        # Define ShortCut ctrl+s
-        #shortcut_save = QShortcut(QKeySequence("Ctrl+s"), self)
-        # shortcut_save.setContext(Qt.ApplicationShortcut)
-        # shortcut_save.activated.connect(self.ipynb_format_save_file)
-
+       
 
         # Move Cell Up
         btn_move_up = QToolButton()
@@ -509,7 +501,10 @@ class WorkWindow(QWidget):
 
         icon_path = os.path.join(os.path.dirname(__file__), "image", "run_all.png")
         self.btn_run_all.setIcon(QIcon(icon_path))        
-        self.btn_run_all.setToolTip("Run all code cells")
+        self.btn_run_all.setToolTip("""
+                            <b>Choose Run All Code</b><br>
+                            Executes the All Code cell and displays the outputs
+                            """)
         self.btn_run_all.clicked.connect(self.run_all_cells)
         self.top_toolbar.addWidget(self.btn_run_all)
 
@@ -706,7 +701,7 @@ class WorkWindow(QWidget):
             print('[WorkWindow->add_cell_above]')
 
         if not self.cell_widgets:
-            self.add_cell(origin="uranus")  # ← اضافه‌شده
+            return
 
         elif self.focused_cell:
             index = self.cell_widgets.index(self.focused_cell)
@@ -733,7 +728,7 @@ class WorkWindow(QWidget):
             print('[WorkWindow->add_cell_below]')
 
         if not self.cell_widgets:
-            self.add_cell(origin="uranus")  # ← اضافه‌شده
+           return
 
         elif self.focused_cell:
             index = self.cell_widgets.index(self.focused_cell)
@@ -760,7 +755,11 @@ class WorkWindow(QWidget):
         if self.debug:
             print('[WorkWindow->delete_active_cell]')
 
-        if self.focused_cell and self.cell_widgets:
+        if  len(self.cell_widgets) <=1 :
+            self.mainwindow_statusbar.showMessage('You can`t delete the last cell — at least one cell is required. Create a new one first, then you can delete this one.')
+            return
+        
+        if self.focused_cell and self.cell_widgets :
             index = self.cell_widgets.index(self.focused_cell)
 
             # استخراج محتوا بسته به نوع سلول
