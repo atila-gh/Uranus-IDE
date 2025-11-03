@@ -149,8 +149,20 @@ class InputWaiter(QObject): # for Covering Input
 
     @pyqtSlot()
     def _show_dialog(self):
-        text, ok = QInputDialog.getText(self._dialog_parent, "Input", self._prompt)
-        self._value = text if ok else ""
+        from PyQt5.QtWidgets import QInputDialog
+
+        dlg = QInputDialog(self._dialog_parent)
+        dlg.setWindowTitle("Input")
+        dlg.setLabelText(self._prompt)
+
+        # حذف علامت ؟ از بالای پنجره
+        dlg.setWindowFlags(dlg.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+
+        if dlg.exec_() == QInputDialog.Accepted:
+            self._value = dlg.textValue()
+        else:
+            self._value = ""
+
 
 class StreamCatcher(io.StringIO): # 2025-10-11 - edited
     """
