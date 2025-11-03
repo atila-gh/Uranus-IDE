@@ -27,12 +27,12 @@ class AboutWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("About Uranus IDE")
-        self.setFixedSize(700, 350)
+        self.setFixedSize(700, 400)
         self.init_ui()
 
     def init_ui(self):
         logo_label = QLabel()
-        icon_path = os.path.join(os.path.dirname(__file__), "image", "uranus.png")
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "Uranus.png")
         pixmap = QPixmap(icon_path)
         logo_label.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         logo_label.setAlignment(Qt.AlignCenter)
@@ -61,10 +61,11 @@ class AboutWindow(QWidget):
         description.setFont(QFont("Arial", 11))
 
         developer_info = QLabel(
-            "Developed by Attila\n"
-            "Contact: attila.gh@outlook.com\n"
-            'GitHub : https://github.com/atila1358/uranus\n'
-            "Website: www.Puyeshmashin.ir\n\n"
+            "Developed by Atila Ghashghaie - آتیلا قشقایی\n"
+            "Contact: atila.gh@gmail.com\n"
+            'GitHub : https://github.com/atila-gh/Uranus-IDE\n'
+            "Website: https://poyeshmashin.ir/\n\n"
+            "PyPi   : https://pypi.org/project/Uranus-IDE\n"
         )
         developer_info.setFont(QFont("Arial", 10))
 

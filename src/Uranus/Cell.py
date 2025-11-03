@@ -256,7 +256,7 @@ class Cell(QFrame):
     def mousePressEvent(self, event):      
 
         if self.debug :print('[Cell->mousePressEvent]')
-        if not hasattr(self,'d_editor') :             
+        if self.editor_type  == 'code':
             cursor = self.editor.textCursor()
             line = cursor.blockNumber() + 1       
             column = cursor.positionInBlock() + 1 
