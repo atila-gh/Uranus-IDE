@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "Uranus-IDE"
 version = "1.0.0a5"
@@ -5,27 +9,31 @@ description = "A lightweight, extensible Python IDE inspired by Jupyter, built w
 authors = [
     { name = "Atila Ghashghaie", email = "atila.gh@gmail.com" }
 ]
+
+
 license = "LicenseRef-Atila"
 license-files = ["LICENSE"]
+
 readme = "README.md"
 requires-python = ">=3.8"
-dependencies = []
+dependencies = [
+    "PyQt5",
+    "IPython",
+    "nbformat",
+    "markdown2",
+    "html2text"
+]
 
 [project.urls]
 Homepage = "https://github.com/atila-gh/Uranus-IDE"
 Documentation = "https://github.com/atila-gh/Uranus-IDE/wiki"
 Issues = "https://github.com/atila-gh/Uranus-IDE/issues"
 
+[project.scripts]
+uranus = "Uranus.core:main"
+
 [tool.setuptools]
 package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project.scripts]
-uranus = "Uranus.core:main"
-
