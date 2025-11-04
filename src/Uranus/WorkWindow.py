@@ -1,8 +1,8 @@
  
-import os ,base64  ,io ,builtins ,uuid , importlib , markdown2
-from PyQt5.QtGui import  QIcon , QKeySequence
-from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject ,QTimer,QEventLoop
-from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWidget ,
+import os ,base64  ,io ,builtins ,uuid , importlib , markdown2 , sys
+from PyQt5.QtGui import  QIcon , QKeySequence 
+from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject ,QTimer,QEventLoop 
+from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWidget ,QTableWidget ,QTableWidgetItem,
     QInputDialog , QSpacerItem, QSizePolicy , QScrollArea,QDialog, QVBoxLayout, QLineEdit, QPushButton, QLabel, QHBoxLayout , QFileDialog, QMessageBox)
 
 import nbformat 
@@ -11,6 +11,29 @@ from contextlib import redirect_stdout, redirect_stderr
 from IPython.core.interactiveshell import InteractiveShell
 from Uranus.Cell import Cell
 
+class ObjectInspectorWindow(QWidget):
+    def __init__(self, object_dict = {}):
+        super().__init__()
+        self.setWindowTitle("User Objects in WorkWindow")
+        self.setGeometry(300, 300, 700, 400)
+        self.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint)
+
+        layout = QVBoxLayout()
+        self.table = QTableWidget()
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(["No", "Object Name", "Type", "Size in Byte"])
+        self.table.setRowCount(len(object_dict))
+
+        for i, (name, obj) in enumerate(object_dict.items()):
+            self.table.setItem(i, 0, QTableWidgetItem(str(i + 1)))
+            self.table.setItem(i, 1, QTableWidgetItem(name))
+            self.table.setItem(i, 2, QTableWidgetItem(type(obj).__name__))
+            self.table.setItem(i, 3, QTableWidgetItem(f"{sys.getsizeof(obj):,}"))
+
+        self.table.resizeColumnsToContents()
+        layout.addWidget(self.table)
+        self.setLayout(layout)
+        self.show()
 
 class FindReplaceDialog(QDialog):
     """
@@ -534,20 +557,17 @@ class WorkWindow(QWidget):
         self.top_toolbar.addWidget(btn_undo)
         
        
-
-
-
-        # # Memory Variable List
-        # memory = QToolButton()
-        # icon_path = os.path.join(os.path.dirname(__file__), "image", "memory.png")
-        # memory.setIcon(QIcon(icon_path))
-        # memory.setToolTip("""
-        #                            <b>Object and Variable</b><br>
-        #                            <span style='color:gray;'>Shortcut: <kbd>F9</kbd></span><br>
-        #                            Object And Variable List
-        #                            """)
-        # memory.clicked.connect(lambda : self.ipython_kernel.run_cell("__uranus_inspect_variables()" , self.handle_result))
-        # self.top_toolbar.addWidget(memory)
+        # Memory Variable List
+        memory = QToolButton()
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "memory.png")
+        memory.setIcon(QIcon(icon_path))
+        memory.setToolTip("""
+                                   <b>Object and Variable</b><br>
+                                   <span style='color:gray;'>Shortcut: <kbd>F9</kbd></span><br>
+                                   Object And Variable List
+                                   """)
+        memory.clicked.connect(self.variable_table)
+        self.top_toolbar.addWidget(memory)
 
     def setup_toolbar_buttons(self):
         if self.debug :print('[WorkWindow->setup_toolbar_buttons]')
@@ -1041,7 +1061,10 @@ class WorkWindow(QWidget):
         cell.run()
         loop.exec_()
     
-    
+    def variable_table (self):
+        self.obj_table_window = ObjectInspectorWindow()
+
+        
     
    
 # if __name__ == "__main__":
