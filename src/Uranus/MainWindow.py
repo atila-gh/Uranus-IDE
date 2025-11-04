@@ -151,7 +151,7 @@ class MainWindow(QMainWindow):
        
         file_menu.addSeparator()
 
-        find_action = QAction("Find", self)
+        find_action = QAction("Find And Replace", self)
         find_action.setShortcut("Ctrl+F")
         find_action.triggered.connect(self.trigger_find_on_active_workwindow)
         edit_menu.addAction(find_action)
