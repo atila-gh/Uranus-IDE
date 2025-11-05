@@ -43,3 +43,4 @@ dist/
 *.autosave
 uranus.db
 src/setting.json
+src/setting.json
