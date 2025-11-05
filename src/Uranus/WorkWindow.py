@@ -1,5 +1,5 @@
  
-import os ,base64  ,io ,builtins ,uuid , importlib , markdown2 , sys
+import os ,base64  ,io ,builtins ,uuid , importlib , markdown2 , sys,inspect
 from PyQt5.QtGui import  QIcon , QKeySequence 
 from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject ,QTimer,QEventLoop 
 from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWidget ,QTableWidget ,QTableWidgetItem,
@@ -259,9 +259,15 @@ class IPythonKernel:
 
         with redirect_stdout(stdout_catcher), redirect_stderr(stderr_buffer):
             result = self.shell.run_cell(code)
+       
+        self.object_store = self.inspect_all_user_attributes(self.shell)
+        print('\n\n' , self.object_store)
+
 
         obj = result.result
         stderr_text = stderr_buffer.getvalue().strip()
+        
+        
 
         # 🖼️ image
         if os.path.exists("plot.png"):
@@ -349,10 +355,77 @@ class IPythonKernel:
                 callback(out)
             except Exception:
                 return outputs
-
+            
+            
+        self.object_store = self.inspect_all_user_attributes(self.shell)
+        print('\n\n' , self.object_store)
         return outputs
+    
+    
+    def inspect_all_user_attributes(self,shell):
+        """
+        Returns only user-defined objects from IPython shell:
+        - Global variables, classes, functions, instances
+        - Filters out built-ins, system-defined, and internal objects
+        """
+        user_ns = shell.user_ns
+        results = []
 
+        def is_simple_type(obj):
+            return isinstance(obj, (int, float, str, bool))
 
+        def safe_size(obj):
+            try:
+                return sys.getsizeof(obj)
+            except Exception:
+                return 0
+
+        for name, obj in user_ns.items():
+            if name.startswith("_"):
+                continue
+            if name in {"In", "Out", "get_ipython", "exit", "quit", "__builtins__"}:
+                continue
+            if getattr(obj, "__module__", None) not in ("__main__", None):
+                continue  # فقط چیزهایی که کاربر نوشته
+
+            results.append({
+                "name": name,
+                "type": type(obj).__name__,
+                "size": safe_size(obj),
+                "scope": "global",
+                "value": obj if is_simple_type(obj) else None
+            })
+
+            # اگر کلاس کاربره → اتریبیوت‌ها و متدها
+            if inspect.isclass(obj) and obj.__module__ == "__main__":
+                for attr_name, attr_value in vars(obj).items():
+                    if attr_name.startswith("_"):
+                        continue
+                    results.append({
+                        "name": f"{name}.{attr_name}",
+                        "type": type(attr_value).__name__,
+                        "size": safe_size(attr_value),
+                        "scope": "class",
+                        "value": attr_value if is_simple_type(attr_value) else None
+                    })
+
+            # اگر اینستنس از کلاس کاربره → اتریبیوت‌های نمونه
+            elif hasattr(obj, "__class__") and getattr(obj.__class__, "__module__", None) == "__main__":
+                for attr_name, attr_value in vars(obj).items():
+                    if attr_name.startswith("_"):
+                        continue
+                    results.append({
+                        "name": f"{name}.{attr_name}",
+                        "type": type(attr_value).__name__,
+                        "size": safe_size(attr_value),
+                        "scope": "instance",
+                        "value": attr_value if is_simple_type(attr_value) else None
+                    })
+
+        return results
+        
+    
+    
 class WorkWindow(QWidget):
     """
        The main notebook interface for Uranus IDE.
