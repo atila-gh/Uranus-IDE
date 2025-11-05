@@ -187,11 +187,13 @@ class FileTreeView(QTreeView):
 
     def on_item_selected(self, index):
         """Update path when a tree item is selected."""
-        path = self.fs_model.filePath(index)
-        if not os.path.commonpath([path, self.project_root]) == self.project_root:
-            return
-        self.path = path
-        self.pathChanged.emit(path)
+        path = os.path.abspath(self.fs_model.filePath(index))
+        project_root = os.path.abspath(self.project_root)
+
+        
+        if path != project_root:
+            self.path = path
+            self.pathChanged.emit(path)
 
     # ------------------------------------------------------------
     # Keyboard Events
