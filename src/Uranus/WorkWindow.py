@@ -5,15 +5,22 @@ from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject ,QTimer,QEve
 from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWidget ,QTableWidget ,QTableWidgetItem,
     QInputDialog , QSpacerItem, QSizePolicy , QScrollArea,QDialog, QVBoxLayout, QLineEdit, QPushButton, QLabel, QHBoxLayout , QFileDialog, QMessageBox)
 
+from traitlets.config import Config
+
 import nbformat 
 from nbformat.v4 import new_notebook, new_output
 from contextlib import redirect_stdout, redirect_stderr
 from IPython.core.interactiveshell import InteractiveShell
 from Uranus.Cell import Cell
 
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QApplication
+from PyQt5.QtCore import Qt
+import sys
+
 class ObjectInspectorWindow(QWidget):
-    def __init__(self, object_dict = {}):
+    def __init__(self , data = {}):
         super().__init__()
+        self.data = data
         self.setWindowTitle("User Objects in WorkWindow")
         self.setGeometry(300, 300, 700, 400)
         self.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint)
@@ -21,19 +28,31 @@ class ObjectInspectorWindow(QWidget):
         layout = QVBoxLayout()
         self.table = QTableWidget()
         self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(["No", "Object Name", "Type", "Size in Byte"])
-        self.table.setRowCount(len(object_dict))
-
-        for i, (name, obj) in enumerate(object_dict.items()):
-            self.table.setItem(i, 0, QTableWidgetItem(str(i + 1)))
-            self.table.setItem(i, 1, QTableWidgetItem(name))
-            self.table.setItem(i, 2, QTableWidgetItem(type(obj).__name__))
-            self.table.setItem(i, 3, QTableWidgetItem(f"{sys.getsizeof(obj):,}"))
-
+        
+        self.table.setHorizontalHeaderLabels(["Object Name", "Type", "Size in Byte" ,"Value"])
         self.table.resizeColumnsToContents()
         layout.addWidget(self.table)
         self.setLayout(layout)
         self.show()
+        
+        self.insert_into_table(data = self.data)
+        
+    def insert_into_table(self,data): 
+        self.table.setRowCount(len(data))
+        self.table.clearContents()
+
+        for i in range (len(data)) :    
+                
+            self.table.setItem(i, 0, QTableWidgetItem(data[i]['name']))            
+            self.table.setItem(i, 1, QTableWidgetItem(data[i]['type'])) 
+            self.table.setItem(i, 2, QTableWidgetItem(str(data[i]['size'])))           
+            self.table.setItem(i, 4, QTableWidgetItem(str(data[i]['value'])))
+        self.table.resizeColumnsToContents()
+
+            
+    
+        
+
 
 class FindReplaceDialog(QDialog):
     """
@@ -240,9 +259,22 @@ class IPythonKernel:
        """
 
     def __init__(self):
-        self.shell = InteractiveShell.instance()
+        # self.shell = InteractiveShell.instance()
+        # self.input_waiter = InputWaiter()
+        # self.object_store = {}
+        
+        
+        cfg = Config()
+        cfg.InteractiveShellEmbed = Config()
+        cfg.InteractiveShellEmbed.user_ns = {}
+
+
+        self.shell = InteractiveShell(config=cfg)
         self.input_waiter = InputWaiter()
         self.object_store = {}
+
+
+       
 
     def run_cell(self, code: str, callback):
 
@@ -260,8 +292,8 @@ class IPythonKernel:
         with redirect_stdout(stdout_catcher), redirect_stderr(stderr_buffer):
             result = self.shell.run_cell(code)
        
-        self.object_store = self.inspect_all_user_attributes(self.shell)
-        print('\n\n' , self.object_store)
+        
+       
 
 
         obj = result.result
@@ -357,70 +389,126 @@ class IPythonKernel:
                 return outputs
             
             
-        self.object_store = self.inspect_all_user_attributes(self.shell)
-        print('\n\n' , self.object_store)
+        
         return outputs
     
     
-    def inspect_all_user_attributes(self,shell):
+    def inspect_all_user_attributes(self, shell):
         """
         Returns only user-defined objects from IPython shell:
-        - Global variables, classes, functions, instances
         - Filters out built-ins, system-defined, and internal objects
+        - Only includes types listed in self.known_dtypes
+        - Shows value only for simple types
         """
+      
+
         user_ns = shell.user_ns
         results = []
 
-        def is_simple_type(obj):
-            return isinstance(obj, (int, float, str, bool))
+        allowed_types = None
 
+        def extract_known_dtypes(user_ns):
+            types_set = set()
+
+            for name, obj in user_ns.items():
+                if name.startswith("_"):
+                    continue
+                try:
+                    t = type(obj)
+                    mod = t.__module__
+                    name = t.__name__
+                    full = f"{mod}.{name}" if mod not in ("builtins", None) else name
+                    types_set.add(full)
+                except Exception:
+                    continue
+
+            return sorted(types_set)
+
+        
+        
         def safe_size(obj):
             try:
                 return sys.getsizeof(obj)
             except Exception:
                 return 0
 
+        def is_simple_type(obj):
+            try :
+                return isinstance(obj, (int, float, str, bool))
+            except ReferenceError :
+                return False
+
+        def full_type_name(obj):
+            try:
+                t = type(obj)
+                mod = t.__module__
+                name = t.__name__
+                return f"{mod}.{name}" if mod not in ("builtins", None) else name
+            except ReferenceError:
+                return "ReferenceError"
+
+        def is_supported(obj):
+            try:
+                return full_type_name(obj) in allowed_types
+            except ReferenceError:
+                return False
+        
+        
+        # build list of all librrary Objects
+        allowed_types = set(extract_known_dtypes(user_ns))
+
         for name, obj in user_ns.items():
             if name.startswith("_"):
                 continue
-            if name in {"In", "Out", "get_ipython", "exit", "quit", "__builtins__"}:
+            if name in {"In", "Out", "get_ipython", "exit", "quit", "__builtins__","open"}:
                 continue
-            if getattr(obj, "__module__", None) not in ("__main__", None):
-                continue  # فقط چیزهایی که کاربر نوشته
+            if not is_supported(obj):
+                # print(f"Rejected: {name} → {full_type_name(obj)}")  
+                continue
 
             results.append({
                 "name": name,
                 "type": type(obj).__name__,
                 "size": safe_size(obj),
-                "scope": "global",
+                
                 "value": obj if is_simple_type(obj) else None
             })
 
-            # اگر کلاس کاربره → اتریبیوت‌ها و متدها
-            if inspect.isclass(obj) and obj.__module__ == "__main__":
-                for attr_name, attr_value in vars(obj).items():
-                    if attr_name.startswith("_"):
-                        continue
-                    results.append({
-                        "name": f"{name}.{attr_name}",
-                        "type": type(attr_value).__name__,
-                        "size": safe_size(attr_value),
-                        "scope": "class",
-                        "value": attr_value if is_simple_type(attr_value) else None
-                    })
+            # User-defined class
+            try:
+                if inspect.isclass(obj) and getattr(obj, "__module__", None) == "__main__":
+                    for attr_name, attr_value in vars(obj).items():
+                        if attr_name.startswith("_"):
+                            continue
+                        if not is_supported(attr_value):
+                            continue
+                        results.append({
+                            "name": f"{name}.{attr_name}",
+                            "type": type(attr_value).__name__,
+                            "size": safe_size(attr_value),
+                            
+                            "value": attr_value if is_simple_type(attr_value) else None
+                        })
+                        
 
-            # اگر اینستنس از کلاس کاربره → اتریبیوت‌های نمونه
-            elif hasattr(obj, "__class__") and getattr(obj.__class__, "__module__", None) == "__main__":
-                for attr_name, attr_value in vars(obj).items():
-                    if attr_name.startswith("_"):
-                        continue
-                    results.append({
-                        "name": f"{name}.{attr_name}",
-                        "type": type(attr_value).__name__,
-                        "size": safe_size(attr_value),
-                        "scope": "instance",
-                        "value": attr_value if is_simple_type(attr_value) else None
-                    })
+                # Instance of user-defined class
+                elif hasattr(obj, "__class__") and getattr(obj.__class__, "__module__", None) == "__main__":
+                    for attr_name, attr_value in vars(obj).items():
+                        if attr_name.startswith("_"):
+                            continue
+                        if not is_supported(attr_value):
+                            continue
+                        results.append({
+                            "name": f"{name}.{attr_name}",
+                            "type": type(attr_value).__name__,
+                            "size": safe_size(attr_value),
+                            
+                            "value": attr_value if is_simple_type(attr_value) else None
+                        })
+            except ReferenceError:
+                pass
+                
+        
 
         return results
         
@@ -475,7 +563,7 @@ class WorkWindow(QWidget):
         self.mainwindow_statusbar = status
 
         self.deleted_cells_stack = []
-
+        
         # Set window title from file name
         if self.file_path:
             filename = os.path.basename(self.file_path)
@@ -635,7 +723,7 @@ class WorkWindow(QWidget):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "memory.png")
         memory.setIcon(QIcon(icon_path))
         memory.setToolTip("""
-                                   <b>Object and Variable</b><br>
+                                   <b>Object and Variable List</b><br>
                                    <span style='color:gray;'>Shortcut: <kbd>F9</kbd></span><br>
                                    Object And Variable List
                                    """)
@@ -788,9 +876,13 @@ class WorkWindow(QWidget):
             print("[run_focused_cell] execution finished")
             self.run_btn.setEnabled(True)
             self.btn_run_all.setEnabled(True)
+            self.variable_table(True)
 
         self.focused_cell.notify_done = on_done
         self.focused_cell.run()
+        
+        
+            
             
      
     def execution_done(self):
@@ -1134,12 +1226,21 @@ class WorkWindow(QWidget):
         cell.run()
         loop.exec_()
     
-    def variable_table (self):
-        self.obj_table_window = ObjectInspectorWindow()
+    def variable_table(self, refresh=False):
+        new_data = self.ipython_kernel.inspect_all_user_attributes(self.ipython_kernel.shell)
 
+        if hasattr(self, 'obj_table_window') and self.obj_table_window.isVisible() and refresh:
+            print('Refreshing object table...')
+            self.data = new_data
+            self.obj_table_window.insert_into_table(self.data)
+        elif not refresh and new_data:
+            self.data = new_data
+            self.obj_table_window = ObjectInspectorWindow(self.data)
+                
+    
+            
         
     
-   
 # if __name__ == "__main__":
 #     import sys
 #     from PyQt5.QtWidgets import QApplication
