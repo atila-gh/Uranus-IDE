@@ -1,4 +1,4 @@
-
+from math import ceil
 from PyQt5.QtGui import  QFont,QFontMetrics,QTextCursor
 from PyQt5.QtCore import Qt,pyqtSignal,QEvent 
 from PyQt5.QtWidgets import QPlainTextEdit,QApplication                        
@@ -408,16 +408,36 @@ class CodeEditor(QPlainTextEdit):
         
         # ---------- Auto Indent for Enter after : ----------
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
-           
             cursor = self.textCursor()
             block_text = cursor.block().text()
             base_indent = len(block_text) - len(block_text.lstrip())
+
+            if base_indent > 0 and base_indent % self.tab_size > 0:
+                print('[Base indent in Error]:', base_indent)
+                fix_indent = self.tab_size - (base_indent % self.tab_size)
+                cursor.beginEditBlock()
+                cursor.movePosition(QTextCursor.StartOfBlock)
+                cursor.insertText(" " * fix_indent)
+                cursor.endEditBlock()
+
+                # recalculate base indent
+                block_text = cursor.block().text()
+                base_indent = len(block_text) - len(block_text.lstrip())
+                print('[Base indent after fixing ]:', base_indent)
+
             add_indent = self.tab_size if block_text.rstrip().endswith(":") else 0
             total_indent = base_indent + add_indent
+            print('[Base]:', base_indent, '[Total Indent]:', total_indent)
+
             super().keyPressEvent(event)
-            if cursor.position() > len(block_text):                
+
+            if total_indent > 0:
+                if total_indent % self.tab_size > 0:
+                    total_indent = ceil(total_indent / self.tab_size) * self.tab_size
+                    print('[Indent Error Correct]:', total_indent)
+
                 self.insertPlainText(" " * total_indent)
-            
+
             delayed_emit()
             return
 
