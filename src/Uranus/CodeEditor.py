@@ -425,7 +425,11 @@ class CodeEditor(QPlainTextEdit):
                 base_indent = len(block_text) - len(block_text.lstrip())
                 print('[Base indent after fixing ]:', base_indent)
 
-            add_indent = self.tab_size if block_text.rstrip().endswith(":") else 0
+            # بررسی موقعیت کرسر نسبت به انتهای خط
+            cursor_at_end = cursor.positionInBlock() >= len(block_text.rstrip())
+            ends_with_colon = block_text.rstrip().endswith(":")
+
+            add_indent = self.tab_size if ends_with_colon and cursor_at_end else 0
             total_indent = base_indent + add_indent
             print('[Base]:', base_indent, '[Total Indent]:', total_indent)
 
