@@ -413,7 +413,7 @@ class CodeEditor(QPlainTextEdit):
             base_indent = len(block_text) - len(block_text.lstrip())
 
             if base_indent > 0 and base_indent % self.tab_size > 0:
-                print('[Base indent in Error]:', base_indent)
+               
                 fix_indent = self.tab_size - (base_indent % self.tab_size)
                 cursor.beginEditBlock()
                 cursor.movePosition(QTextCursor.StartOfBlock)
@@ -423,7 +423,7 @@ class CodeEditor(QPlainTextEdit):
                 # recalculate base indent
                 block_text = cursor.block().text()
                 base_indent = len(block_text) - len(block_text.lstrip())
-                print('[Base indent after fixing ]:', base_indent)
+               
 
             # بررسی موقعیت کرسر نسبت به انتهای خط
             cursor_at_end = cursor.positionInBlock() >= len(block_text.rstrip())
@@ -431,14 +431,13 @@ class CodeEditor(QPlainTextEdit):
 
             add_indent = self.tab_size if ends_with_colon and cursor_at_end else 0
             total_indent = base_indent + add_indent
-            print('[Base]:', base_indent, '[Total Indent]:', total_indent)
-
+            
             super().keyPressEvent(event)
 
             if total_indent > 0:
                 if total_indent % self.tab_size > 0:
                     total_indent = ceil(total_indent / self.tab_size) * self.tab_size
-                    print('[Indent Error Correct]:', total_indent)
+                    
 
                 self.insertPlainText(" " * total_indent)
 

@@ -1,6 +1,6 @@
 import json , nbformat , os
 from PyQt5 import sip
-from PyQt5.QtWidgets import  QMainWindow, QWidget, QVBoxLayout, QToolBar, QToolButton, QDockWidget  , QMessageBox , QMdiArea, QAction , QFileDialog ,QMessageBox
+from PyQt5.QtWidgets import  QMainWindow, QWidget, QVBoxLayout, QToolBar, QToolButton, QDockWidget  , QMessageBox , QMdiArea, QAction , QFileDialog ,QMessageBox , QLabel
 from PyQt5.QtGui import QIcon 
 from PyQt5.QtCore import Qt, QSize , QEvent
 
@@ -68,11 +68,26 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.mdi_area)
         self.mdi_area.subWindowActivated.connect(self.sync_working_directory)
         
-
-        # Set up the status bar
+        # Set up the status bar with 3 sections
         self.mainwindow_statusbar = self.statusBar()
-        self.statusBar().showMessage("Ready")
-        self.statusBar().setStyleSheet("QStatusBar { border-top: 1px solid gray; }")
+        self.mainwindow_statusbar.setStyleSheet("QStatusBar { border-top: 1px solid gray; }")
+
+        # Create three QLabel sections
+        
+        self.status_left = QLabel("Ready")
+        self.status_center = QLabel()
+        self.status_right = QLabel("Line: - | Col: -    ")
+        # --- Style customization ---
+        self.status_left.setStyleSheet("color: black; font-size: 11pt;")
+        self.status_center.setStyleSheet("color: black; font-size: 11pt;")
+        self.status_right.setStyleSheet("color: blue; font-weight: normal; font-size: 12pt;")
+
+        # Add them to the status bar
+        self.mainwindow_statusbar.addWidget(self.status_left)
+        self.mainwindow_statusbar.addPermanentWidget(self.status_center, 1)
+        self.mainwindow_statusbar.addPermanentWidget(self.status_right)
+
+        
         
 
         # Initialize UI components
@@ -298,7 +313,7 @@ class MainWindow(QMainWindow):
                         self.ipynb_format_load_file(path)
                         
                     else:
-                        work_widget = WorkWindow(file_path=path , status = self.mainwindow_statusbar )
+                        work_widget = WorkWindow(file_path=path , status_l = self.set_status_left , status_c = self.set_status_center , status_r = self.set_status_right )
                         sub_window = self.mdi_area.addSubWindow(work_widget)
 
 
@@ -333,8 +348,9 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Unexpected error:\n{e}")
 
+       
         # Make Instance Object
-        work_widget = WorkWindow(file_path=path , content = nb , status = self.mainwindow_statusbar)
+        work_widget = WorkWindow(file_path=path , content = nb , status_l = self.set_status_left , status_c = self.set_status_center , status_r = self.set_status_right)
         sub_window = self.mdi_area.addSubWindow(work_widget)
         sub_window.show()
         MainWindow.open_files[path] = sub_window
@@ -435,7 +451,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.warning(self, "Save Error", f"Could not save file:\n{e}")
         else:
-            self.statusBar().showMessage("Saved As: " + new_path)
+            self.set_status_left("Saved As: " + new_path)
             
             
             
@@ -502,6 +518,68 @@ class MainWindow(QMainWindow):
             if os.path.exists(folder):
                 try:
                     os.chdir(folder)                    
-                    self.statusBar().showMessage('[Current Folder] '+folder)
+                    self.set_status_left('[Current Folder] '+folder)
                 except Exception as e:
                     print(f"⚠️ Failed to set working directory: {e}")
+                    
+                    
+    
+    
+
+    def set_status_left(self, text: str):
+        """Update the left section of the status bar."""
+        self.status_left.setText(text)
+
+    def set_status_center(self, text: str):
+        """Update the center section of the status bar."""
+        self.status_center.setText(text)
+
+    def set_status_right(self, text: str):
+        """Update the right section of the status bar."""
+        self.status_right.setText(text)
+
+
+    def closeEvent(self, event):
+        """
+        Ask user about saving each open file individually before closing.
+        """
+        unsaved = []
+
+        
+        for path, subwindow in MainWindow.open_files.items():
+            if subwindow and not sip.isdeleted(subwindow):
+                widget = subwindow.widget()
+                if isinstance(widget, WorkWindow) and widget.is_notebook_modified():
+                    unsaved.append((path, widget))
+
+        if not unsaved:
+            event.accept()
+            return
+
+        for path, widget in unsaved:
+            filename = os.path.basename(path)
+
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Question)
+            msg.setWindowTitle("Save File")
+            msg.setText(f"Do you want to save changes to:\n\n{filename}")
+            msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+            msg.setDefaultButton(QMessageBox.Save)
+
+            choice = msg.exec_()
+
+            if choice == QMessageBox.Save:
+                if hasattr(widget, "ipynb_format_save_file"):
+                    widget.ipynb_format_save_file()
+                continue
+
+            elif choice == QMessageBox.Discard:
+                continue
+
+            elif choice == QMessageBox.Cancel:
+                # لغو بستن کل برنامه
+                event.ignore()
+                return
+
+        # اگر از حلقه با موفقیت خارج شد یعنی هیچ Cancel وجود ندارد
+        event.accept()

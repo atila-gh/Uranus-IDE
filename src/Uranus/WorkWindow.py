@@ -12,44 +12,13 @@ from nbformat.v4 import new_notebook, new_output
 from contextlib import redirect_stdout, redirect_stderr
 from IPython.core.interactiveshell import InteractiveShell
 from Uranus.Cell import Cell
+from Uranus.ObjectInspectorWindow import ObjectInspectorWindow
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QApplication
 from PyQt5.QtCore import Qt
 import sys
 
-class ObjectInspectorWindow(QWidget):
-    def __init__(self , data = {}):
-        super().__init__()
-        self.data = data
-        self.setWindowTitle("User Objects in WorkWindow")
-        self.setGeometry(300, 300, 700, 400)
-        self.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint)
-
-        layout = QVBoxLayout()
-        self.table = QTableWidget()
-        self.table.setColumnCount(4)
-        
-        self.table.setHorizontalHeaderLabels(["Object Name", "Type", "Size in Byte" ,"Value"])
-        self.table.resizeColumnsToContents()
-        layout.addWidget(self.table)
-        self.setLayout(layout)
-        self.show()
-        
-        self.insert_into_table(data = self.data)
-        
-    def insert_into_table(self,data): 
-        self.table.setRowCount(len(data))
-        self.table.clearContents()
-
-        for i in range (len(data)) :    
-                
-            self.table.setItem(i, 0, QTableWidgetItem(data[i]['name']))            
-            self.table.setItem(i, 1, QTableWidgetItem(data[i]['type'])) 
-            self.table.setItem(i, 2, QTableWidgetItem(str(data[i]['size'])))           
-            self.table.setItem(i, 4, QTableWidgetItem(str(data[i]['value'])))
-        self.table.resizeColumnsToContents()
-
-            
+         
     
         
 
@@ -394,22 +363,11 @@ class IPythonKernel:
     
     
     def inspect_all_user_attributes(self, shell):
-        """
-        Returns only user-defined objects from IPython shell:
-        - Filters out built-ins, system-defined, and internal objects
-        - Only includes types listed in self.known_dtypes
-        - Shows value only for simple types
-        """
-      
-
         user_ns = shell.user_ns
         results = []
 
-        allowed_types = None
-
         def extract_known_dtypes(user_ns):
             types_set = set()
-
             for name, obj in user_ns.items():
                 if name.startswith("_"):
                     continue
@@ -421,22 +379,13 @@ class IPythonKernel:
                     types_set.add(full)
                 except Exception:
                     continue
-
             return sorted(types_set)
 
-        
-        
         def safe_size(obj):
             try:
                 return sys.getsizeof(obj)
             except Exception:
                 return 0
-
-        def is_simple_type(obj):
-            try :
-                return isinstance(obj, (int, float, str, bool))
-            except ReferenceError :
-                return False
 
         def full_type_name(obj):
             try:
@@ -452,30 +401,26 @@ class IPythonKernel:
                 return full_type_name(obj) in allowed_types
             except ReferenceError:
                 return False
-        
-        
-        # build list of all librrary Objects
+
         allowed_types = set(extract_known_dtypes(user_ns))
 
         for name, obj in user_ns.items():
             if name.startswith("_"):
                 continue
-            if name in {"In", "Out", "get_ipython", "exit", "quit", "__builtins__","open"}:
+            if name in {"In", "Out", "get_ipython", "exit", "quit", "__builtins__", "open"}:
                 continue
             if not is_supported(obj):
-                # print(f"Rejected: {name} → {full_type_name(obj)}")  
                 continue
 
             results.append({
                 "name": name,
                 "type": type(obj).__name__,
                 "size": safe_size(obj),
-                
-                "value": obj if is_simple_type(obj) else None
+                "value": obj  # ✅ مقدار واقعی حفظ شود
             })
 
-            # User-defined class
             try:
+                # User-defined class
                 if inspect.isclass(obj) and getattr(obj, "__module__", None) == "__main__":
                     for attr_name, attr_value in vars(obj).items():
                         if attr_name.startswith("_"):
@@ -486,10 +431,8 @@ class IPythonKernel:
                             "name": f"{name}.{attr_name}",
                             "type": type(attr_value).__name__,
                             "size": safe_size(attr_value),
-                            
-                            "value": attr_value if is_simple_type(attr_value) else None
+                            "value": attr_value
                         })
-                        
 
                 # Instance of user-defined class
                 elif hasattr(obj, "__class__") and getattr(obj.__class__, "__module__", None) == "__main__":
@@ -502,16 +445,13 @@ class IPythonKernel:
                             "name": f"{name}.{attr_name}",
                             "type": type(attr_value).__name__,
                             "size": safe_size(attr_value),
-                            
-                            "value": attr_value if is_simple_type(attr_value) else None
+                            "value": attr_value
                         })
             except ReferenceError:
                 pass
-                
-        
 
         return results
-        
+            
     
     
 class WorkWindow(QWidget):
@@ -547,7 +487,7 @@ class WorkWindow(QWidget):
     focused_cell = None
 
 
-    def __init__(self, content=None, file_path=None , status = None):
+    def __init__(self, content=None, file_path=None , status_l = None , status_c = None , status_r = None):
         self.debug = False
         if self.debug: print('[WorkWindow]->[__init__]')
 
@@ -560,15 +500,18 @@ class WorkWindow(QWidget):
         self.content = content
         self.execution_in_progress = False
         self.outputs = []
-        self.mainwindow_statusbar = status
+        self.status_l = status_l
+        self.status_c = status_c
+        self.status_r = status_r
+        
 
         self.deleted_cells_stack = []
         
         # Set window title from file name
         if self.file_path:
             filename = os.path.basename(self.file_path)
-            name_only = os.path.splitext(filename)[0]
-            self.setWindowTitle(name_only)
+            self.name_only = os.path.splitext(filename)[0]
+            self.setWindowTitle(self.name_only)
 
         # Set minimum window size
         self.setMinimumSize(620, 600)
@@ -723,7 +666,7 @@ class WorkWindow(QWidget):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "memory.png")
         memory.setIcon(QIcon(icon_path))
         memory.setToolTip("""
-                                   <b>Object and Variable List</b><br>
+                                   <b>Object List</b><br>
                                    <span style='color:gray;'>Shortcut: <kbd>F9</kbd></span><br>
                                    Object And Variable List
                                    """)
@@ -793,7 +736,7 @@ class WorkWindow(QWidget):
                                 Executes the current cell and displays the output.
                                 """)
 
-    def add_cell(self, editor_type=None, content=None, border_color=None, origin="uranus" , outputs = None):
+    def add_cell(self, editor_type=None, content=None, border_color=None, origin="uranus" , outputs = None , status_c = None , status_r = None):
         """
         Adds a new cell at the end of the notebook.
         """
@@ -808,7 +751,10 @@ class WorkWindow(QWidget):
             kernel=self.ipython_kernel,
             notify_done=self.execution_done,
             origin=origin  ,
-            outputs=outputs
+            outputs=outputs,
+            status_c = self.status_c,
+            status_r = self.status_r
+            
         )
 
         # Mouse Event Handler
@@ -905,7 +851,11 @@ class WorkWindow(QWidget):
             cell = Cell(
                 kernel=self.ipython_kernel,
                 notify_done=self.execution_done,
-                origin="uranus"  # ← اضافه‌شده
+                origin="uranus"  ,
+                status_c = self.status_c ,
+                status_r = self.status_r
+                
+                
             )
 
             cell.clicked.connect(lambda c=cell: self.set_focus(c))
@@ -932,7 +882,9 @@ class WorkWindow(QWidget):
             cell = Cell(
                 kernel=self.ipython_kernel,
                 notify_done=self.execution_done,
-                origin="uranus"  # ← اضافه‌شده
+                origin="uranus" ,
+                status_c = self.status_c ,
+                status_r = self.status_r
             )
 
             cell.clicked.connect(lambda c=cell: self.set_focus(c))
@@ -953,7 +905,7 @@ class WorkWindow(QWidget):
             print('[WorkWindow->delete_active_cell]')
 
         if  len(self.cell_widgets) <=1 :
-            self.mainwindow_statusbar.showMessage('You can`t delete the last cell — at least one cell is required. Create a new one first, then you can delete this one.')
+            self.status_l('You can`t delete the last cell — at least one cell is required. Create a new one first, then you can delete this one.')
             return
         
         if self.focused_cell and self.cell_widgets :
@@ -1027,17 +979,18 @@ class WorkWindow(QWidget):
                 cells.append(cell.get_nb_code_cell())
             elif cell.editor_type == "markdown":
                 cells.append(cell.get_nb_markdown_cell())
-        nb = nbformat.v4.new_notebook()
+        nb = nbformat.v4.new_notebook()        
         nb["cells"] = cells
+        
         if self.file_path:
             try:
                 with open(self.file_path, "w", encoding="utf-8") as f:
                     nbformat.write(nb, f)
             except Exception as e:
-                from PyQt5.QtWidgets import QMessageBox
+                
                 QMessageBox.warning(self, "Save Error", f"Could not save file:\n{e}")
             else :
-                self.mainwindow_statusbar.showMessage('Saved To : '+self.file_path)
+                self.status_l('Saved To : '+self.file_path)
 
    
     def load_file(self, content):
@@ -1111,6 +1064,7 @@ class WorkWindow(QWidget):
         cell_type = cell_info["cell_type"]
         source = cell_info["source"]
         color = cell_info["color"]
+        origin = cell_info['origin']
 
         cell = Cell(
             editor_type=cell_type,
@@ -1118,7 +1072,9 @@ class WorkWindow(QWidget):
             border_color=color,
             kernel=self.ipython_kernel,
             notify_done=self.execution_done,
-            origin="uranus"  # ← فقط این خط اضافه شده
+            origin = origin  ,
+            status_c = self.status_c ,
+            status_r = self.status_r
         )
 
         cell.clicked.connect(lambda c=cell: self.set_focus(c))
@@ -1213,7 +1169,7 @@ class WorkWindow(QWidget):
             QMessageBox.warning(self, "Save Error", f"Could not save file:\n{e}")
         else:
             self.file_path = new_path
-            self.mainwindow_statusbar.showMessage("Saved As: " + new_path)
+            self.status_l("Saved As: " + new_path)
 
     def run_cell_blocking(self, cell):
         loop = QEventLoop()
@@ -1228,17 +1184,98 @@ class WorkWindow(QWidget):
     
     def variable_table(self, refresh=False):
         new_data = self.ipython_kernel.inspect_all_user_attributes(self.ipython_kernel.shell)
+       
+        if not new_data :
+            self.status_c("    No Data For Showing In Table -> Run a Cell To Process " )
+            return
 
         if hasattr(self, 'obj_table_window') and self.obj_table_window.isVisible() and refresh:
-            print('Refreshing object table...')
-            self.data = new_data
-            self.obj_table_window.insert_into_table(self.data)
-        elif not refresh and new_data:
-            self.data = new_data
-            self.obj_table_window = ObjectInspectorWindow(self.data)
-                
-    
             
+            
+            self.obj_table_window.add_objects(new_data)
+        elif not refresh:
+            
+            self.obj_table_window = ObjectInspectorWindow(file_name=self.name_only)
+            self.obj_table_window.add_objects(new_data)
+            
+        
+                
+    def closeEvent(self, event):
+        
+     
+            if not self.is_notebook_modified():
+                return 
+            
+            
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Question)
+            msg.setWindowTitle("Save File")
+            msg.setText(f"Do you want to save changes to:\n\n{self.name_only}")
+            msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+            msg.setDefaultButton(QMessageBox.Save)
+
+            choice = msg.exec_()
+
+            if choice == QMessageBox.Save:
+              
+                    self.ipynb_format_save_file()
+               
+
+            elif choice == QMessageBox.Discard:
+                pass
+
+            elif choice == QMessageBox.Cancel:
+               
+                event.ignore()
+                return
+
+        # اگر از حلقه با موفقیت خارج شد یعنی هیچ Cancel وجود ندارد
+            event.accept()
+
+ 
+
+    def is_notebook_modified(self) -> bool:
+        """
+        Compare only the textual content of cells between the loaded notebook
+        (self.content) and the current state of the editor.
+        Ignores metadata and output differences.
+        """
+        try:
+            if not self.content:
+                return False
+
+            # --- استخراج متن از نسخه اولیه ---
+            original_sources = []
+            for cell in self.content.cells:
+                if cell.cell_type == "code":
+                    original_sources.append(cell.source.strip())
+                elif cell.cell_type == "markdown":
+                    original_sources.append(cell.source.strip())
+
+            # --- استخراج متن از نسخه فعلی ---
+            current_sources = []
+            for cell in self.cell_widgets:
+                if cell.editor_type == "code":
+                    current_sources.append(cell.editor.toPlainText().strip())
+                elif cell.editor_type == "markdown":
+                    current_sources.append(cell.d_editor.editor.toHtml().strip())
+
+            # --- مقایسه ---
+            if len(original_sources) != len(current_sources):
+                return True  # تعداد سلول‌ها تغییر کرده
+
+            for old, new in zip(original_sources, current_sources):
+                if old != new:
+                    return True  # محتوای یک سلول فرق دارد
+
+            
+            return False  # هیچ تفاوتی وجود ندارد
+
+        except Exception as e:
+            print(f"[WorkWindow->is_notebook_modified] Error: {e}")
+            return False
+
+
         
     
 # if __name__ == "__main__":

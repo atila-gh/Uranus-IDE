@@ -83,7 +83,7 @@ class Cell(QFrame):
         """
 
     def __init__(self, editor_type=None, content=None, border_color=None,
-             kernel=None, notify_done=None , origin = 'uranus' , outputs=None):
+             kernel=None, notify_done=None , origin = 'uranus' , outputs=None , status_c = None , status_r = None):
         super().__init__()
         self.debug = False
         if self.debug: print('[Cell->init]')
@@ -99,6 +99,8 @@ class Cell(QFrame):
         self.kernel = kernel
         self.cells_content = []
         self.execution_lock = True  # activate the lock in start of Processing
+        self.status_c = status_c
+        self.status_r = status_r
 
 
         # Load settings
@@ -436,6 +438,7 @@ class Cell(QFrame):
     def update_line_char_update(self, line, column):
 
             self.line_number.setText(f"Line: {line} | Chr: {column}")
+            self.status_r(f"Line: {line} | Chr: {column}     ")
 
     def get_nb_code_cell(self):
         code = self.editor.toPlainText()
