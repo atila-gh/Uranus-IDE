@@ -194,9 +194,9 @@ class CodeHighlighter(QSyntaxHighlighter):
         string_format = QTextCharFormat()
         string_format.setForeground(QColor("#D14"))
 
-        # Numbers (123, 3.14)
-        number_format = QTextCharFormat()
-        number_format.setForeground(QColor("#1C00CF"))
+        # # Numbers (123, 3.14)
+        # number_format = QTextCharFormat()
+        # number_format.setForeground(QColor("#1C00CF"))
 
         # Comments (# توضیح)
         comment_format = QTextCharFormat()
@@ -218,7 +218,7 @@ class CodeHighlighter(QSyntaxHighlighter):
         #library_function_format.setFontWeight(QFont.Bold)
 
 
-
+        
         # ==========================
         # اضافه کردن قوانین
         # ==========================
@@ -260,7 +260,7 @@ class CodeHighlighter(QSyntaxHighlighter):
         self.rules.append((QRegExp(r"#.*"), comment_format))
 
         # اعداد
-        self.rules.append((QRegExp(r"\b\d+(\.\d+)?\b"), number_format))
+        # self.rules.append((QRegExp(r"\b\d+(\.\d+)?\b"), number_format))
         
         # دکوراتور 
         self.rules.append((QRegExp(r"^@\w+(\(.*\))?"), decorator_format))
