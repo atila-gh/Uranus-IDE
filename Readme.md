@@ -88,6 +88,11 @@ pip install Uranus-IDE
 ```bash
 uranus
 ```
+## Update Project to the Last Version in Pypi.org
+1 - go to cmd or terminal
+```bash
+pip install --upgrade uranus-ide
 
+```
 
 
