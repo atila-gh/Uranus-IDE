@@ -191,12 +191,17 @@ class CodeHighlighter(QSyntaxHighlighter):
         module_format.setForeground(QColor("#FF8800"))
 
         # Strings ("hello", 'world')
-        string_format = QTextCharFormat()
-        string_format.setForeground(QColor("#D14"))
+        self.string_format = QTextCharFormat()
+        self.string_format.setForeground(QColor("#D14"))
 
-        # # Numbers (123, 3.14)
-        # number_format = QTextCharFormat()
-        # number_format.setForeground(QColor("#1C00CF"))
+        # Numbers (123, 3.14)
+        number_format = QTextCharFormat()
+        number_format.setForeground(QColor("#1C00CF"))
+        # number_format.setFontWeight(QFont.Bold)
+        # number_format.setFontItalic(True)
+        
+
+        
 
         # Comments (# توضیح)
         comment_format = QTextCharFormat()
@@ -253,14 +258,14 @@ class CodeHighlighter(QSyntaxHighlighter):
 
        
         # اضافه به rules برای حالت‌های تک‌خطی
-        self.rules.append((QRegExp(r'"[^"\\]*(\\.[^"\\]*)*"'), string_format))
-        self.rules.append((QRegExp(r"'[^'\\]*(\\.[^'\\]*)*'"), string_format))
+        self.rules.append((QRegExp(r'"[^"\\]*(\\.[^"\\]*)*"'), self.string_format))
+        self.rules.append((QRegExp(r"'[^'\\]*(\\.[^'\\]*)*'"), self.string_format))
 
         # کامنت‌ها
         self.rules.append((QRegExp(r"#.*"), comment_format))
 
         # اعداد
-        # self.rules.append((QRegExp(r"\b\d+(\.\d+)?\b"), number_format))
+        self.rules.append((QRegExp(r"\b\d+(\.\d+)?\b"), number_format))
         
         # دکوراتور 
         self.rules.append((QRegExp(r"^@\w+(\(.*\))?"), decorator_format))
@@ -316,27 +321,33 @@ class CodeHighlighter(QSyntaxHighlighter):
 
     # this method is Override QtGui Standard Method dont Touch This 
     def highlightBlock(self, text):
+        self.setCurrentBlockState(0)
+        block_start = self.currentBlock().position()
+        block_end = block_start + len(text)
+
+        # بررسی رشته‌های چندخطی
+        if not hasattr(self, "triple_quote_ranges"):
+            self.triple_quote_ranges = self.find_triple_quote_blocks()
+
+        in_string_block = False
+        for start_offset, end_offset in self.triple_quote_ranges:
+            if start_offset <= block_end and end_offset >= block_start:
+                in_string_block = True
+                start = max(start_offset, block_start) - block_start
+                end = min(end_offset, block_end) - block_start
+                self.setFormat(start, end - start, self.string_format)
+
+        # اگر در رشته هستیم، هیچ قاعده‌ای اجرا نشه
+        if in_string_block:
+            return
+
+        # اجرای قواعد معمول
         for pattern, fmt in self.rules:
             index = pattern.indexIn(text)
             while index >= 0:
                 length = pattern.matchedLength()
                 self.setFormat(index, length, fmt)
                 index = pattern.indexIn(text, index + length)
-
-        self.setCurrentBlockState(0)
-
-        # 🔹 رنگی‌سازی رشته‌های چندخطی
-        block_start = self.currentBlock().position()
-        block_end = block_start + len(text)
-
-        if not hasattr(self, "triple_quote_ranges"):
-            self.triple_quote_ranges = self.find_triple_quote_blocks()
-
-        for start_offset, end_offset in self.triple_quote_ranges:
-            if end_offset < block_start or start_offset > block_end:
-                continue
-            start = max(start_offset, block_start) - block_start
-            end = min(end_offset, block_end) - block_start
-            self.setFormat(start, end - start, self.string_format)
+                
             
         
