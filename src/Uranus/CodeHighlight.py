@@ -325,9 +325,11 @@ class CodeHighlighter(QSyntaxHighlighter):
         block_start = self.currentBlock().position()
         block_end = block_start + len(text)
 
-        # بررسی رشته‌های چندخطی
-        if not hasattr(self, "triple_quote_ranges"):
+        full_text = self.document().toPlainText()
+        if not hasattr(self, "cached_text") or self.cached_text != full_text:
             self.triple_quote_ranges = self.find_triple_quote_blocks()
+            self.cached_text = full_text
+            
 
         in_string_block = False
         for start_offset, end_offset in self.triple_quote_ranges:

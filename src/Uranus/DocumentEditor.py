@@ -52,6 +52,10 @@ class RichTextEditor(QTextEdit):
         else:
             super().insertFromMimeData(source)
 
+
+
+
+
     def mouseDoubleClickEvent(self, event):
         self.doubleClicked.emit()
         super().mouseDoubleClickEvent(event)
@@ -344,11 +348,17 @@ class DocumentEditor(QWidget):
             char_fmt.setFontWeight(weights[index])
 
             if cursor.hasSelection():
+                start = cursor.selectionStart()
+                end = cursor.selectionEnd()
+
                 cursor.mergeCharFormat(char_fmt)
-                # 🔁 بازنشانی فرمت کرسر بعد از انتخاب
-                cursor.clearSelection()
                 self.editor.setTextCursor(cursor)
-                self.editor.setCurrentCharFormat(QTextCharFormat())  # بازنشانی کامل
+
+                
+                new_cursor = self.editor.textCursor()
+                new_cursor.setPosition(start)
+                new_cursor.setPosition(end, QTextCursor.KeepAnchor)
+                self.editor.setTextCursor(new_cursor)
             else:
                 self.editor.setCurrentCharFormat(char_fmt)
 
@@ -395,21 +405,22 @@ class DocumentEditor(QWidget):
             fmt = QTextCharFormat()
             fmt.setForeground(QColor(color))
 
-            # ✅ ذخیره رنگ جاری قبل از تغییر
+            
             original_format = self.editor.currentCharFormat()
 
             if cursor.hasSelection():
+                start = cursor.selectionStart()
+                end = cursor.selectionEnd()
+
                 cursor.mergeCharFormat(fmt)
                 self.editor.setTextCursor(cursor)
 
-                # ✅ انتقال کرسر به انتهای انتخاب برای جلوگیری از override
-                cursor.clearSelection()
-                self.editor.setTextCursor(cursor)
-
-                # ✅ بازگرداندن رنگ جاری قبلی
-                self.editor.setCurrentCharFormat(original_format)
+               
+                new_cursor = self.editor.textCursor()
+                new_cursor.setPosition(start)
+                new_cursor.setPosition(end, QTextCursor.KeepAnchor)
+                self.editor.setTextCursor(new_cursor)
             else:
-                # اگر انتخابی نبود، رنگ جاری را تغییر بده
                 self.editor.setCurrentCharFormat(fmt)
 
         icon_path = os.path.join(os.path.dirname(__file__), "image", "text_color.png")

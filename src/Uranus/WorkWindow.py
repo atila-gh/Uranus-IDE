@@ -503,6 +503,8 @@ class WorkWindow(QWidget):
         self.status_l = status_l
         self.status_c = status_c
         self.status_r = status_r
+        self.saved_flag = False
+        self.original_sources = []
         
 
         self.deleted_cells_stack = []
@@ -977,8 +979,10 @@ class WorkWindow(QWidget):
         for cell in self.cell_widgets:
             if cell.editor_type == "code":
                 cells.append(cell.get_nb_code_cell())
+                self.original_sources.append(cell.editor.toPlainText().strip())
             elif cell.editor_type == "markdown":
                 cells.append(cell.get_nb_markdown_cell())
+                self.original_sources.append(cell.d_editor.editor.toHtml().strip())
         nb = nbformat.v4.new_notebook()        
         nb["cells"] = cells
         
@@ -991,6 +995,8 @@ class WorkWindow(QWidget):
                 QMessageBox.warning(self, "Save Error", f"Could not save file:\n{e}")
             else :
                 self.status_l('Saved To : '+self.file_path)
+                self.saved_flag = True
+                
 
    
     def load_file(self, content):
@@ -1244,13 +1250,13 @@ class WorkWindow(QWidget):
             if not self.content:
                 return False
 
-            # --- استخراج متن از نسخه اولیه ---
-            original_sources = []
-            for cell in self.content.cells:
-                if cell.cell_type == "code":
-                    original_sources.append(cell.source.strip())
-                elif cell.cell_type == "markdown":
-                    original_sources.append(cell.source.strip())
+            # orginal source extract if not saved 
+            if not self.saved_flag :
+                for cell in self.content.cells:
+                    if cell.cell_type == "code":
+                        self.original_sources.append(cell.source.strip())
+                    elif cell.cell_type == "markdown":
+                        self.original_sources.append(cell.source.strip())
 
             # --- استخراج متن از نسخه فعلی ---
             current_sources = []
@@ -1261,10 +1267,10 @@ class WorkWindow(QWidget):
                     current_sources.append(cell.d_editor.editor.toHtml().strip())
 
             # --- مقایسه ---
-            if len(original_sources) != len(current_sources):
+            if len(self.original_sources) != len(current_sources):
                 return True  # تعداد سلول‌ها تغییر کرده
 
-            for old, new in zip(original_sources, current_sources):
+            for old, new in zip(self.original_sources, current_sources):
                 if old != new:
                     return True  # محتوای یک سلول فرق دارد
 
