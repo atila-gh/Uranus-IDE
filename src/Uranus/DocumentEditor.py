@@ -297,10 +297,6 @@ class DocumentEditor(QWidget):
 
         
 
-
-
-        
-
         # Center Align
         icon_path = os.path.join(os.path.dirname(__file__), "image", "center.png")
         align_center = QAction(QIcon(icon_path), "Center", self)
@@ -472,14 +468,23 @@ class DocumentEditor(QWidget):
 
     
     def insert_image(self):
-        """
-        Opens file dialog and inserts selected image into the editor.
-        """
-        # print('[DocumentEditor->insert_image]')
         path, _ = QFileDialog.getOpenFileName(self, "Select Image", "", "Images (*.png *.jpg *.bmp)")
         if path:
-            cursor = self.editor.textCursor()
-            cursor.insertImage(path)
+            from PyQt5.QtGui import QImage
+            from PyQt5.QtCore import QBuffer
+
+            image = QImage(path)
+            if image.isNull():
+                QMessageBox.warning(self, "Insert Failed", "Could not load image.")
+                return
+
+            buffer = QBuffer()
+            buffer.open(QBuffer.WriteOnly)
+            image.save(buffer, "PNG")
+            img_base64 = base64.b64encode(buffer.data()).decode("utf-8")
+            html = f'<img src="data:image/png;base64,{img_base64}"><br>'
+
+            self.editor.insertHtml(html)
 
     def selected_image_format(self):
         """
@@ -568,7 +573,6 @@ class DocumentEditor(QWidget):
         buttons.accepted.connect(apply_resize)
         buttons.rejected.connect(dialog.reject)
         dialog.exec()
-
    
     def adjust_height_document_editor(self):
         font_metrics = QFontMetrics(self.editor.font())
@@ -607,7 +611,6 @@ class DocumentEditor(QWidget):
             self.setMaximumHeight(int(final_height))
 
         self.updateGeometry()
-
 
     def mousePressEvent(self, event):
        
@@ -706,8 +709,6 @@ class DocumentEditor(QWidget):
 
         return super().eventFilter(obj, event)
 
-
-
     def apply_direction_to_selection(self, direction: Qt.LayoutDirection):
         cursor = self.editor.textCursor()
 
@@ -734,8 +735,6 @@ class DocumentEditor(QWidget):
             block_format.setLayoutDirection(direction)
             temp_cursor.mergeBlockFormat(block_format)
             block = block.next()
-    
-    
     
     def update_heading_combo(self):
         cursor = self.editor.textCursor()
