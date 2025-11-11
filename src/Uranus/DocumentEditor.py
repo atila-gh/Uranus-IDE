@@ -341,8 +341,8 @@ class DocumentEditor(QWidget):
             char_fmt = QTextCharFormat()
 
             # define font size and font weight
-            sizes = [14, 22, 18, 16]
-            weights = [QFont.Normal, QFont.Bold, QFont.Bold, QFont.Bold]
+            sizes = [14, 26, 22, 18, 16]
+            weights = [QFont.Normal, QFont.Bold, QFont.Bold, QFont.Bold, QFont.Bold]
 
             char_fmt.setFontPointSize(sizes[index])
             char_fmt.setFontWeight(weights[index])
@@ -363,7 +363,7 @@ class DocumentEditor(QWidget):
                 self.editor.setCurrentCharFormat(char_fmt)
 
         self.heading_combo = QComboBox()
-        self.heading_combo.addItems(["Normal", "Heading 2", "Heading 3", "Heading 4"])
+        self.heading_combo.addItems(["Normal", "Heading 1","Heading 2", "Heading 3", "Heading 4"])
         self.heading_combo.setToolTip("Heading style")
         # adjust the lenght of Comobox
         font_metrics = self.heading_combo.fontMetrics()
@@ -739,15 +739,26 @@ class DocumentEditor(QWidget):
     
     def update_heading_combo(self):
         cursor = self.editor.textCursor()
+        
+
+        if cursor.hasSelection():
+            self.heading_combo.blockSignals(True)
+            self.heading_combo.setCurrentIndex(-1)
+            self.heading_combo.blockSignals(False)
+            return
+          
+        
+        
         fmt = cursor.charFormat()
         size = fmt.fontPointSize()
-
-        # تطبیق اندازه با heading‌ها
-        if size == 22:
-            self.heading_combo.setCurrentIndex(1)  # Heading 2
+        
+        if size == 26:
+            self.heading_combo.setCurrentIndex(1)  # Heading 1
         elif size == 18:
-            self.heading_combo.setCurrentIndex(2)  # Heading 3
+            self.heading_combo.setCurrentIndex(2)  # Heading 2
+        elif size == 18:
+            self.heading_combo.setCurrentIndex(3)  # Heading 3
         elif size == 16:
-            self.heading_combo.setCurrentIndex(3)  # Heading 4
+            self.heading_combo.setCurrentIndex(4)  # Heading 4
         else:
             self.heading_combo.setCurrentIndex(0)  # Normal
