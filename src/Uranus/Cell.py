@@ -1,4 +1,4 @@
-import re , importlib , html2text
+import re ,  html2text , hashlib
 from PyQt5.QtGui import QFont, QTextCursor
 from PyQt5.QtCore import Qt, pyqtSignal, QThread, QObject , QTimer
 from PyQt5.QtWidgets import QFrame, QHBoxLayout,QSizePolicy, QRadioButton, QButtonGroup, QVBoxLayout , QLabel, QScrollArea , QApplication
@@ -472,7 +472,7 @@ class Cell(QFrame):
 
         return cell
 
-    def get_nb_markdown_cell(self):
+    def get_nb_markdown_cell1(self):
         """
         Converts the current cell's content to a Jupyter-compatible Markdown cell.
         If origin is not 'uranus', HTML is converted to Markdown using html2text.
@@ -573,3 +573,42 @@ class Cell(QFrame):
                 self.output_editor.adjust_height()
 
         self.outputs = outputs
+        
+
+
+
+    def get_nb_markdown_cell(self):
+        """
+        Converts the current cell's content to a Jupyter-compatible Markdown cell.
+        Assigns a stable ID based on content hash to avoid unnecessary file changes.
+        """
+
+        html = self.d_editor.editor.toHtml()
+
+        if self.origin != "uranus":
+            converter = html2text.HTML2Text()
+            converter.ignore_links = False
+            converter.body_width = 0
+            markdown = converter.handle(html)
+            content = markdown
+            origin = "jupyter"
+            edited = True
+        else:
+            content = html
+            origin = "uranus"
+            edited = False
+
+        # 🎯 تولید ID پایدار بر اساس محتوای سلول
+        hash_id = hashlib.md5(content.encode("utf-8")).hexdigest()
+
+        cell = new_markdown_cell(source=content)
+        cell['id'] = hash_id  # ✅ تثبیت ID
+        cell['metadata']['bg'] = self.border_color
+        cell['metadata']['uranus'] = {
+            "origin": origin,
+            "edited": edited
+        } if edited else {
+            "origin": origin
+        }
+
+        return cell
