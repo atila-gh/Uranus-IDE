@@ -2,7 +2,8 @@ from PyQt5.QtWidgets import QWidget, QTreeView, QInputDialog, QMenu , QAction , 
 from PyQt5.QtCore import Qt, QPoint, QSize , pyqtSignal , QModelIndex
 from PyQt5.QtGui import QCursor,QIcon
 from PyQt5.QtWidgets import QFileSystemModel
-import shutil , os , stat
+import shutil , os , stat ,platform , subprocess
+
 
 
 from Uranus.SettingWindow import load_setting
@@ -317,13 +318,22 @@ class FileTreeView(QTreeView):
         else:
             path = self.path  # مسیر جاری که در select_project_folder تنظیم شده
 
-        
         try:
-            os.startfile(path)
+            system = platform.system()
+            if system == "Windows":
+                os.startfile(path)
+            elif system == "Darwin":  # macOS
+                subprocess.run(["open", path], check=True)
+            else:  # Linux and others
+                subprocess.run(["xdg-open", path], check=True)
+
             os.chdir(path)
 
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Could not open:\n{e}")
+
+
+    
 
     def delete_item(self):
         index = self.currentIndex()
