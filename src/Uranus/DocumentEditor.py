@@ -1,7 +1,7 @@
 
 
 import os , base64
-from PyQt5.QtGui import QIcon, QTextCharFormat, QFont, QFontMetrics, QTextImageFormat, QTextCursor, QColor , QMouseEvent
+from PyQt5.QtGui import QIcon, QTextCharFormat, QFont, QFontMetrics, QTextImageFormat, QTextCursor, QColor , QMouseEvent , QPixmap
 from PyQt5.QtCore import  QSize , QEvent ,pyqtSignal, QBuffer, Qt
 from PyQt5.QtWidgets import (QDialog, QToolBar, QDialogButtonBox, QLabel, QWidget, QVBoxLayout, QTextEdit,QAction , QScrollArea
 , QFileDialog, QMessageBox, QSlider, QComboBox, QHBoxLayout, QPushButton)
@@ -504,7 +504,7 @@ class DocumentEditor(QWidget):
          #print('[DocumentEditor->set_text_cursor]')
          self.editor.setTextCursor(cursor)
 
-    def resize_selected_image(self):
+    def resize_selected_image1(self):
         """
         Opens a dialog to resize the currently selected image.
         Applies percentage-based scaling while preserving aspect ratio.
@@ -573,6 +573,126 @@ class DocumentEditor(QWidget):
         buttons.accepted.connect(apply_resize)
         buttons.rejected.connect(dialog.reject)
         dialog.exec()
+   
+
+    def resize_selected_image(self):
+            """
+            Resize the selected image (Base64 or file-based) with proper Base64 decoding,
+            QPixmap reconstruction, scaling, and reinsertion.
+            """
+            image_format = self.selected_image_format()
+            if not image_format or not image_format.name():
+                return
+
+            name = image_format.name()
+
+            # ---------------------------------------------------------
+            # 1) Load QPixmap correctly (Base64 OR a file path)
+            # ---------------------------------------------------------
+            
+            pixmap = QPixmap()
+
+            if name.startswith("data:image"):
+                try:
+                    base64_data = name.split(",")[1]
+                    raw_bytes = base64.b64decode(base64_data)
+                    pixmap.loadFromData(raw_bytes)
+                except Exception:
+                    QMessageBox.warning(self, "Resize Failed", "Could not decode Base64 image.")
+                    return
+            else:
+                # شاید کاربر عکس از فایل وارد کرده باشد
+                if not pixmap.load(name):
+                    QMessageBox.warning(self, "Resize Failed", "Could not load image from file.")
+                    return
+
+            original_width = pixmap.width()
+            original_height = pixmap.height()
+
+            if original_width == 0 or original_height == 0:
+                QMessageBox.warning(self, "Resize Failed", "Could not load image dimensions.")
+                return
+
+            # ---------------------------------------------------------
+            # 2) Create resize dialog
+            # ---------------------------------------------------------
+            dialog = QDialog(self)
+            dialog.setWindowTitle("Resize Image")
+            layout = QVBoxLayout(dialog)
+
+            percent_label = QLabel("Size: 100%")
+            percent_label.setAlignment(Qt.AlignCenter)
+            layout.addWidget(percent_label)
+
+            size_slider = QSlider(Qt.Horizontal)
+            size_slider.setRange(10, 200)
+            size_slider.setValue(100)
+            layout.addWidget(size_slider)
+
+            size_slider.valueChanged.connect(lambda v: percent_label.setText(f"Size: {v}%"))
+
+            buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+            layout.addWidget(buttons)
+
+            # ---------------------------------------------------------
+            # 3) Apply resize when OK is pressed
+            # ---------------------------------------------------------
+            def apply_resize():
+                scale = size_slider.value() / 100.0
+                new_width = int(original_width * scale)
+                new_height = int(original_height * scale)
+
+                # Scale pixmap
+                new_pixmap = pixmap.scaled(
+                    new_width, new_height,
+                    Qt.KeepAspectRatio,
+                    Qt.SmoothTransformation
+                )
+
+                # ---------------------------------------------------------
+                # 4) Convert back to Base64 (always store as Base64)
+                # ---------------------------------------------------------
+                buffer = QBuffer()
+                buffer.open(QBuffer.WriteOnly)
+                new_pixmap.save(buffer, "PNG")
+
+                new_base64 = base64.b64encode(buffer.data()).decode("utf-8")
+                new_src = f"data:image/png;base64,{new_base64}"
+
+                # ---------------------------------------------------------
+                # 5) Insert image back into the document
+                # ---------------------------------------------------------
+                cursor = self.editor.textCursor()
+
+                # اگر کاربر تصویر را انتخاب کرده بود → پاک کن
+                if cursor.hasSelection():
+                    cursor.removeSelectedText()
+                else:
+                    # اگر روی تصویر هست → تصویر قبلی را حذف کن
+                    temp_cursor = QTextCursor(cursor)
+                    temp_cursor.movePosition(QTextCursor.Left, QTextCursor.MoveAnchor, 1)
+                    if temp_cursor.charFormat().isImageFormat():
+                        temp_cursor.deleteChar()
+                        cursor = temp_cursor
+
+                # فرمت جدید + سایز جدید
+                new_format = QTextImageFormat()
+                new_format.setName(new_src)
+                new_format.setWidth(new_width)
+                new_format.setHeight(new_height)
+
+                cursor.insertImage(new_format)
+                self.editor.setTextCursor(cursor)
+                self.editor.setFocus()
+
+                dialog.accept()
+
+            buttons.accepted.connect(apply_resize)
+            buttons.rejected.connect(dialog.reject)
+
+            dialog.exec()
+        
+   
    
     def adjust_height_document_editor(self):
         font_metrics = QFontMetrics(self.editor.font())
