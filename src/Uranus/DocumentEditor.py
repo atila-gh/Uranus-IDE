@@ -507,7 +507,7 @@ class DocumentEditor(QWidget):
          #print('[DocumentEditor->set_text_cursor]')
          self.editor.setTextCursor(cursor)
 
-    def resize_selected_image1(self):
+    def resize_selected_image(self):
         """
         Opens a dialog to resize the currently selected image.
         Applies percentage-based scaling while preserving aspect ratio.
@@ -697,44 +697,7 @@ class DocumentEditor(QWidget):
         
    
    
-    def adjust_height_document_editor(self):
-        font_metrics = QFontMetrics(self.editor.font())
-        line_height = font_metrics.lineSpacing()
-
-        doc = self.editor.document()
-        layout = doc.documentLayout()
-        content_height = 0
-
-        for i in range(doc.blockCount()):
-            block = doc.findBlockByNumber(i)
-            content_height += layout.blockBoundingRect(block).height()
-
-        padding = line_height
-        toolbar_height = 30 if self.toolbar.isVisible() else 0
-        margin = 0
-
-        # اگر ادیتور خالی بود، مقدار پیش‌فرض بده
-        if not self.editor.toPlainText().strip():
-            content_height = line_height * 3  # حداقل ۳ خط
-
-        new_height = int(content_height + padding + toolbar_height + margin)
-
-        if self.readonly_mode:
-            min_lines = 3
-            min_height = line_height * min_lines + toolbar_height + padding
-            new_height = int(max(content_height + padding + toolbar_height + margin, min_height))
-            self.setMinimumHeight(int(new_height))
-            self.setMaximumHeight(int(new_height))
-        else:
-            # حالت ویرایش: حداقل ۳ خط، حداکثر ۸۰۰ پیکسل
-            min_height = line_height * 3 + toolbar_height + padding
-            max_height = 800
-            final_height = int(max(min_height, min(new_height, max_height)))
-            self.setMinimumHeight(int(final_height))
-            self.setMaximumHeight(int(final_height))
-
-        self.updateGeometry()
-
+    
     def mousePressEvent(self, event):
        
         super().mousePressEvent(event)
@@ -884,6 +847,59 @@ class DocumentEditor(QWidget):
             self.heading_combo.setCurrentIndex(4)  # Heading 4
         else:
             self.heading_combo.setCurrentIndex(0)  # Normal
-            
+ 
+ 
+    def adjust_height_document_editor(self):
+        doc = self.editor.document()
+        layout = doc.documentLayout()
 
+        # ارتفاع واقعی محتوای رندر شده
+        content_height = layout.documentSize().height()
+               
+        cm = self.editor.contentsMargins()
+        toolbar_height = 30 if self.toolbar.isVisible() else 0
+        
+
+        
+        new_height = int(content_height 
+                 + toolbar_height 
+                 + doc.documentMargin()   # می‌تونی اینو کم یا حذف کنی
+                 + self.editor.frameWidth() * 2  # یا فقط یک بار بذاری
+                 + cm.top() 
+                 + cm.bottom()
+                 + 2)   # به جای 10، فقط 2 پیکسل اضافه
+
+
+
+        if self.readonly_mode:
+            self.setMinimumHeight(new_height)
+            self.setMaximumHeight(new_height)
+        else:
+            min_height = 100
+            max_height = 800
+            final_height = max(min_height, min(new_height, max_height))
+            self.setMinimumHeight(final_height)
+            self.setMaximumHeight(final_height)
+
+        self.updateGeometry()
+        print(f"Applied new_h: {new_height}, editor.h now: {self.editor.height()}")
+        doc = self.editor.document()
+        layout = doc.documentLayout()
+
+        print(f"widgetResizable: {self.scroll_area.widgetResizable()}")
+        print(f"documentSize.h: {layout.documentSize().height()}")   # ارتفاع واقعی محتوای رندرشده
+        print(f"documentMargin: {doc.documentMargin()}")
+
+        cm = self.editor.contentsMargins()
+        print(f"contentsMargins: {cm.left()}, {cm.top()}, {cm.right()}, {cm.bottom()}")
+        print(f"frameWidth: {self.editor.frameWidth()}")
+
+        print(f"sizeHint.h: {self.editor.sizeHint().height()}")
+        print(f"viewport.h: {self.scroll_area.viewport().size().height()}")
+        print(f"editor.h before: {self.editor.height()}")
+     
+     
+     
+        
    
+

@@ -361,6 +361,11 @@ class Cell(QFrame):
             self.set_color(border_color)                    
             
             self.d_editor.editor.textChanged.connect(self.d_editor.adjust_height_document_editor)
+            
+            self.d_editor.editor.document().adjustSize()
+            QApplication.processEvents()
+           
+           
             QTimer.singleShot(0, self.d_editor.adjust_height_document_editor) # adjust after cell rendering
             self.d_editor.editor.setFocus(True)
 
@@ -548,8 +553,6 @@ class Cell(QFrame):
         self.outputs = outputs
         
 
-
-
     def get_nb_markdown_cell(self):
         """
         Converts the current cell's content to a Jupyter-compatible Markdown cell.
@@ -585,3 +588,6 @@ class Cell(QFrame):
         }
 
         return cell
+    
+    
+    

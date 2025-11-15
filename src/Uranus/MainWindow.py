@@ -5,7 +5,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QSize , QEvent
 
 
-from Uranus.utils import FileTreeView , FileTreePanel
+from Uranus.utils import  FileTreePanel
  # Make sure your FileTreeView is updated as below
 from Uranus.WorkWindow import WorkWindow 
 from Uranus.SettingWindow import SettingsWindow , load_setting
@@ -380,8 +380,6 @@ class MainWindow(QMainWindow):
         self.save_settings(self.setting)
         os.chdir(folder_path)
 
-
-
     def create_project_from_selected_folder(self):
         folder_path = QFileDialog.getExistingDirectory(self, "Select Project Folder")
         if not folder_path:
@@ -454,7 +452,6 @@ class MainWindow(QMainWindow):
             self.set_status_left("Saved As: " + new_path)
             
             
-            
     def open_ipynb_file(self):
         """
         Opens a file dialog to select a .ipynb file and loads it into a new WorkWindow.
@@ -522,9 +519,7 @@ class MainWindow(QMainWindow):
                 except Exception as e:
                     print(f"⚠️ Failed to set working directory: {e}")
                     
-                    
-    
-    
+  
 
     def set_status_left(self, text: str):
         """Update the left section of the status bar."""
