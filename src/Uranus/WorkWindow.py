@@ -19,10 +19,7 @@ from PyQt5.QtCore import Qt
 import sys
 
          
-    
-        
-
-
+ 
 class FindReplaceDialog(QDialog):
     """
         A dialog window for performing find and replace operations within a text editor.
@@ -486,7 +483,6 @@ class WorkWindow(QWidget):
 
     focused_cell = None
 
-
     def __init__(self, content=None, file_path=None , status_l = None , status_c = None , status_r = None):
         self.debug = False
         if self.debug: print('[WorkWindow]->[__init__]')
@@ -772,8 +768,7 @@ class WorkWindow(QWidget):
         self.set_focus(cell)  # set cell focused
 
         return cell
- 
-         
+          
     def set_focus(self, cell):
         if self.debug:print('[WorkWindow->set_focus]')
 
@@ -818,7 +813,11 @@ class WorkWindow(QWidget):
         if not self.focused_cell:
             return
 
+       
         # 🔒 غیرفعال کردن دکمه‌ها
+        self.status_c("")
+        self.status_l(self.file_path)
+        
         self.run_btn.setEnabled(False)
         self.btn_run_all.setEnabled(False)
 
@@ -831,9 +830,7 @@ class WorkWindow(QWidget):
 
         self.focused_cell.notify_done = on_done
         self.focused_cell.run()
-        
-            
-     
+
     def execution_done(self):
         self.execution_in_progress = False
         self.set_focus(self.focused_cell)
@@ -1004,9 +1001,7 @@ class WorkWindow(QWidget):
             else :
                 self.status_l('Saved To : '+self.file_path)
                 self.saved_flag = True
-                
-
-   
+  
     def load_file(self, content):
         if self.debug:
             print('[WorkWindow->load_file]')
@@ -1048,8 +1043,7 @@ class WorkWindow(QWidget):
 
         # فضای اضافه برای اسکرول
         self.cell_layout.addItem(QSpacerItem(20, 400, QSizePolicy.Minimum, QSizePolicy.Fixed))
-   
-   
+
     def move_cell_up(self):
         if self.debug: print('[WorkWindow->move_cell_up]')
         if self.focused_cell and self.cell_widgets:
@@ -1115,7 +1109,6 @@ class WorkWindow(QWidget):
                 self.cell_layout.insertWidget(index + 1, self.focused_cell)
                 self.set_focus(self.focused_cell)
 
-
     def run_all_cells(self):
         print('[WorkWindow->run_all_cells]')
 
@@ -1132,7 +1125,6 @@ class WorkWindow(QWidget):
         self.run_btn.setEnabled(True)
         self.btn_run_all.setEnabled(True)
 
-
     def find_replace(self):       
         
         
@@ -1147,7 +1139,6 @@ class WorkWindow(QWidget):
                 editor = self.focused_cell.d_editor.editor
                 dialog = FindReplaceDialog(editor, self)
                 dialog.exec_()
-
 
     def save_as_file(self):
         """
@@ -1211,9 +1202,7 @@ class WorkWindow(QWidget):
             
             self.obj_table_window = ObjectInspectorWindow(file_name=self.name_only)
             self.obj_table_window.add_objects(new_data)
-            
-        
-                
+              
     def closeEvent(self, event):
         
      
@@ -1245,8 +1234,6 @@ class WorkWindow(QWidget):
 
         # اگر از حلقه با موفقیت خارج شد یعنی هیچ Cancel وجود ندارد
             event.accept()
-
- 
 
     def is_notebook_modified1(self) -> bool:
         """
@@ -1288,8 +1275,7 @@ class WorkWindow(QWidget):
         except Exception as e:
             print(f"[WorkWindow->is_notebook_modified] Error: {e}")
             return False
-       
-        
+      
     def is_notebook_modified(self):
         self.ipynb_format_save_file(True)
         hash1 = self.compute_md5(self.temp_path)
@@ -1299,26 +1285,13 @@ class WorkWindow(QWidget):
             return True
         return False
      
-     
-        
     def compute_md5(self, path):
         try:
             with open(path, "rb") as f:
                 data = f.read()
             hash_code = hashlib.md5(data).hexdigest()
-            print(f"[compute_md5] {os.path.basename(path)} → {hash_code}")
+            #print(f"[compute_md5] {os.path.basename(path)} → {hash_code}")
             return hash_code
         except Exception as e:
             print(f"[compute_md5] Error: {e}")
             return None         
-
-
-        
-    
-# if __name__ == "__main__":
-#     import sys
-#     from PyQt5.QtWidgets import QApplication
-#     app = QApplication(sys.argv)
-#     window = WorkWindow()
-#     window.show()
-#     sys.exit(app.exec_())

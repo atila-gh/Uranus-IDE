@@ -444,7 +444,7 @@ class Cell(QFrame):
         code = self.editor.toPlainText()
         cell = new_code_cell(source=code)
 
-        # 🎯 فقط خروجی‌های قابل ذخیره‌سازی
+     
         filtered_outputs = []
         for out in self.outputs:
             if out.output_type == "stream":
@@ -458,20 +458,18 @@ class Cell(QFrame):
                 if editor_target == "output_image" and "image/png" in out.data:
                     filtered_outputs.append(out)
 
-            # ⛔ خروجی‌های جدول یا تعاملی ذخیره نمی‌شن
-            # elif editor_target == "output_data": → حذف
-
+        
         cell.outputs = filtered_outputs
         cell.execution_count = 1
 
-        # 📎 متادیتا
+        # metadata
         cell['metadata']['bg'] = self.border_color
         cell['metadata']['uranus'] = {
             "origin": self.origin
         }
         
         
-        # 🆔 تولید ID پایدار بر اساس هش محتوای کد
+        # Generate md5 static hash code acording to context of cell
         hash_id = hashlib.sha1(code.encode("utf-8")).hexdigest()
         cell['id'] = hash_id
 

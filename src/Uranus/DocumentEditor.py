@@ -1,9 +1,9 @@
 
 
 import os , base64
-from PyQt5.QtGui import QIcon, QTextCharFormat, QFont, QFontMetrics, QTextImageFormat, QTextCursor, QColor , QMouseEvent , QPixmap
-from PyQt5.QtCore import  QSize , QEvent ,pyqtSignal, QBuffer, Qt
-from PyQt5.QtWidgets import (QDialog, QToolBar, QDialogButtonBox, QLabel, QWidget, QVBoxLayout, QTextEdit,QAction , QScrollArea
+from PyQt5.QtGui import QIcon, QTextCharFormat, QFont, QFontMetrics, QTextImageFormat, QTextCursor, QColor , QMouseEvent , QPixmap  
+from PyQt5.QtCore import  QSize , QEvent ,pyqtSignal, QBuffer, Qt 
+from PyQt5.QtWidgets import (QDialog, QToolBar, QDialogButtonBox, QLabel, QWidget, QVBoxLayout, QTextEdit,QAction , QScrollArea, QPlainTextEdit
 , QFileDialog, QMessageBox, QSlider, QComboBox, QHBoxLayout, QPushButton)
 from Uranus.SettingWindow import load_setting
 
@@ -33,6 +33,13 @@ class RichTextEditor(QTextEdit):
         self.setCursor(Qt.IBeamCursor)
         self.setAcceptRichText(True)
         self.installEventFilter(self)
+        
+        
+    def wheelEvent(self, event):
+        # فقط خود ادیتور اسکرول شود، به والد پاس داده نشود
+        super().wheelEvent(event)
+        event.accept()
+
 
 
     def mousePressEvent(self, event: QMouseEvent):
@@ -51,10 +58,6 @@ class RichTextEditor(QTextEdit):
             self.insertHtml(html)
         else:
             super().insertFromMimeData(source)
-
-
-
-
 
     def mouseDoubleClickEvent(self, event):
         self.doubleClicked.emit()
@@ -881,3 +884,6 @@ class DocumentEditor(QWidget):
             self.heading_combo.setCurrentIndex(4)  # Heading 4
         else:
             self.heading_combo.setCurrentIndex(0)  # Normal
+            
+
+   
