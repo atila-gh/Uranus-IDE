@@ -93,7 +93,7 @@ class DocumentEditor(QWidget):
         embedded images, and interactive formatting for notebook-style workflows.
         """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None ):
         super().__init__(parent)
 
         # Load settings
@@ -104,6 +104,9 @@ class DocumentEditor(QWidget):
         metadata_font_size = setting['Meta Font Size']
         self.tab_size = 4
         self.readonly_mode = False
+        self.editor_height = 0
+        self.flag_doc_height_adjust = False
+      
 
         # Toolbar
         self.toolbar = QToolBar()
@@ -704,14 +707,16 @@ class DocumentEditor(QWidget):
         if self.parent():
             self.parent().mousePressEvent(event)
 
-    def activate_readonly_mode(self):
+    def activate_readonly_mode(self , init = False):
         self.readonly_mode = True
         self.toolbar.hide()
-        self.editor.setReadOnly(True)
-        #self.editor.setStyleSheet(self.editor.styleSheet() + " QTextEdit { border: none; }")
+        self.editor.setReadOnly(True)       
         self.editor.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.editor.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.adjust_height_document_editor()
+        if not init :
+            self.adjust_height_document_editor()
+        
+    
 
     def activate_edit_mode(self):
         self.readonly_mode = False
@@ -850,6 +855,7 @@ class DocumentEditor(QWidget):
  
  
     def adjust_height_document_editor(self):
+        print('[adjust_height_document_editor]')
         doc = self.editor.document()
         layout = doc.documentLayout()
 
@@ -870,7 +876,8 @@ class DocumentEditor(QWidget):
                  + 2)   # به جای 10، فقط 2 پیکسل اضافه
 
 
-
+        self.editor_height = new_height #  New Height to save to file metadata
+        
         if self.readonly_mode:
             self.setMinimumHeight(new_height)
             self.setMaximumHeight(new_height)
@@ -882,24 +889,35 @@ class DocumentEditor(QWidget):
             self.setMaximumHeight(final_height)
 
         self.updateGeometry()
-        print(f"Applied new_h: {new_height}, editor.h now: {self.editor.height()}")
-        doc = self.editor.document()
-        layout = doc.documentLayout()
+        self.flag_doc_height_adjust = True
+        # print(f"Applied new_h: {new_height}, editor.h now: {self.editor.height()}")
+        # doc = self.editor.document()
+        # layout = doc.documentLayout()
 
-        print(f"widgetResizable: {self.scroll_area.widgetResizable()}")
-        print(f"documentSize.h: {layout.documentSize().height()}")   # ارتفاع واقعی محتوای رندرشده
-        print(f"documentMargin: {doc.documentMargin()}")
+        # print(f"widgetResizable: {self.scroll_area.widgetResizable()}")
+        # print(f"documentSize.h: {layout.documentSize().height()}")   # ارتفاع واقعی محتوای رندرشده
+        # print(f"documentMargin: {doc.documentMargin()}")
 
-        cm = self.editor.contentsMargins()
-        print(f"contentsMargins: {cm.left()}, {cm.top()}, {cm.right()}, {cm.bottom()}")
-        print(f"frameWidth: {self.editor.frameWidth()}")
+        # cm = self.editor.contentsMargins()
+        # print(f"contentsMargins: {cm.left()}, {cm.top()}, {cm.right()}, {cm.bottom()}")
+        # print(f"frameWidth: {self.editor.frameWidth()}")
 
-        print(f"sizeHint.h: {self.editor.sizeHint().height()}")
-        print(f"viewport.h: {self.scroll_area.viewport().size().height()}")
-        print(f"editor.h before: {self.editor.height()}")
+        # print(f"sizeHint.h: {self.editor.sizeHint().height()}")
+        # print(f"viewport.h: {self.scroll_area.viewport().size().height()}")
+        # print(f"editor.h before: {self.editor.height()}")
      
-     
-     
+    def set_fixed_height(self , height = 0):
+        """Set editor to exact pixel height (from metadata)"""
+        print('[SET FIXED HEIGHT METHOD] ' ,height)
+        """
+        Force editor to exact pixel height.
+        """
+        self.setFixedHeight(height)   # دقیقاً همون ارتفاع
+        self.resize(self.width(), height)  # اگر داخل layout باشه، این هم کمک می‌کنه
+        self.updateGeometry()
+
+
         
-   
+        
+    
 

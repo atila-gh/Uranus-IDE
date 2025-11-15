@@ -83,7 +83,10 @@ class Cell(QFrame):
         """
 
     def __init__(self, editor_type=None, content=None, border_color=None,
-             kernel=None, notify_done=None , origin = 'uranus' , outputs=None , status_c = None , status_r = None):
+             kernel=None, notify_done=None , origin = 'uranus' , outputs=None 
+             , status_c = None , status_r = None , height = 0):
+        
+        
         super().__init__()
         self.debug = False
         if self.debug: print('[Cell->init]')
@@ -101,6 +104,7 @@ class Cell(QFrame):
         self.execution_lock = True  # activate the lock in start of Processing
         self.status_c = status_c
         self.status_r = status_r
+        self.editor_height = height
 
 
         # Load settings
@@ -345,28 +349,33 @@ class Cell(QFrame):
                 self.inject_outputs(self.outputs)
 
 
-            
-
 
         elif editor_type == "markdown":
             # Create markdown editor
             self.d_editor = DocumentEditor()
             self.main_layout.addWidget(self.d_editor)
-            self.d_editor.clicked.connect(lambda: self.doc_editor_clicked.emit(self))
-            self.d_editor.editor.clicked.connect(lambda: self.doc_editor_clicked.emit(self))
-            self.d_editor.editor.doubleClicked.connect(lambda: self.doc_editor_editor_clicked.emit(self))
+           
             if content:
                 self.d_editor.editor.setHtml(content)
-                self.d_editor.activate_readonly_mode()
-            self.set_color(border_color)                    
+                self.d_editor.activate_readonly_mode(init= True)
+            self.set_color(border_color) 
             
+            
+            if self.editor_height < 100 :
+                #print('[EDITOR HEIGHT < 100]' , self.editor_height)
+                self.d_editor.editor.document().adjustSize()
+                QApplication.processEvents()          
+                QTimer.singleShot(0, self.d_editor.adjust_height_document_editor) # adjust after cell rendering
+                
+            else :
+                #print('[EDITOR HEIGHT > 100] ', self.editor_height) 
+                QTimer.singleShot(0, lambda  : self.d_editor.set_fixed_height(self.editor_height)) # adjust after cell rendering
+          
+            
+            self.d_editor.clicked.connect(lambda: self.doc_editor_clicked.emit(self))
+            self.d_editor.editor.clicked.connect(lambda: self.doc_editor_clicked.emit(self))
+            self.d_editor.editor.doubleClicked.connect(lambda: self.doc_editor_editor_clicked.emit(self))                
             self.d_editor.editor.textChanged.connect(self.d_editor.adjust_height_document_editor)
-            
-            self.d_editor.editor.document().adjustSize()
-            QApplication.processEvents()
-           
-           
-            QTimer.singleShot(0, self.d_editor.adjust_height_document_editor) # adjust after cell rendering
             self.d_editor.editor.setFocus(True)
 
     def append_output(self, out):
@@ -576,17 +585,18 @@ class Cell(QFrame):
 
         # 🎯 تولید ID پایدار بر اساس محتوای سلول
         hash_id = hashlib.md5(content.encode("utf-8")).hexdigest()
-
+        
         cell = new_markdown_cell(source=content)
+        
         cell['id'] = hash_id  # ✅ تثبیت ID
         cell['metadata']['bg'] = self.border_color
-        cell['metadata']['uranus'] = {
-            "origin": origin,
-            "edited": edited
-        } if edited else {
-            "origin": origin
-        }
-
+        cell['metadata']['uranus'] = { "origin": origin, "edited": edited } if edited else {"origin": origin }
+        if self.d_editor.flag_doc_height_adjust : # if is recalculted height in document editor 
+            cell['metadata']['height'] = self.d_editor.editor_height  # height of editor in pixcel
+            #print('[CELL-> FLAGED]' , self.d_editor.editor_height)
+        else :
+            cell['metadata']['height'] = self.editor_height  # height of editor in pixcel
+            #print('[CELL-> NOT FLAGED]' , self.editor_height)
         return cell
     
     

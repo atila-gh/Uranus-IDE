@@ -737,7 +737,9 @@ class WorkWindow(QWidget):
                                 Executes the current cell and displays the output.
                                 """)
 
-    def add_cell(self, editor_type=None, content=None, border_color=None, origin="uranus" , outputs = None , status_c = None , status_r = None):
+    def add_cell(self, editor_type=None, content=None, border_color=None
+                 , origin="uranus" , outputs = None  
+                 , height =  0):
         """
         Adds a new cell at the end of the notebook.
         """
@@ -754,7 +756,8 @@ class WorkWindow(QWidget):
             origin=origin  ,
             outputs=outputs,
             status_c = self.status_c,
-            status_r = self.status_r
+            status_r = self.status_r,
+            height= height
             
         )
 
@@ -986,22 +989,19 @@ class WorkWindow(QWidget):
         nb = nbformat.v4.new_notebook()        
         nb["cells"] = cells
         
-       
-        
-
         file_path = self.temp_path if temp else self.file_path
 
         if file_path:
-            try:
-                with open(file_path, "w", encoding="utf-8") as f:
-                    nbformat.write(nb, f)
-            except Exception as e:
-                
-                QMessageBox.warning(self, "Save Error", f"Could not save file:\n{e}")
-            else :
-                self.status_l('Saved To : '+self.file_path)
-                self.saved_flag = True
-  
+            
+            with open(file_path, "w", encoding="utf-8") as f:
+                nbformat.write(nb, f)
+        
+            
+            
+        
+            self.status_l('Saved To : '+self.file_path)
+            self.saved_flag = True
+
     def load_file(self, content):
         if self.debug:
             print('[WorkWindow->load_file]')
@@ -1018,7 +1018,10 @@ class WorkWindow(QWidget):
             source = cell_data.source
             metadata = cell_data.get("metadata", {})
             border_color = metadata.get("bg")
-            origin = metadata.get("uranus", {}).get("origin", "uranus")
+            origin = metadata.get("uranus", {}).get("origin", "uranus")            
+            height = metadata.get('height',0)
+            # if editor_type == 'markdown' : 
+            #     print ('[LOAD FILE] ' , height )
 
             outputs = None
             if editor_type == "code" and hasattr(cell_data, "outputs"):
@@ -1034,7 +1037,8 @@ class WorkWindow(QWidget):
                 content=source,
                 border_color=border_color,
                 origin=origin,
-                outputs=outputs
+                outputs=outputs,
+                height = height
             )
 
         # تمرکز روی آخرین سلول
@@ -1235,46 +1239,7 @@ class WorkWindow(QWidget):
         # اگر از حلقه با موفقیت خارج شد یعنی هیچ Cancel وجود ندارد
             event.accept()
 
-    def is_notebook_modified1(self) -> bool:
-        """
-        Compare only the textual content of cells between the loaded notebook
-        (self.content) and the current state of the editor.
-        Ignores metadata and output differences.
-        """
-        try:
-            if not self.content:
-                return False
-
-            # orginal source extract if not saved 
-            if not self.saved_flag :
-                for cell in self.content.cells:
-                    if cell.cell_type == "code":
-                        self.original_sources.append(cell.source.strip())
-                    elif cell.cell_type == "markdown":
-                        self.original_sources.append(cell.source.strip())
-
-            # --- استخراج متن از نسخه فعلی ---
-            current_sources = []
-            for cell in self.cell_widgets:
-                if cell.editor_type == "code":
-                    current_sources.append(cell.editor.toPlainText().strip())
-                elif cell.editor_type == "markdown":
-                    current_sources.append(cell.d_editor.editor.toHtml().strip())
-
-            # --- مقایسه ---
-            if len(self.original_sources) != len(current_sources):
-                return True  # تعداد سلول‌ها تغییر کرده
-
-            for old, new in zip(self.original_sources, current_sources):
-                if old != new:
-                    return True  # محتوای یک سلول فرق دارد
-
-            
-            return False  # هیچ تفاوتی وجود ندارد
-
-        except Exception as e:
-            print(f"[WorkWindow->is_notebook_modified] Error: {e}")
-            return False
+  
       
     def is_notebook_modified(self):
         self.ipynb_format_save_file(True)
