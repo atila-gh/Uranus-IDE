@@ -1,5 +1,5 @@
  
-import os ,base64  ,io ,builtins ,uuid , importlib , markdown2 , sys,inspect
+import os ,base64  ,io ,builtins ,uuid , importlib , hashlib , sys,inspect
 from PyQt5.QtGui import  QIcon , QKeySequence 
 from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject ,QTimer,QEventLoop 
 from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWidget ,QTableWidget ,QTableWidgetItem,
@@ -505,6 +505,9 @@ class WorkWindow(QWidget):
         self.status_r = status_r
         self.saved_flag = False
         self.original_sources = []
+        # path of temp.chk file 
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.temp_path = os.path.join(base_dir, 'temp.chk')
         
 
         self.deleted_cells_stack = []
@@ -829,8 +832,6 @@ class WorkWindow(QWidget):
         self.focused_cell.notify_done = on_done
         self.focused_cell.run()
         
-        
-            
             
      
     def execution_done(self):
@@ -969,12 +970,14 @@ class WorkWindow(QWidget):
 
     # Connected to Save File Button
     # gather all cell_widgets contents and build an ipynb file (SAVE FILE)
-    def ipynb_format_save_file(self):
+    def ipynb_format_save_file(self , temp = False):
         """
         Converts all cells into nbformat-compatible structure and saves to disk.
         """
         if self.debug:
             print('[WorkWindow->ipynb_format_save_file]')
+            
+            
         cells = []
         for cell in self.cell_widgets:
             if cell.editor_type == "code":
@@ -986,9 +989,14 @@ class WorkWindow(QWidget):
         nb = nbformat.v4.new_notebook()        
         nb["cells"] = cells
         
-        if self.file_path:
+       
+        
+
+        file_path = self.temp_path if temp else self.file_path
+
+        if file_path:
             try:
-                with open(self.file_path, "w", encoding="utf-8") as f:
+                with open(file_path, "w", encoding="utf-8") as f:
                     nbformat.write(nb, f)
             except Exception as e:
                 
@@ -1209,7 +1217,7 @@ class WorkWindow(QWidget):
     def closeEvent(self, event):
         
      
-            if not self.is_notebook_modified():
+            if  self.is_notebook_modified():
                 return 
             
             
@@ -1240,7 +1248,7 @@ class WorkWindow(QWidget):
 
  
 
-    def is_notebook_modified(self) -> bool:
+    def is_notebook_modified1(self) -> bool:
         """
         Compare only the textual content of cells between the loaded notebook
         (self.content) and the current state of the editor.
@@ -1280,6 +1288,29 @@ class WorkWindow(QWidget):
         except Exception as e:
             print(f"[WorkWindow->is_notebook_modified] Error: {e}")
             return False
+       
+        
+    def is_notebook_modified(self):
+        self.ipynb_format_save_file(True)
+        hash1 = self.compute_md5(self.temp_path)
+        hash2 = self.compute_md5(self.file_path)
+        
+        if hash1 == hash2 :            
+            return True
+        return False
+     
+     
+        
+    def compute_md5(self, path):
+        try:
+            with open(path, "rb") as f:
+                data = f.read()
+            hash_code = hashlib.md5(data).hexdigest()
+            print(f"[compute_md5] {os.path.basename(path)} → {hash_code}")
+            return hash_code
+        except Exception as e:
+            print(f"[compute_md5] Error: {e}")
+            return None         
 
 
         

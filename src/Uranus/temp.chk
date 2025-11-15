@@ -1,0 +1,58 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "73d04721916e77181cf0b5ed68853723",
+   "metadata": {
+    "bg": "#BEBDBD",
+    "uranus": {
+     "origin": "uranus"
+    }
+   },
+   "source": [
+    "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n",
+    "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n",
+    "p, li { white-space: pre-wrap; }\n",
+    "</style></head><body style=\" font-family:'Segoe UI'; font-size:12pt; font-weight:400; font-style:normal;\">\n",
+    "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">salam1</p>\n",
+    "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "b4ab7565dbdd98368ba5b0213185baccd3b433b4",
+   "metadata": {
+    "bg": "#BEBDBD",
+    "uranus": {
+     "origin": "uranus"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "print()\n",
+    "hi\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c662b92f7fcd1f6ad3cb6d6346a16cc2",
+   "metadata": {
+    "bg": "#BEBDBD",
+    "uranus": {
+     "origin": "uranus"
+    }
+   },
+   "source": [
+    "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n",
+    "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n",
+    "p, li { white-space: pre-wrap; }\n",
+    "</style></head><body style=\" font-family:'Segoe UI'; font-size:12pt; font-weight:400; font-style:normal;\">\n",
+    "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">asa <span style=\" font-size:14pt;\">kjdf</span></p></body></html>"
+   ]
+  }
+ ],
+ "metadata": {},
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

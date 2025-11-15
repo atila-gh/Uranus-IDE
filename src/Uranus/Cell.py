@@ -469,40 +469,15 @@ class Cell(QFrame):
         cell['metadata']['uranus'] = {
             "origin": self.origin
         }
+        
+        
+        # 🆔 تولید ID پایدار بر اساس هش محتوای کد
+        hash_id = hashlib.sha1(code.encode("utf-8")).hexdigest()
+        cell['id'] = hash_id
 
         return cell
 
-    def get_nb_markdown_cell1(self):
-        """
-        Converts the current cell's content to a Jupyter-compatible Markdown cell.
-        If origin is not 'uranus', HTML is converted to Markdown using html2text.
-        Otherwise, raw HTML is preserved as source.
-        """
-
-        html = self.d_editor.editor.toHtml()
-
-        if self.origin != "uranus":
-            # تبدیل HTML به Markdown به‌صورت درون‌تابعی
-
-            converter = html2text.HTML2Text()
-            converter.ignore_links = False
-            converter.body_width = 0  # جلوگیری از شکستن خطوط
-            markdown = converter.handle(html)
-
-            cell = new_markdown_cell(source=markdown)
-            cell['metadata']['bg'] = self.border_color
-            cell['metadata']['uranus'] = {
-                "origin": "jupyter",
-                "edited": True  # ← اضافه‌شده
-            }
-        else:
-            cell = new_markdown_cell(source=html)
-            cell['metadata']['bg'] = self.border_color
-            cell['metadata']['uranus'] = {
-                "origin": "uranus"
-            }
-
-        return cell
+   
         
     def create_output_editor (self):
         self.output_editor = OutputEditor()
