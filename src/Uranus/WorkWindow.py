@@ -480,7 +480,8 @@ class WorkWindow(QWidget):
 
     focused_cell = None
 
-    def __init__(self, content=None, file_path=None , status_l = None , status_c = None , status_r = None):
+    def __init__(self, nb_content=None, file_path=None , status_l = None 
+                 , status_c = None , status_r = None ):
         self.debug = False
         if self.debug: print('[WorkWindow]->[__init__]')
 
@@ -490,7 +491,7 @@ class WorkWindow(QWidget):
         self.ipython_kernel.input_waiter = InputWaiter(self) # for cover input with dialog
         self.file_path = file_path
         self.cell_widgets = []
-        self.content = content
+        self.nb_content = nb_content
         self.execution_in_progress = False
         self.outputs = []
         self.status_l = status_l
@@ -560,7 +561,7 @@ class WorkWindow(QWidget):
        
 
         # --- Load initial content ---
-        self.load_file(self.content)
+        self.load_file(self.nb_content)
 
         # fpr scrolling window more than half of page
         extra_scroll_space = QSpacerItem(20, 400, QSizePolicy.Minimum, QSizePolicy.Fixed)
@@ -750,29 +751,25 @@ class WorkWindow(QWidget):
                                 Executes the current cell and displays the output.
                                 """)
 
-    def add_cell(self, editor_type=None, content=None, border_color=None
-                 , origin="uranus" , outputs = None  
-                 , height =  0):
-        """
-        Adds a new cell at the end of the notebook.
-        """
-        if self.debug:
-            print('[WorkWindow->add_cell]')
-
-        # create an object of cell class with type of editor if exist
+    def add_cell(self, editor_type=None, nb_cell=None,
+             src_content=None, border_color=None,
+             origin="uranus", outputs=None, height=0):
+        
         cell = Cell(
-            editor_type,
-            content,
-            border_color,
+            editor_type=editor_type,
+            src_content=src_content,
+            border_color=border_color,
             kernel=self.ipython_kernel,
             notify_done=self.execution_done,
-            origin=origin  ,
+            origin=origin,
             outputs=outputs,
-            status_c = self.status_c,
-            status_r = self.status_r,
-            height= height
-            
+            status_c=self.status_c,
+            status_r=self.status_r,
+            height=height,
+            nb_cell=nb_cell
         )
+
+
 
         # Mouse Event Handler
         cell.clicked.connect(lambda c=cell: self.set_focus(c))
@@ -1015,6 +1012,7 @@ class WorkWindow(QWidget):
             self.status_l('Saved To : '+self.file_path)
             self.saved_flag = True
 
+    
     def load_file(self, content):
         if self.debug:
             print('[WorkWindow->load_file]')
@@ -1023,18 +1021,23 @@ class WorkWindow(QWidget):
             self.add_cell(origin='uranus')
             return
 
-        self.content = content
+        #self.content = content
         self.cell_widgets.clear()
 
+        # WorkWindow.load_file
         for cell_data in content.cells:
             editor_type = "code" if cell_data.cell_type == "code" else "markdown"
             source = cell_data.source
             metadata = cell_data.get("metadata", {})
             border_color = metadata.get("bg")
-            origin = metadata.get("uranus", {}).get("origin", "uranus")            
-            height = metadata.get('height',0)
-            # if editor_type == 'markdown' : 
-            #     print ('[LOAD FILE] ' , height )
+
+            if "uranus" not in metadata:
+                metadata["uranus"] = {}
+            if "origin" not in metadata["uranus"]:
+                metadata["uranus"]["origin"] = "jupyter"
+
+            origin = metadata["uranus"]["origin"]
+            height = metadata.get('height', 0)
 
             outputs = None
             if editor_type == "code" and hasattr(cell_data, "outputs"):
@@ -1047,11 +1050,12 @@ class WorkWindow(QWidget):
 
             self.add_cell(
                 editor_type=editor_type,
-                content=source,
+                src_content=source,
                 border_color=border_color,
                 origin=origin,
                 outputs=outputs,
-                height = height
+                height=height,
+                nb_cell=cell_data  # ← پاس دادن سلول
             )
 
         # تمرکز روی آخرین سلول
@@ -1060,6 +1064,7 @@ class WorkWindow(QWidget):
 
         # فضای اضافه برای اسکرول
         self.cell_layout.addItem(QSpacerItem(20, 400, QSizePolicy.Minimum, QSizePolicy.Fixed))
+
 
     def move_cell_up(self):
         if self.debug: print('[WorkWindow->move_cell_up]')
@@ -1267,9 +1272,8 @@ class WorkWindow(QWidget):
         try:
             with open(path, "rb") as f:
                 data = f.read()
-            hash_code = hashlib.md5(data).hexdigest()
-            #print(f"[compute_md5] {os.path.basename(path)} → {hash_code}")
-            return hash_code
+            hash_code = hashlib.md5(data).hexdigest()            
+            return hash_code[:6] # return only 6 char of hashcode 
         except Exception as e:
             print(f"[compute_md5] Error: {e}")
             return None         

@@ -1,4 +1,4 @@
-import re ,  html2text , hashlib ,os
+import re ,  html2text , hashlib ,os , markdown2
 from nbformat.v4 import  new_code_cell, new_markdown_cell
 
 # PyQT Methods Import
@@ -87,9 +87,10 @@ class Cell(QFrame):
         - get_nb_markdown_cell(): Converts cell to nbformat markdown cell.
         """
 
-    def __init__(self, editor_type=None, content=None, border_color=None,
-             kernel=None, notify_done=None , origin = 'uranus' , outputs=None 
-             , status_c = None , status_r = None , height = 0):
+    def __init__(self, editor_type=None, src_content=None, border_color=None,
+             kernel=None, notify_done=None, origin='uranus', outputs=None,
+             status_c=None, status_r=None, height=0, nb_cell=None):
+
         
         
         super().__init__()
@@ -103,7 +104,7 @@ class Cell(QFrame):
         self.origin = origin
         self.editor_type = editor_type
         self.notify_done = notify_done
-        self.content = content
+        self.src_content = src_content
         self.border_color = border_color
         self.editor = None
         self.kernel = kernel
@@ -112,6 +113,7 @@ class Cell(QFrame):
         self.status_c = status_c
         self.status_r = status_r
         self.editor_height = height
+        self.nb_cell = nb_cell
 
 
         # Load settings
@@ -239,10 +241,10 @@ class Cell(QFrame):
             self.radio_doc.toggled.connect(lambda checked: self.initialize_editor("markdown" , original = True) if checked else None)
 
         elif self.editor_type == 'code':
-            self.initialize_editor("code", content=self.content, border_color=self.border_color)
+            self.initialize_editor("code", content=self.src_content, border_color=self.border_color)
 
         elif self.editor_type == 'markdown':
-            self.initialize_editor("markdown", content=self.content, border_color=self.border_color)
+            self.initialize_editor("markdown", content=self.src_content, border_color=self.border_color)
 
 
     def run(self):
@@ -357,16 +359,45 @@ class Cell(QFrame):
 
 
 
+        # Cell.initialize_editor (شاخه‌ی markdown)
         elif editor_type == "markdown":
-            # Create markdown editor
             self.d_editor = DocumentEditor()
             self.main_layout.addWidget(self.d_editor)
-           
-            if content:
-                self.d_editor.editor.setHtml(content)
-                self.d_editor.activate_readonly_mode(init= True)
-            self.set_color(border_color) 
-            
+
+            if self.src_content:
+                if getattr(self, "origin", None) == "jupyter":
+                    # 1) تبدیل Markdown به HTML
+                    html = markdown2.markdown(self.src_content)
+
+                    # 2) جایگزینی attachment:image.png با data URL از nb_cell.attachments
+                    attachments = getattr(self.nb_cell, "attachments", {}) or {}
+                    # attachments شکل: {"image.png": {"image/png": "base64string", ...}, ...}
+                    for name, mime_map in attachments.items():
+                        # اولویت با image/png
+                        b64 = None
+                        if "image/png" in mime_map:
+                            b64 = mime_map["image/png"]
+                            html = html.replace(
+                                f"attachment:{name}",
+                                f"data:image/png;base64,{b64}"
+                            )
+                        elif "image/jpeg" in mime_map:
+                            b64 = mime_map["image/jpeg"]
+                            html = html.replace(
+                                f"attachment:{name}",
+                                f"data:image/jpeg;base64,{b64}"
+                            )
+                        # سایر MIMEها هم قابل اضافه شدن‌اند
+
+                    self.d_editor.editor.setHtml(html)
+                else:
+                    # محتوای تولیدشده توسط اورانوس معمولاً HTML است
+                    self.d_editor.editor.setHtml(self.src_content)
+
+                self.d_editor.activate_readonly_mode(init=True)
+
+            self.set_color(border_color)
+   
             
             if self.editor_height < 100 :
                 #print('[EDITOR HEIGHT < 100]' , self.editor_height)

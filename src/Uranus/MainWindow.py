@@ -350,7 +350,7 @@ class MainWindow(QMainWindow):
 
        
         # Make Instance Object
-        work_widget = WorkWindow(file_path=path , content = nb , status_l = self.set_status_left , status_c = self.set_status_center , status_r = self.set_status_right)
+        work_widget = WorkWindow(file_path=path , nb_content = nb , status_l = self.set_status_left , status_c = self.set_status_center , status_r = self.set_status_right)
         sub_window = self.mdi_area.addSubWindow(work_widget)
         sub_window.show()
         MainWindow.open_files[path] = sub_window
