@@ -1,24 +1,21 @@
  
-import os ,base64  ,io ,builtins ,uuid , importlib , hashlib , sys,inspect
-from PyQt5.QtGui import  QIcon , QKeySequence 
-from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject ,QTimer,QEventLoop 
-from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWidget ,QTableWidget ,QTableWidgetItem,
-    QInputDialog , QSpacerItem, QSizePolicy , QScrollArea,QDialog, QVBoxLayout, QLineEdit, QPushButton, QLabel, QHBoxLayout , QFileDialog, QMessageBox)
-
-from traitlets.config import Config
-
-import nbformat 
-from nbformat.v4 import new_notebook, new_output
+import os ,base64  ,io ,builtins ,uuid , importlib , hashlib , sys,inspect , nbformat , sys
+from nbformat.v4 import  new_output
 from contextlib import redirect_stdout, redirect_stderr
+from traitlets.config import Config
 from IPython.core.interactiveshell import InteractiveShell
+
+# Import Pyqt Feturse
+from PyQt5.QtGui import  QIcon , QKeySequence 
+from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject ,QEventLoop 
+from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWidget
+    , QVBoxLayout , QSpacerItem, QSizePolicy , QScrollArea,QDialog, QVBoxLayout, QLineEdit
+    , QPushButton , QLabel, QHBoxLayout , QFileDialog, QMessageBox)
+
+# Import Uranus Class
 from Uranus.Cell import Cell
 from Uranus.ObjectInspectorWindow import ObjectInspectorWindow
 
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QApplication
-from PyQt5.QtCore import Qt
-import sys
-
-         
  
 class FindReplaceDialog(QDialog):
     """
@@ -604,6 +601,7 @@ class WorkWindow(QWidget):
         shortcut_move_up.setContext(Qt.ApplicationShortcut)
         shortcut_move_up.activated.connect(self.move_cell_up)
 
+        self.top_toolbar.addSeparator()
 
         # Move Sell Bottom
         btn_move_down = QToolButton()
@@ -616,6 +614,7 @@ class WorkWindow(QWidget):
                             """)
         btn_move_down.clicked.connect(self.move_cell_down)
         self.top_toolbar.addWidget(btn_move_down)
+        
 
         # Define ShortCut F4
         shortcut_move_down = QShortcut(QKeySequence("F8"), self)
@@ -634,11 +633,11 @@ class WorkWindow(QWidget):
                             """)
         btn_color.clicked.connect(self.choose_border_color)
         self.top_toolbar.addWidget(btn_color)
-
         self.top_toolbar.addSeparator()  
 
-        self.btn_run_all = QToolButton()
 
+        # Button Run All
+        self.btn_run_all = QToolButton()
         icon_path = os.path.join(os.path.dirname(__file__), "image", "run_all.png")
         self.btn_run_all.setIcon(QIcon(icon_path))        
         self.btn_run_all.setToolTip("""
@@ -647,6 +646,7 @@ class WorkWindow(QWidget):
                             """)
         self.btn_run_all.clicked.connect(self.run_all_cells)
         self.top_toolbar.addWidget(self.btn_run_all)
+        self.top_toolbar.addSeparator()
 
 
         # Undo Cell Button
@@ -657,9 +657,9 @@ class WorkWindow(QWidget):
                             <b>Undo Delete</b><br>
                             Restore the last deleted cell.
                             """)
-        
         btn_undo.clicked.connect(self.undo_delete_cell)
         self.top_toolbar.addWidget(btn_undo)
+        self.top_toolbar.addSeparator()
         
        
         # Memory Variable List
@@ -667,12 +667,25 @@ class WorkWindow(QWidget):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "memory.png")
         memory.setIcon(QIcon(icon_path))
         memory.setToolTip("""
-                                   <b>Object List</b><br>
+                                   <b>Objects List</b><br>
                                    <span style='color:gray;'>Shortcut: <kbd>F9</kbd></span><br>
                                    Object And Variable List
                                    """)
         memory.clicked.connect(self.variable_table)
         self.top_toolbar.addWidget(memory)
+        self.top_toolbar.addSeparator()
+        
+        # print cell
+        print_cell = QToolButton()
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "print.png")
+        print_cell.setIcon(QIcon(icon_path))
+        print_cell.setToolTip("""
+                                   <b>Print</b><br>
+                                   
+                                   Print Focused Cell 
+                                   """)
+        print_cell.clicked.connect(self.print_cell)
+        self.top_toolbar.addWidget(print_cell)
 
     def setup_toolbar_buttons(self):
         if self.debug :print('[WorkWindow->setup_toolbar_buttons]')
@@ -1260,3 +1273,8 @@ class WorkWindow(QWidget):
         except Exception as e:
             print(f"[compute_md5] Error: {e}")
             return None         
+        
+        
+    def print_cell(self):
+        if self.focused_cell : 
+            self.focused_cell.print_full_cell()

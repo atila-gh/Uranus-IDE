@@ -36,9 +36,13 @@ class RichTextEditor(QTextEdit):
         
         
     def wheelEvent(self, event):
-        # فقط خود ادیتور اسکرول شود، به والد پاس داده نشود
-        super().wheelEvent(event)
-        event.accept()
+        # اگر ادیتور فوکوس دارد و در حالت editable است → فقط خودش اسکرول کند
+        if self.hasFocus() and not self.isReadOnly():
+            super().wheelEvent(event)
+            event.accept()   # جلوگیری از پاس دادن به والد
+        else:
+            # در غیر این صورت اجازه بده اسکرول خارجی کار کند
+            event.ignore()
 
 
 

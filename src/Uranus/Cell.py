@@ -1,15 +1,20 @@
-import re ,  html2text , hashlib
-from PyQt5.QtGui import QFont, QTextCursor
+import re ,  html2text , hashlib ,os
+from nbformat.v4 import  new_code_cell, new_markdown_cell
+
+# PyQT Methods Import
+from PyQt5.QtGui import QFont, QTextCursor , QTextDocument, QTextCursor, QTextImageFormat
 from PyQt5.QtCore import Qt, pyqtSignal, QThread, QObject , QTimer
 from PyQt5.QtWidgets import QFrame, QHBoxLayout,QSizePolicy, QRadioButton, QButtonGroup, QVBoxLayout , QLabel, QScrollArea , QApplication
+from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
 
+# Uranus Calss Import
 from Uranus.SettingWindow import load_setting
 from Uranus.DocumentEditor import DocumentEditor
 from Uranus.OutputEditor import OutputEditor
 from Uranus.CodeEditor import CodeEditor
-from nbformat.v4 import  new_code_cell, new_markdown_cell
 from Uranus.DataOutputEditor import DataFrameWidget
 from Uranus.ImageOutput import ImageOutput
+
 
 
 
@@ -88,6 +93,8 @@ class Cell(QFrame):
         
         
         super().__init__()
+        
+        os.environ["QT_LOGGING_RULES"] = "*.debug=false"        
         self.debug = False
         if self.debug: print('[Cell->init]')
 
@@ -599,5 +606,53 @@ class Cell(QFrame):
             #print('[CELL-> NOT FLAGED]' , self.editor_height)
         return cell
     
+
+    def print_full_cell(self, parent=None):
+        """
+        Print the full content of this cell (code/doc editor + outputs),
+        but only if each editor/output is visible.
+        """
+        printer = QPrinter(QPrinter.HighResolution)
+        dialog = QPrintDialog(printer, parent or self)
+        if dialog.exec_() != QPrintDialog.Accepted:
+            return
+
+        doc = QTextDocument()
+        cursor = QTextCursor(doc)
+
+        # --- بخش کد یا داکیومنت ---
+        if self.editor_type == "code" and self.editor is not None and self.editor.isVisible():
+            cursor.insertText(self.editor.toPlainText())
+            cursor.insertBlock()
+
+        elif self.editor_type == "markdown" and hasattr(self, "d_editor") and self.d_editor.isVisible():
+            cursor.insertHtml(self.d_editor.editor.toHtml())
+            cursor.insertBlock()
+
+        # --- خروجی متنی ---
+        if hasattr(self, "output_editor") and self.output_editor.isVisible():
+            text_out = self.output_editor.text_output.toPlainText()
+            if text_out.strip():
+                cursor.insertText(text_out)
+                cursor.insertBlock()
+
+        # --- خروجی تصویری ---
+        if hasattr(self, "output_image") and self.output_image.isVisible():
+            # فرض: base64 در خروجی ذخیره شده
+            try:
+                base64_data = self.outputs[-1].data["image/png"]  # آخرین خروجی تصویری
+                img_format = QTextImageFormat()
+                img_format.setName(f"data:image/png;base64,{base64_data}")
+                img_format.setWidth(400)  # یا مقدار دلخواه
+                img_format.setHeight(300)
+                cursor.insertImage(img_format)
+                cursor.insertBlock()
+            except Exception as e:
+                print("[Print Image Error]", e)
+
+       
+
+        # --- پرینت کل ---
+        doc.print_(printer)
     
     
