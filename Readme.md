@@ -91,6 +91,13 @@ uranus
 ## Update Project to the Last Version in Pypi.org
 1 - go to cmd or terminal
 ```bash
+# Recomended Method
+pip uninstall uranus-ide
+pip install uranus-ide
+```
+OR 
+
+```bash
 pip install --upgrade uranus-ide
 
 ```
