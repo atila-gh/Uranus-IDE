@@ -204,9 +204,9 @@ class CodeHighlighter(QSyntaxHighlighter):
         
 
         # Comments (# توضیح)
-        comment_format = QTextCharFormat()
-        comment_format.setForeground(QColor("#777777"))
-        comment_format.setFont(QFont("Ubuntu Mono", 13))
+        self.comment_format = QTextCharFormat()
+        self.comment_format.setForeground(QColor("#777777"))
+        self.comment_format.setFont(QFont("Ubuntu Mono", 13))
 
         # Structure (class, self, __init__)
         structure_format = QTextCharFormat()
@@ -262,15 +262,15 @@ class CodeHighlighter(QSyntaxHighlighter):
         self.rules.append((QRegExp(r"'[^'\\]*(\\.[^'\\]*)*'"), self.string_format))
 
         # کامنت‌ها
-        self.rules.append((QRegExp(r"#.*"), comment_format))
+        #self.rules.append((QRegExp(r"#.*"), comment_format))
 
         # اعداد
         self.rules.append((QRegExp(r"\b\d+(\.\d+)?\b"), number_format))
         
         # دکوراتور 
         self.rules.append((QRegExp(r"^@\w+(\(.*\))?"), decorator_format))
-
-
+        
+  
 
     def line_index_to_offset(self, lines, line_num, char_index):
         res = sum(len(lines[i]) + 1 for i in range(line_num)) + char_index  # +1 for \n
@@ -329,8 +329,8 @@ class CodeHighlighter(QSyntaxHighlighter):
         if not hasattr(self, "cached_text") or self.cached_text != full_text:
             self.triple_quote_ranges = self.find_triple_quote_blocks()
             self.cached_text = full_text
-            
 
+        # بررسی رشته‌های سه‌تایی
         in_string_block = False
         for start_offset, end_offset in self.triple_quote_ranges:
             if start_offset <= block_end and end_offset >= block_start:
@@ -339,17 +339,26 @@ class CodeHighlighter(QSyntaxHighlighter):
                 end = min(end_offset, block_end) - block_start
                 self.setFormat(start, end - start, self.string_format)
 
-        # اگر در رشته هستیم، هیچ قاعده‌ای اجرا نشه
         if in_string_block:
             return
 
-        # اجرای قواعد معمول
+        # پیدا کردن شروع کامنت
+        comment_start = text.find('#')
+        if comment_start < 0:
+            comment_start = len(text)
+
+        # اجرای قواعد فقط تا قبل از کامنت
         for pattern, fmt in self.rules:
             index = pattern.indexIn(text)
             while index >= 0:
                 length = pattern.matchedLength()
+                if index >= comment_start:
+                    break  # بعد از کامنت هیچ قاعده‌ای اعمال نشه
+                if index + length > comment_start:
+                    length = comment_start - index
                 self.setFormat(index, length, fmt)
                 index = pattern.indexIn(text, index + length)
-                
-            
-        
+
+        # رنگ کردن کل بخش کامنت
+        if comment_start < len(text):
+            self.setFormat(comment_start, len(text) - comment_start, self.comment_format)

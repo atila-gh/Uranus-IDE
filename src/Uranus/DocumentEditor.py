@@ -100,6 +100,7 @@ class DocumentEditor(QWidget):
         setting = load_setting()
         bg_meta = setting['colors']['Back Ground Color MetaData']
         fg_meta = setting['colors']['ForGround Color MetaData']
+        self.code_font_size = setting['Code Font Size']
         metadata_font = setting['Meta Font']
         metadata_font_size = setting['Meta Font Size']
         self.tab_size = 4
@@ -343,7 +344,7 @@ class DocumentEditor(QWidget):
             char_fmt = QTextCharFormat()
 
             # define font size and font weight
-            sizes = [14, 26, 22, 18, 16]
+            sizes = [self.code_font_size, self.code_font_size+8, self.code_font_size+6, self.code_font_size+4, self.code_font_size+2]
             weights = [QFont.Normal, QFont.Bold, QFont.Bold, QFont.Bold, QFont.Bold]
 
             char_fmt.setFontPointSize(sizes[index])
@@ -855,7 +856,7 @@ class DocumentEditor(QWidget):
  
  
     def adjust_height_document_editor(self):
-        print('[adjust_height_document_editor]')
+        #print('[adjust_height_document_editor]')
         doc = self.editor.document()
         layout = doc.documentLayout()
 
@@ -908,10 +909,8 @@ class DocumentEditor(QWidget):
      
     def set_fixed_height(self , height = 0):
         """Set editor to exact pixel height (from metadata)"""
-        print('[SET FIXED HEIGHT METHOD] ' ,height)
-        """
-        Force editor to exact pixel height.
-        """
+        #print('[SET FIXED HEIGHT METHOD] ' ,height)
+      
         self.setFixedHeight(height)   # دقیقاً همون ارتفاع
         self.resize(self.width(), height)  # اگر داخل layout باشه، این هم کمک می‌کنه
         self.updateGeometry()
