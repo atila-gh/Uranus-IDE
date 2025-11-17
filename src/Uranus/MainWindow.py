@@ -1,4 +1,5 @@
-import json , nbformat , os
+import json , nbformat , os 
+
 from PyQt5 import sip
 from PyQt5.QtWidgets import  QMainWindow, QWidget, QVBoxLayout, QToolBar, QToolButton, QDockWidget  , QMessageBox , QMdiArea, QAction , QFileDialog ,QMessageBox , QLabel
 from PyQt5.QtGui import QIcon 
@@ -16,6 +17,9 @@ from Uranus.AboutWindow import AboutWindow
 
 # noinspection PyUnresolvedReferences
 class MainWindow(QMainWindow):
+   
+
+    
 
 
     open_files = {}  # dict: file_path -> WorkWindow instance
@@ -53,6 +57,7 @@ class MainWindow(QMainWindow):
         
 
         self.debug = False
+        self.work_widget_list = []
         self.setting = load_setting()
 
         self.setWindowTitle("Uranus")
@@ -64,7 +69,7 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon(icon_path))
 
         # MDI Area: central widget to hold multiple WorkWindows
-        self.mdi_area = QMdiArea()
+        self.mdi_area = QMdiArea()        
         self.setCentralWidget(self.mdi_area)
         self.mdi_area.subWindowActivated.connect(self.sync_working_directory)
         
@@ -350,10 +355,15 @@ class MainWindow(QMainWindow):
 
        
         # Make Instance Object
-        work_widget = WorkWindow(file_path=path , nb_content = nb , status_l = self.set_status_left , status_c = self.set_status_center , status_r = self.set_status_right)
+        work_widget = WorkWindow(file_path=path , nb_content = nb , status_l = self.set_status_left 
+                                 , status_c = self.set_status_center , status_r = self.set_status_right , mdi_area = self.mdi_area)
         sub_window = self.mdi_area.addSubWindow(work_widget)
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "ipynb_icon.png")  
+        sub_window.setWindowIcon(QIcon(icon_path))  # 
+
         sub_window.show()
         MainWindow.open_files[path] = sub_window
+        self.work_widget_list.append(work_widget)
 
     def open_settings_window(self):
         self.settings_window = SettingsWindow()
@@ -534,47 +544,26 @@ class MainWindow(QMainWindow):
         self.status_right.setText(text)
 
 
-    def closeEvent(self, event):
-        """
-        Ask user about saving each open file individually before closing.
-        """
-        unsaved = []
-
+    
         
-        for path, subwindow in MainWindow.open_files.items():
-            if subwindow and not sip.isdeleted(subwindow):
-                widget = subwindow.widget()
-                if isinstance(widget, WorkWindow) and widget.is_notebook_modified():
-                    unsaved.append((path, widget))
+    def closeEvent(self, event):
+        
 
-        if not unsaved:
-            event.accept()
-            return
+        # بستن پنجره‌های شناور
+        for widget in self.work_widget_list:
+            if isinstance(widget, WorkWindow) and widget.detached and widget.detached_window:
+                widget.detached_window.close()
+                if not sip.isdeleted(widget) and not widget.isHidden():
+                    event.ignore()
+                    return
 
-        for path, widget in unsaved:
-            filename = os.path.basename(path)
+        # بستن پنجره‌های داخل mdi_area
+        for subwindow in self.mdi_area.subWindowList():
+            widget = subwindow.widget()
+            if isinstance(widget, WorkWindow):
+                subwindow.close()
+                if not sip.isdeleted(widget) and not widget.isHidden():
+                    event.ignore()
+                    return
 
-            msg = QMessageBox(self)
-            msg.setIcon(QMessageBox.Question)
-            msg.setWindowTitle("Save File")
-            msg.setText(f"Do you want to save changes to:\n\n{filename}")
-            msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
-            msg.setDefaultButton(QMessageBox.Save)
-
-            choice = msg.exec_()
-
-            if choice == QMessageBox.Save:
-                if hasattr(widget, "ipynb_format_save_file"):
-                    widget.ipynb_format_save_file()
-                continue
-
-            elif choice == QMessageBox.Discard:
-                continue
-
-            elif choice == QMessageBox.Cancel:
-                # لغو بستن کل برنامه
-                event.ignore()
-                return
-
-        # اگر از حلقه با موفقیت خارج شد یعنی هیچ Cancel وجود ندارد
         event.accept()

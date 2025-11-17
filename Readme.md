@@ -72,6 +72,45 @@ Uranus is a lightweight, extensible Python IDE inspired by Jupyter. It supports 
 - ✅ Custom file explorer with inline editing
 - ✅ Project creation and metadata management
 
+
+## 🧩 Advanced Window & Memory Features
+
+Uranus IDE goes beyond traditional editors by introducing two powerful features that elevate both usability and introspection:
+
+### 🔀 Detachable WorkWindows — Seamless Floating Mode
+
+Switch any notebook window between embedded (MDI) and floating mode with a single click — without losing content, focus, or execution state. This feature enables:
+
+- Multi-monitor workflows with independent execution panels
+- Persistent cell layout and toolbar state across transitions
+- Instant toggling via the "Detach" checkbox in the top toolbar
+
+> Built with robust parent migration logic, Uranus ensures that every cell, output, and toolbar remains intact during window transitions.
+
+---
+
+### 🧠 Attribute Table — Inspect Your Runtime Like a Pro
+
+Uranus includes a dynamic attribute inspector that visualizes all user-defined variables and objects in a structured table:
+
+| Name         | Type     | Size (bytes) | Value Preview |
+|--------------|----------|--------------|----------------|
+| `df`         | DataFrame| 2048         | `<table>`      |
+| `img`        | Image    | 5120         | `<image>`      |
+| `model`      | Class    | 1024         | `<object>`     |
+
+Features:
+- Recursively inspects attributes of user-defined classes and instances
+- Filters internal and unsupported types for clarity
+- Displays live memory footprint and object type
+- Fully integrated with IPython kernel and object store
+
+> Whether you're debugging a complex pipeline or teaching data structures, this table gives you full visibility into your runtime environment.
+
+---
+
+These features are designed and implemented by [Atila Ghashghaie](https://github.com/atila-gh) — bringing modular architecture and deep introspection to the heart of Python development.
+
 ## Installation and Run Project After GitHub Cloning 
 
 1- Go to Project Folder  -> Uranus-IDE\

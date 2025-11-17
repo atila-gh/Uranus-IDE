@@ -8,9 +8,9 @@ from IPython.core.interactiveshell import InteractiveShell
 # Import Pyqt Feturse
 from PyQt5.QtGui import  QIcon , QKeySequence 
 from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject ,QEventLoop 
-from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWidget
-    , QVBoxLayout , QSpacerItem, QSizePolicy , QScrollArea,QDialog, QVBoxLayout, QLineEdit
-    , QPushButton , QLabel, QHBoxLayout , QFileDialog, QMessageBox)
+from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWidget , QFrame , QMainWindow
+    , QVBoxLayout , QSpacerItem, QSizePolicy , QScrollArea,QDialog, QVBoxLayout, QLineEdit , QMdiSubWindow , QStatusBar
+    , QPushButton , QLabel, QHBoxLayout , QFileDialog, QMessageBox , QCheckBox)
 
 # Import Uranus Class
 from Uranus.Cell import Cell
@@ -448,7 +448,7 @@ class IPythonKernel:
             
     
     
-class WorkWindow(QWidget):
+class WorkWindow(QFrame):
     """
        The main notebook interface for Uranus IDE.
 
@@ -481,30 +481,36 @@ class WorkWindow(QWidget):
     focused_cell = None
 
     def __init__(self, nb_content=None, file_path=None , status_l = None 
-                 , status_c = None , status_r = None ):
+                 , status_c = None , status_r = None  , mdi_area = None):
         self.debug = False
         if self.debug: print('[WorkWindow]->[__init__]')
 
         super().__init__()
 
         self.ipython_kernel = IPythonKernel()
-        self.ipython_kernel.input_waiter = InputWaiter(self) # for cover input with dialog
-        self.file_path = file_path
-        self.cell_widgets = []
+        self.ipython_kernel.input_waiter = InputWaiter(self) # for cover input with dialog        
+        self.file_path = file_path        
         self.nb_content = nb_content
-        self.execution_in_progress = False
-        self.outputs = []
+        self.mdi_area = mdi_area # Midwindow Mainwindow Original Window Container        
         self.status_l = status_l
         self.status_c = status_c
         self.status_r = status_r
-        self.saved_flag = False
+        
+        self.cell_widgets = []
+        self.outputs = []
         self.original_sources = []
+        self.deleted_cells_stack = []
+        
+        self.execution_in_progress = False        
+        
+        self.detached = False
+        self.detached_window = None
+        self.fake_close = False
+       
+       
         # path of temp.chk file 
         base_dir = os.path.dirname(os.path.abspath(__file__))
         self.temp_path = os.path.join(base_dir, 'temp.chk')
-        
-
-        self.deleted_cells_stack = []
         
         # Set window title from file name
         if self.file_path:
@@ -512,6 +518,21 @@ class WorkWindow(QWidget):
             self.name_only = os.path.splitext(filename)[0]
             self.setWindowTitle(self.name_only)
 
+
+        # --------------------------- GRAPHIC -----------------------------
+        
+        # Define New QFrame
+        
+        
+       
+        self.setFrameShape(QFrame.StyledPanel)   # خط دور فریم
+        self.setFrameShadow(QFrame.Raised)       # حالت برجسته
+        self.setLineWidth(2)                      # ضخامت خط دور فریم
+
+
+    
+        
+        
         # Set minimum window size
         self.setMinimumSize(620, 600)
 
@@ -557,8 +578,6 @@ class WorkWindow(QWidget):
         final_layout.addLayout(top_bar_layout)
         final_layout.addLayout(horizontal_layout)
 
-
-       
 
         # --- Load initial content ---
         self.load_file(self.nb_content)
@@ -687,6 +706,24 @@ class WorkWindow(QWidget):
                                    """)
         print_cell.clicked.connect(self.print_cell)
         self.top_toolbar.addWidget(print_cell)
+        
+        
+        # Detach Check Button 
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "detach.png")
+        self.chk_detach = QCheckBox()
+        self.chk_detach.setToolTip("Toggle floating mode")
+        self.chk_detach.setIcon(QIcon(icon_path))  # یا مسیر مستقیم فایل
+        self.chk_detach.setToolTip("""
+                            <b>Detach Window</b><br>                            
+                            "Detach editor into a floating window." 
+                            """)
+        self.chk_detach.clicked.connect(self.toggle_detach_mode)
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.top_toolbar.addWidget(spacer)         # این فاصله‌دهنده همه‌چیز رو به چپ می‌چسبونه
+        self.top_toolbar.addWidget(self.chk_detach)  # این می‌ره سمت راست
+
+       
 
     def setup_toolbar_buttons(self):
         if self.debug :print('[WorkWindow->setup_toolbar_buttons]')
@@ -937,7 +974,9 @@ class WorkWindow(QWidget):
                     "cell_type": self.focused_cell.editor_type,
                     "source": content,
                     "color": self.focused_cell.border_color,
-                    "origin": self.focused_cell.origin  # ← فقط این خط اضافه شده
+                    "origin": self.focused_cell.origin , # ← فقط این خط اضافه شده
+                    "nb_cell" : self.focused_cell.nb_cell
+                    
                 })
 
             # حذف سلول از رابط کاربری و لیست
@@ -1005,12 +1044,12 @@ class WorkWindow(QWidget):
             
             with open(file_path, "w", encoding="utf-8") as f:
                 nbformat.write(nb, f)
-        
             
+         
+            if not temp :
+                print(f'[FILE {file_path} SAVED]')
+                self.status_l('Saved To : '+self.file_path)
             
-        
-            self.status_l('Saved To : '+self.file_path)
-            self.saved_flag = True
 
     
     def load_file(self, content):
@@ -1095,16 +1134,19 @@ class WorkWindow(QWidget):
         source = cell_info["source"]
         color = cell_info["color"]
         origin = cell_info['origin']
+        nb_cell = cell_info['nb_cell']
 
         cell = Cell(
             editor_type=cell_type,
-            content=source,
+            src_content=source,
             border_color=color,
             kernel=self.ipython_kernel,
             notify_done=self.execution_done,
             origin = origin  ,
             status_c = self.status_c ,
-            status_r = self.status_r
+            status_r = self.status_r,
+            nb_cell = nb_cell
+            
         )
 
         cell.clicked.connect(lambda c=cell: self.set_focus(c))
@@ -1227,12 +1269,15 @@ class WorkWindow(QWidget):
               
     def closeEvent(self, event):
         
-     
+            if self.fake_close :
+                self.fake_close = False
+                return
+            
             if  self.is_notebook_modified():
                 return 
             
             
-            msg = QMessageBox(self)
+            msg = QMessageBox(self)            
             msg.setIcon(QMessageBox.Question)
             msg.setWindowTitle("Save File")
             msg.setText(f"Do you want to save changes to:\n\n{self.name_only}")
@@ -1247,7 +1292,11 @@ class WorkWindow(QWidget):
                
 
             elif choice == QMessageBox.Discard:
-                pass
+                parent = self.parent()
+                
+                parent.close()
+
+
 
             elif choice == QMessageBox.Cancel:
                
@@ -1257,8 +1306,7 @@ class WorkWindow(QWidget):
         # اگر از حلقه با موفقیت خارج شد یعنی هیچ Cancel وجود ندارد
             event.accept()
 
-  
-      
+    
     def is_notebook_modified(self):
         self.ipynb_format_save_file(True)
         hash1 = self.compute_md5(self.temp_path)
@@ -1282,3 +1330,57 @@ class WorkWindow(QWidget):
     def print_cell(self):
         if self.focused_cell : 
             self.focused_cell.print_full_cell()
+            
+    
+    def toggle_detach_mode(self):
+        self.fake_close = True
+        if self.chk_detach.isChecked():
+            
+            # مسیر رفت: از MDI به QMainWindow
+            mdi_subwindow = self.parent()
+            if mdi_subwindow and isinstance(mdi_subwindow, QMdiSubWindow):
+                self.setParent(None)  # قطع ارتباط با QMdiSubWindow                
+                mdi_subwindow.close()
+
+            self.detached_window = QMainWindow()
+            self.detached_window.setWindowTitle(self.windowTitle())
+            self.detached_window.setCentralWidget(self)
+            self.detached_window.closeEvent = self._handle_detached_close_event
+            self.detached_window.resize(1000, 800)
+            icon_path = os.path.join(os.path.dirname(__file__), "image", "ipynb_icon.png")  
+            icon = QIcon(icon_path)  # مسیر آیکن یا QRC
+            self.detached_window.setWindowIcon(icon)
+
+
+            # افزودن status bar
+            status_bar = QStatusBar()
+            status_bar.setStyleSheet("background-color: #f0f0f0; color: #444; font-size: 11px;")
+            status_bar.showMessage("Detached mode active")
+            self.detached_window.setStatusBar(status_bar)
+
+
+            self.detached_window.show()
+            self.detached = True
+
+        else:
+            # مسیر برگشت: از QMainWindow به MDI
+            if self.detached_window:
+                self.detached_window.takeCentralWidget()  # جلوگیری از حذف self
+                self.detached_window.close()
+                self.detached_window = None
+                self.detached = False
+
+                if self.mdi_area and hasattr(self.mdi_area, "addSubWindow"):
+                    sub_window = self.mdi_area.addSubWindow(self)
+                    sub_window.show()
+            
+
+    def _handle_detached_close_event(self, event):
+        """
+        Custom closeEvent for detached QMainWindow.
+        This ensures WorkWindow's closeEvent logic is triggered.
+        """
+        self.closeEvent(event)  # اجرای منطق ذخیره‌سازی و هشدار
+        if event.isAccepted():
+            self.detached_window = None
+            self.detached = False
