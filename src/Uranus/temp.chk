@@ -1,26 +1,47 @@
 {
  "cells": [
   {
+   "cell_type": "markdown",
+   "id": "7b1c8628caa5557e9f7e2d39bea1f1a3",
+   "metadata": {
+    "bg": "#BEBDBD",
+    "height": 201,
+    "uranus": {
+     "edited": true,
+     "origin": "jupyter"
+    }
+   },
+   "source": [
+    "# salam\n",
+    "\n",
+    "### bye\n",
+    "\n",
+    "salam salam \n",
+    "\n",
+    "![image.png](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAA8CAIAAABZ6yszAAACxklEQVRoBe1ZMWvjMBTWXwn4DwTyB86QxZCl2xk6hIxHhmI6HNlK6SQ6ZTrEDQEvAS8HvqGgLAEvBXcIKMOBO2TQ4MFDBw0ZfKSWXAXcxHbc2A4KIQbrWf6+770n6b0AoD5KAaWAUkApoBRQClyIAj3DvDbTr9FrB62OfovwikYszviwiK4wutU7zeTSHdskzICdcSsk9rjbJBaaCZd0D+iWRRtCnrEzs+2Zg58J2URsu2dCl9BoBAnNwhJ4Rn37p/GJvN3Rg+PTj/BiG9fS6iWhWTgNGxbgRzNHfHfMRxykLCiukYOB1gIIxZNC60xvkjJna1RPLBnzgAd1WEpFyXvB7PwU+ojwpAycQdk4Hro8fZgPz5wM1iJK5Kd/R2Xh756rap6iGKCfyL/1pycqp035VG/epCiK8vZ3Hk/eF1h+EvEkfEl8ybw7ceurrz+eePyQXxW8qvOb8Gj8Y1YwXZ4p0Jq/0b3OY37MZoy5Hit0zLSacVOsHaSiFyLugnVF8x2jaQnF2kpAd16TEGorAdD2HACtX4VAlftAZ3r+fQCAe+/tPQ1O34n7Nj8SnnUnls4w0cI6tmodGq/rLARAHxF+nKDu8BDEQ2M3YkHeEtQ/ZPglY8bstHpAqmmC+fnrgZ0mUkUWFqzIBtATtWhtFdmOglzRF6mJpco+jouSrzieNMvdiMo4jhn1nYfRga5Edu+oZg7AgIs9TeOkL7Ty3Jltz7G/IkHI9vtCLFhAQ0qDOPRg6dK0Ep90x7bc80lOS5m/7BXD76L/0igOAIDu8N5ZBtm90YiSBbK+CeipbFJCx5E/rdcPKSqg6Vcf3enPenXCvKEcBLxc18HU54VZ3CQ/5MIujGQOjKCmxJKAl+t6ERzSU1Yct9YPF8bhn63nir+mGQ2EH9pKAACw+6vzSj+x/do0xyg8SgGlgFJAKaAUUAo0VIH/8KWUrEVVLlEAAAAASUVORK5CYII=)\n"
+   ]
+  },
+  {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "8ea49ee60a850e4625efcff087156d314b8f3789",
+   "id": "f34d33bcb5c13eae1c15faddc6054e479f74aa28",
    "metadata": {
     "bg": "#BEBDBD",
     "uranus": {
-     "origin": "uranus"
+     "origin": "jupyter"
     }
    },
    "outputs": [],
    "source": [
-    "oa"
+    "print('hi')"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "90d5e539f7b3f6a1ec5c66b86ab07772",
+   "id": "985ebcfe50c1b0594aa8ee08811d531b",
    "metadata": {
     "bg": "#BEBDBD",
-    "height": 61,
+    "height": 114,
     "uranus": {
      "origin": "uranus"
     }
@@ -30,127 +51,7 @@
     "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n",
     "p, li { white-space: pre-wrap; }\n",
     "</style></head><body style=\" font-family:'Segoe UI'; font-size:12pt; font-weight:400; font-style:normal;\">\n",
-    "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">salame<span style=\" font-size:13pt;\">srgadssgds</span></p></body></html>"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 1,
-   "id": "29d7e14cd9dee89a3d9867e5e9788379579a0758",
-   "metadata": {
-    "bg": "#BEBDBD",
-    "uranus": {
-     "origin": "uranus"
-    }
-   },
-   "outputs": [],
-   "source": [
-    "fjfdghjgjdg"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "3b867af170514f6cbfce0201fdf1a4bd",
-   "metadata": {
-    "bg": "#BEBDBD",
-    "height": 59,
-    "uranus": {
-     "origin": "uranus"
-    }
-   },
-   "source": [
-    "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n",
-    "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n",
-    "p, li { white-space: pre-wrap; }\n",
-    "</style></head><body style=\" font-family:'Segoe UI'; font-size:12pt; font-weight:400; font-style:normal;\">\n",
-    "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 1,
-   "id": "b9ba2d9891d1c0aa011eca26b88e858b2e646181",
-   "metadata": {
-    "bg": "#BEBDBD",
-    "uranus": {
-     "origin": "uranus"
-    }
-   },
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "0"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "1"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "2"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "3"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "4"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "5"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "6"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "7"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "8"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "9"
-     ]
-    }
-   ],
-   "source": [
-    "for i in range (10):\n",
-    "    print(i)"
+    "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:17pt; font-weight:600; color:#0000ff;\">salam</span></p></body></html>"
    ]
   }
  ],

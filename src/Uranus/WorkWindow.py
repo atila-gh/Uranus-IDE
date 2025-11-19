@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWi
 # Import Uranus Class
 from Uranus.Cell import Cell
 from Uranus.ObjectInspectorWindow import ObjectInspectorWindow
+from Uranus.AstDetection import RelationChartView
 
  
 class FindReplaceDialog(QDialog):
@@ -706,7 +707,19 @@ class WorkWindow(QFrame):
                                    """)
         print_cell.clicked.connect(self.print_cell)
         self.top_toolbar.addWidget(print_cell)
+        self.top_toolbar.addSeparator()
         
+        # Drawing  Graph
+        graph = QToolButton()
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "graph.png")
+        graph.setIcon(QIcon(icon_path))
+        graph.setToolTip("""
+                                   <b>Graph</b><br>                                   
+                                   Drawing Graph For Run cell Focused Cell 
+                                   """)
+        graph.clicked.connect(self.graph)
+        self.top_toolbar.addWidget(graph)
+      
         
         # Detach Check Button 
         icon_path = os.path.join(os.path.dirname(__file__), "image", "detach.png")
@@ -722,8 +735,6 @@ class WorkWindow(QFrame):
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.top_toolbar.addWidget(spacer)         # این فاصله‌دهنده همه‌چیز رو به چپ می‌چسبونه
         self.top_toolbar.addWidget(self.chk_detach)  # این می‌ره سمت راست
-
-       
 
     def setup_toolbar_buttons(self):
         if self.debug :print('[WorkWindow->setup_toolbar_buttons]')
@@ -1050,8 +1061,7 @@ class WorkWindow(QFrame):
                 print(f'[FILE {file_path} SAVED]')
                 self.status_l('Saved To : '+self.file_path)
             
-
-    
+  
     def load_file(self, content):
         if self.debug:
             print('[WorkWindow->load_file]')
@@ -1384,3 +1394,18 @@ class WorkWindow(QFrame):
         if event.isAccepted():
             self.detached_window = None
             self.detached = False
+            
+            
+    def graph (self) :
+        
+        if hasattr(self.focused_cell , 'editor'):
+            text = self.focused_cell.editor.toPlainText()
+            self.graph_window = QMainWindow(self)
+            self.graph_window.setWindowTitle("Graph Window")
+            # ویجت گراف
+            chart = RelationChartView(code=text)
+            # قرار دادن در پنجرهٔ جدید
+            self.graph_window.setCentralWidget(chart)
+            self.graph_window.resize(800, 600)
+            self.graph_window.show()
+
