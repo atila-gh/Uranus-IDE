@@ -16,6 +16,44 @@ FUNC_PALETTE = [
 ]
 
 class CodeAnalyzer:
+    """
+    A static-code analysis utility that inspects Python source code using the AST module
+    and extracts structural information about variables, functions, classes, methods,
+    and their interactions.
+
+    This analyzer identifies:
+      • Root-level variables
+      • Functions and their local variables
+      • Classes, including:
+            - Parent classes
+            - Class-level variables
+            - Instance variables
+            - Methods and their local variables
+            - Cross-class references and method/instance usages
+
+    The collected data is normalized into a rich dictionary structure and is intended
+    for consumption by visualization or documentation tools.
+
+    Parameters
+    ----------
+    code : str
+        Raw Python source code to be analyzed.
+
+    Attributes
+    ----------
+    code : str
+        The original source code.
+    tree : ast.AST
+        Parsed AST tree of the input code.
+    root_vars : list
+        List of variable names defined at module root level.
+    functions : dict
+        Mapping of function_name → list of 'function.local_variable'.
+    classes : dict
+        Mapping of class_name → metadata extracted from class body.
+    res : dict
+        Final aggregated analysis result containing: root_vars, functions, classes.
+    """
     def __init__(self, code: str):
         self.code = code
         self.tree = ast.parse(code)
@@ -120,6 +158,42 @@ class CodeAnalyzer:
 
 
 class RelationChartView(QGraphicsView):
+    """
+    A PyQt-based graphical viewer that visualizes relationships between classes,
+    functions, variables, and method interactions extracted from Python source code.
+
+    Internally, Graphviz is used to generate an SVG diagram representing:
+        • Classes and inherited parents
+        • Class variables and instance variables
+        • Methods and their local variables
+        • Function-level variables
+        • Cross-class connections (method calls, attribute access, instantiations)
+        • Imported or external parent classes
+
+    The generated SVG graph is rendered inside a QGraphicsScene and supports
+    interactive navigation such as:
+        • Mouse-wheel zooming
+        • Drag-to-pan
+        • Auto-centering
+
+    Parameters
+    ----------
+    code : str, optional
+        Python code whose structure will be analyzed and visualized.
+    parent : QWidget, optional
+        Parent widget for the QGraphicsView.
+
+    Attributes
+    ----------
+    code : str
+        Provided source code to be visualized.
+    scene : QGraphicsScene
+        The scene containing the SVG graph.
+    astdetect : CodeAnalyzer
+        Analyzer instance used to extract code structure.
+    context : dict
+        Parsed analysis result containing functions, classes, variables.
+    """
     def __init__(self, code=None, parent=None):
         super().__init__(parent)
         if not code:
@@ -140,6 +214,24 @@ class RelationChartView(QGraphicsView):
         self.load_graph()
 
     def normalize_classes(self, classes_dict):
+        """
+        Merge imported-parent placeholder classes into their real class names
+        and unify class metadata.
+
+        This method resolves duplicates created for imported parents,
+        removes suffixes such as '.import', merges attributes, methods, variables,
+        and ensures uniqueness of lists.
+
+        Parameters
+        ----------
+        classes_dict : dict
+            Raw class metadata extracted by CodeAnalyzer.
+
+        Returns
+        -------
+        dict
+            Normalized class metadata indexed by clean class names.
+        """
         normalized = {}
         for cls_name, info in classes_dict.items():
             base_name = cls_name.replace(".import", "")
@@ -171,12 +263,40 @@ class RelationChartView(QGraphicsView):
         return normalized
 
     def assign_colors(self, keys, palette):
+        """
+        Assign deterministic colors to keys based on a given palette.
+
+        Parameters
+        ----------
+        keys : iterable
+            Names of classes or functions.
+        palette : list
+            List of color hex strings.
+
+        Returns
+        -------
+        dict
+            Mapping of key → color.
+        """
         color_map = {}
         for i, k in enumerate(sorted(keys)):
             color_map[k] = palette[i % len(palette)]
         return color_map
 
     def load_graph(self):
+        """
+        Build the Graphviz graph for all detected code entities, render it
+        into SVG, and display it in the QGraphicsScene.
+
+        This includes:
+            • Root variables
+            • Functions and their locals
+            • Classes, variables, instance vars, and methods
+            • Inheritance edges
+            • Cross-class call/attribute relationships
+
+        The final SVG is centered and scaled inside the view.
+        """
         dot = Digraph(format="svg")
         classes = self.normalize_classes(self.context.get("classes", {}))
         class_color = self.assign_colors(classes.keys(), CLASS_PALETTE)
@@ -271,6 +391,14 @@ class RelationChartView(QGraphicsView):
         self.centerOn(0, 0)
 
     def wheelEvent(self, event):
+        """
+        Handle mouse-wheel zooming for the diagram.
+
+        Parameters
+        ----------
+        event : QWheelEvent
+            Wheel event containing zoom direction.
+        """
         zoom_in_factor = 1.25
         zoom_out_factor = 1 / zoom_in_factor
         if event.angleDelta().y() > 0:

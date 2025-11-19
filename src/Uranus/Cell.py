@@ -527,8 +527,6 @@ class Cell(QFrame):
 
         return cell
 
-   
-        
     def create_output_editor (self):
         self.output_editor = OutputEditor()
         self.toggle_output_button.setVisible(False)
@@ -598,8 +596,7 @@ class Cell(QFrame):
                 self.output_editor.adjust_height()
 
         self.outputs = outputs
-        
-
+      
     def get_nb_markdown_cell(self):
         """
         Converts the current cell's content to a Jupyter-compatible Markdown cell.
@@ -637,7 +634,6 @@ class Cell(QFrame):
             #print('[CELL-> NOT FLAGED]' , self.editor_height)
         return cell
     
-
     def print_full_cell(self, parent=None):
         """
         Print the full content of this cell (code/doc editor + outputs),

@@ -15,7 +15,7 @@ from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWi
 # Import Uranus Class
 from Uranus.Cell import Cell
 from Uranus.ObjectInspectorWindow import ObjectInspectorWindow
-from Uranus.AstDetection import RelationChartView
+#from Uranus.AstDetection import RelationChartView
 
  
 class FindReplaceDialog(QDialog):
@@ -1397,15 +1397,16 @@ class WorkWindow(QFrame):
             
             
     def graph (self) :
+        pass
         
-        if hasattr(self.focused_cell , 'editor'):
-            text = self.focused_cell.editor.toPlainText()
-            self.graph_window = QMainWindow(self)
-            self.graph_window.setWindowTitle("Graph Window")
-            # ویجت گراف
-            chart = RelationChartView(code=text)
-            # قرار دادن در پنجرهٔ جدید
-            self.graph_window.setCentralWidget(chart)
-            self.graph_window.resize(800, 600)
-            self.graph_window.show()
+        # if hasattr(self.focused_cell , 'editor'):
+        #     text = self.focused_cell.editor.toPlainText()
+        #     self.graph_window = QMainWindow(self)
+        #     self.graph_window.setWindowTitle("Graph Window")
+        #     # ویجت گراف
+        #     chart = RelationChartView(code=text)
+        #     # قرار دادن در پنجرهٔ جدید
+        #     self.graph_window.setCentralWidget(chart)
+        #     self.graph_window.resize(800, 600)
+        #     self.graph_window.show()
 

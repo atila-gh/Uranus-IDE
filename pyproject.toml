@@ -21,7 +21,9 @@ dependencies = [
     "IPython",
     "nbformat",
     "markdown2",
-    "html2text"
+    "html2text",
+    "graphviz",
+    "Pillow"
 ]
 
 [project.urls]
