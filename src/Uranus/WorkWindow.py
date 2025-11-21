@@ -6,7 +6,7 @@ from traitlets.config import Config
 from IPython.core.interactiveshell import InteractiveShell
 
 # Import Pyqt Feturse
-from PyQt5.QtGui import  QIcon , QKeySequence 
+from PyQt5.QtGui import  QIcon , QKeySequence , QTextCursor
 from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject ,QEventLoop 
 from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWidget , QFrame , QMainWindow
     , QVBoxLayout , QSpacerItem, QSizePolicy , QScrollArea,QDialog, QVBoxLayout, QLineEdit , QMdiSubWindow , QStatusBar
@@ -17,113 +17,178 @@ from Uranus.Cell import Cell
 from Uranus.ObjectInspectorWindow import ObjectInspectorWindow
 #from Uranus.AstDetection import RelationChartView
 
- 
+
 class FindReplaceDialog(QDialog):
     """
-        A dialog window for performing find and replace operations within a text editor.
-
-        Features:
-        - Allows users to search for specific text within the editor.
-        - Supports single replacement and bulk replacement of matched text.
-        - Displays match count and navigation between matches.
-
-        Parameters:
-        - editor (QPlainTextEdit or QTextEdit): The target editor to operate on.
-        - parent (QWidget): Optional parent widget.
-
-        Usage:
-        This dialog is typically triggered via a shortcut (Ctrl+F) and interacts directly
-        with the editor's text cursor and document model.
-        """
+    Find/replace with preindexed matches. No overlapping search. Navigation and replacement
+    operate on stored ranges to avoid rebuilding and infinite loops (e.g., prin -> print).
+    """
 
     def __init__(self, editor, parent=None):
         super().__init__(parent)
-
-        self.matches = []
-        self.current_index = -1
-
         self.editor = editor
         self.setWindowTitle("Find and Replace")
-        self.setMinimumWidth(300)
+        self.setMinimumWidth(340)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
+        self.matches = []         # list of (start, length)
+        self.current_index = -1   # index into matches
+        self.find_text = ""
+        self.replace_text = ""
+
         layout = QVBoxLayout(self)
-
-        self.find_input = QLineEdit()
-        self.replace_input = QLineEdit()
-
-
         self.status_label = QLabel("No matches")
         layout.addWidget(self.status_label)
 
         layout.addWidget(QLabel("Find:"))
+        self.find_input = QLineEdit()
         layout.addWidget(self.find_input)
+
         layout.addWidget(QLabel("Replace with:"))
+        self.replace_input = QLineEdit()
         layout.addWidget(self.replace_input)
 
         btn_layout = QHBoxLayout()
-        btn_find = QPushButton("Find Next")
+        btn_find_all = QPushButton("Find All")
+        btn_find_next = QPushButton("Next")
+        btn_find_prev = QPushButton("Prev")
         btn_replace = QPushButton("Replace")
         btn_replace_all = QPushButton("Replace All")
 
-        btn_find.clicked.connect(self.find_next)
-        btn_replace.clicked.connect(self.replace_one)
-        btn_replace_all.clicked.connect(self.replace_all)
-
-
-
-        btn_layout.addWidget(btn_find)
+        btn_layout.addWidget(btn_find_all)
+        btn_layout.addWidget(btn_find_prev)
+        btn_layout.addWidget(btn_find_next)
         btn_layout.addWidget(btn_replace)
         btn_layout.addWidget(btn_replace_all)
         layout.addLayout(btn_layout)
 
-    def find_next(self):
-        text = self.find_input.text()
-        if not text:
+        # connections
+        btn_find_all.clicked.connect(self.find_all)
+        btn_find_next.clicked.connect(self.goto_next)
+        btn_find_prev.clicked.connect(self.goto_prev)
+        btn_replace.clicked.connect(self.replace_one)
+        btn_replace_all.clicked.connect(self.replace_all)
+
+        # optional: rebuild when find text changes
+        self.find_input.textChanged.connect(self.on_find_text_changed)
+
+    def on_find_text_changed(self, _):
+        # reset index so user must press Find All again
+        self.matches.clear()
+        self.current_index = -1
+        self.status_label.setText("No matches")
+
+    def find_all(self):
+        self.find_text = self.find_input.text()
+        if not self.find_text:
+            self.matches.clear()
+            self.current_index = -1
+            self.status_label.setText("Empty find text")
             return
 
-        # پیدا کردن همه موارد
         self.matches = []
-        cursor = self.editor.textCursor()
         doc = self.editor.document()
-        pos = 0
+        cursor = QTextCursor(doc)
+        cursor.setPosition(0)
+
+        # non-overlapping search: advance from selectionEnd()
         while True:
-            found = doc.find(text, pos)
+            found = doc.find(self.find_text, cursor)
             if found.isNull():
                 break
-            self.matches.append(found)
-            pos = found.position() + 1
+            start = found.selectionStart()
+            length = found.selectionEnd() - start
+            self.matches.append((start, length))
+            cursor.setPosition(found.selectionEnd())
 
         if not self.matches:
-            self.status_label.setText("No matches found")
             self.current_index = -1
+            self.status_label.setText("No matches found")
             return
 
-        # حرکت به مورد بعدی
+        self.current_index = 0
+        self._select_match(self.current_index)
+        self._update_status()
+
+    def goto_next(self):
+        if not self.matches:
+            self.status_label.setText("No matches")
+            return
         self.current_index = (self.current_index + 1) % len(self.matches)
-        self.editor.setTextCursor(self.matches[self.current_index])
-        self.status_label.setText(f"Match {self.current_index + 1} of {len(self.matches)}")
+        self._select_match(self.current_index)
+        self._update_status()
+
+    def goto_prev(self):
+        if not self.matches:
+            self.status_label.setText("No matches")
+            return
+        self.current_index = (self.current_index - 1) % len(self.matches)
+        self._select_match(self.current_index)
+        self._update_status()
 
     def replace_one(self):
+        if not self.matches or self.current_index < 0:
+            return
+        self.replace_text = self.replace_input.text()
+        start, length = self.matches[self.current_index]
+
         cursor = self.editor.textCursor()
-        if cursor.hasSelection():
-            cursor.insertText(self.replace_input.text())
-        self.find_next()  # بعد از جایگزینی، برو به مورد بعدی
+        cursor.setPosition(start)
+        cursor.setPosition(start + length, QTextCursor.KeepAnchor)
+        cursor.insertText(self.replace_text)
+
+        # compute delta and update subsequent match positions
+        delta = len(self.replace_text) - length
+        self.matches[self.current_index] = (start, len(self.replace_text))
+
+        for i in range(self.current_index + 1, len(self.matches)):
+            s, l = self.matches[i]
+            self.matches[i] = (s + delta, l)
+
+        # move to next match (if any)
+        if len(self.matches) > 1:
+            self.current_index = (self.current_index + 1) % len(self.matches)
+            self._select_match(self.current_index)
+        self._update_status()
 
     def replace_all(self):
-        self.status_label.setText(f"Replaced {len(self.matches)} matches")
-        self.matches = []
-        self.current_index = -1
-        find_text = self.find_input.text()
-        replace_text = self.replace_input.text()
-        if not find_text:
+        if not self.matches:
+            self.status_label.setText("No matches")
             return
-        cursor = self.editor.textCursor()
+        self.replace_text = self.replace_input.text()
+
+        # replace from end to start to avoid shifting positions
+        doc = self.editor.document()
+        cursor = QTextCursor(doc)
         cursor.beginEditBlock()
-        text = self.editor.toPlainText()
-        new_text = text.replace(find_text, replace_text)
-        self.editor.setPlainText(new_text)
-        cursor.endEditBlock()
+        try:
+            for start, length in reversed(self.matches):
+                c = QTextCursor(doc)
+                c.setPosition(start)
+                c.setPosition(start + length, QTextCursor.KeepAnchor)
+                c.insertText(self.replace_text)
+        finally:
+            cursor.endEditBlock()
+
+        count = len(self.matches)
+        self.matches.clear()
+        self.current_index = -1
+        self.status_label.setText(f"Replaced {count} matches")
+
+    def _select_match(self, idx: int):
+        start, length = self.matches[idx]
+        cursor = self.editor.textCursor()
+        cursor.setPosition(start)
+        cursor.setPosition(start + length, QTextCursor.KeepAnchor)
+        self.editor.setTextCursor(cursor)
+        self.editor.ensureCursorVisible()
+
+    def _update_status(self):
+        if self.matches and self.current_index >= 0:
+            self.status_label.setText(f"Match {self.current_index + 1} of {len(self.matches)}")
+        else:
+            self.status_label.setText("No matches")
+ 
 
 class InputWaiter(QObject): # for Covering Input
     """
