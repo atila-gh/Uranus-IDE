@@ -562,18 +562,21 @@ class WorkWindowPython(QFrame):
         #     self.graph_window.show()
 
     def save_file(self):
-        
+       
         content = self.editor.toPlainText()
         if content : 
             try :
                 with open(self.file_path , 'w' , encoding='utf-8') as f:
                     f.write(content)
-                self.content = content # refresh last Content 
-                self.status_l(f"File saved successfully {self.file_path}")
+                self.content = content # refresh last Content                 
+                self.status_bar.showMessage("File saved successfully", 2000)
+                
+               
+                
 
             except Exception  as e :
                 self.status_l(f'Not Saved {e}')
-                self.status_bar.showMessage("File saved successfully", 3000)
+                
                 
     def update_line_char_update(self, line, column):           
             

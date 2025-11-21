@@ -399,9 +399,7 @@ class MainWindow(QMainWindow):
             sub_window.show()
             MainWindow.open_files[path] = sub_window
             self.work_widget_list.append(work_widget)
-
    
-
     def open_settings_window(self):
         self.settings_window = SettingsWindow()
         self.settings_window.show()
@@ -531,7 +529,7 @@ class MainWindow(QMainWindow):
         else : 
             QMessageBox.warning(self, "Invalid File", "Selected file is not a valid File Type ")
             return
-        
+       
         
     def trigger_save_on_active_workwindow(self):
         active_subwindow = self.mdi_area.activeSubWindow()
@@ -541,6 +539,8 @@ class MainWindow(QMainWindow):
         work_widget = active_subwindow.widget()
         if hasattr(work_widget, "ipynb_format_save_file"):
             work_widget.ipynb_format_save_file()
+        elif  hasattr(work_widget, "save_file"):
+            work_widget.save_file()
 
     def trigger_find_on_active_workwindow(self):
         active_subwindow = self.mdi_area.activeSubWindow()
@@ -587,7 +587,6 @@ class MainWindow(QMainWindow):
         
     def closeEvent(self, event):
         
-
         # بستن پنجره‌های شناور
         for widget in self.work_widget_list:
             if isinstance(widget, WorkWindow) and widget.detached and widget.detached_window:
@@ -601,7 +600,7 @@ class MainWindow(QMainWindow):
                     event.ignore()
                     return
                 
-            
+           
 
         # بستن پنجره‌های داخل mdi_area
         for subwindow in self.mdi_area.subWindowList():
