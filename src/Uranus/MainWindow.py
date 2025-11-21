@@ -3,24 +3,23 @@ import json , nbformat , os
 from PyQt5 import sip
 from PyQt5.QtWidgets import  QMainWindow, QWidget, QVBoxLayout, QToolBar, QToolButton, QDockWidget  , QMessageBox , QMdiArea, QAction , QFileDialog ,QMessageBox , QLabel
 from PyQt5.QtGui import QIcon 
-from PyQt5.QtCore import Qt, QSize , QEvent
+from PyQt5.QtCore import Qt, QSize , QEvent , QTimer
 
 
 from Uranus.utils import  FileTreePanel
  # Make sure your FileTreeView is updated as below
 from Uranus.WorkWindow import WorkWindow 
+
 from Uranus.SettingWindow import SettingsWindow , load_setting
 from Uranus.PythonTemplate import ProjectInfoDialog
 from Uranus.AboutWindow import AboutWindow
+from Uranus.WorkWindowPython import WorkWindowPython
 
 
 
 # noinspection PyUnresolvedReferences
 class MainWindow(QMainWindow):
    
-
-    
-
 
     open_files = {}  # dict: file_path -> WorkWindow instance
     """
@@ -56,7 +55,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         
 
-        self.debug = False
+        self.debug = True
         self.work_widget_list = []
         self.setting = load_setting()
 
@@ -128,7 +127,7 @@ class MainWindow(QMainWindow):
         
         open_file = QAction("Open File", self)      
         open_file.setShortcut("Ctrl+O") 
-        open_file.triggered.connect(self.open_ipynb_file)
+        open_file.triggered.connect(self.open_file)
         file_menu.addAction(open_file)
         
         file_menu.addSeparator()        
@@ -308,9 +307,7 @@ class MainWindow(QMainWindow):
 
             if ext == ".ipynb":
                 existing_subwindow = MainWindow.open_files.get(path)
-
                 if existing_subwindow and not sip.isdeleted(existing_subwindow):
-
                     self.mdi_area.setActiveSubWindow(existing_subwindow)
                 else:
 
@@ -320,14 +317,28 @@ class MainWindow(QMainWindow):
                     else:
                         work_widget = WorkWindow(file_path=path , status_l = self.set_status_left , status_c = self.set_status_center , status_r = self.set_status_right )
                         sub_window = self.mdi_area.addSubWindow(work_widget)
-
-
                         sub_window.destroyed.connect(lambda: MainWindow.open_files.pop(path, None))
-
                         sub_window.show()
                         MainWindow.open_files[path] = sub_window
+            
+            elif ext == '.py' :
+                existing_subwindow = MainWindow.open_files.get(path)
+                if existing_subwindow and not sip.isdeleted(existing_subwindow):
+                    self.mdi_area.setActiveSubWindow(existing_subwindow)
+                else:
 
-
+                    if os.path.getsize(path) > 0:
+                        self.py_format_load_file(path)
+                        
+                    else:
+                        work_widget = WorkWindowPython(file_path=path , status_l = self.set_status_left , context = None
+                                    , status_c = self.set_status_center , status_r = self.set_status_right , mdi_area = self.mdi_area)
+                        sub_window = self.mdi_area.addSubWindow(work_widget)
+                        sub_window.destroyed.connect(lambda: MainWindow.open_files.pop(path, None))
+                        sub_window.show()
+                        MainWindow.open_files[path] = sub_window
+    
+    
     def eventFilter(self, source, event):
         if source == self.tree and event.type() == QEvent.KeyPress:
             if event.key() in (Qt.Key_Return, Qt.Key_Enter):
@@ -364,6 +375,32 @@ class MainWindow(QMainWindow):
         sub_window.show()
         MainWindow.open_files[path] = sub_window
         self.work_widget_list.append(work_widget)
+        
+        
+    def py_format_load_file(self,path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                py_code_context = f.read()
+               
+        except UnicodeDecodeError as e:
+            QMessageBox.warning(self, "Encoding Error", f"Cannot decode file:\n{e}")        
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Unexpected error:\n{e}")
+        else :  
+                     
+            # Make Instance Object
+            
+            work_widget = WorkWindowPython(file_path=path , status_l = self.set_status_left , context = py_code_context
+                                    , status_c = self.set_status_center , status_r = self.set_status_right , mdi_area = self.mdi_area)
+            
+            sub_window = self.mdi_area.addSubWindow(work_widget)
+            icon_path = os.path.join(os.path.dirname(__file__), "image", "python_icon.png")  
+            sub_window.setWindowIcon(QIcon(icon_path))  
+            sub_window.show()
+            MainWindow.open_files[path] = sub_window
+            self.work_widget_list.append(work_widget)
+
+   
 
     def open_settings_window(self):
         self.settings_window = SettingsWindow()
@@ -462,7 +499,7 @@ class MainWindow(QMainWindow):
             self.set_status_left("Saved As: " + new_path)
             
             
-    def open_ipynb_file(self):
+    def open_file(self):
         """
         Opens a file dialog to select a .ipynb file and loads it into a new WorkWindow.
         Only accepts valid Jupyter Notebook files.
@@ -470,19 +507,16 @@ class MainWindow(QMainWindow):
        
 
         path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Open Notebook",
-            "",
-            "Jupyter Notebook (*.ipynb)"
-        )
+        self,
+        "Open File",
+        "",
+        "Notebook/Python (*.ipynb *.py);;All Files (*.*)"
+         )
 
         if not path:
             return  # کاربر لغو کرده
 
-        if not os.path.isfile(path) or not path.lower().endswith(".ipynb"):
-            QMessageBox.warning(self, "Invalid File", "Selected file is not a valid .ipynb notebook.")
-            return
-
+      
         # بررسی اینکه آیا قبلاً باز شده
         existing_subwindow = MainWindow.open_files.get(path)
         if existing_subwindow and not sip.isdeleted(existing_subwindow):
@@ -490,7 +524,13 @@ class MainWindow(QMainWindow):
             return
 
         # بارگذاری فایل
-        self.ipynb_format_load_file(path)
+        if os.path.isfile(path) and path.lower().endswith(".ipynb"):
+            self.ipynb_format_load_file(path)
+        elif os.path.isfile(path) and path.lower().endswith(".py"):
+            self.py_format_load_file(path)
+        else : 
+            QMessageBox.warning(self, "Invalid File", "Selected file is not a valid File Type ")
+            return
         
         
     def trigger_save_on_active_workwindow(self):
@@ -509,8 +549,7 @@ class MainWindow(QMainWindow):
         work_widget = active_subwindow.widget()
         if hasattr(work_widget, "find_replace"):
             work_widget.find_replace()
-            
-            
+           
     def sync_working_directory(self, subwindow):
         """
         Syncs the system working directory with the active WorkWindow's file path.
@@ -528,16 +567,16 @@ class MainWindow(QMainWindow):
                     self.set_status_left('[Current Folder] '+folder)
                 except Exception as e:
                     print(f"⚠️ Failed to set working directory: {e}")
-                    
-  
-
+    
     def set_status_left(self, text: str):
         """Update the left section of the status bar."""
         self.status_left.setText(text)
+        QTimer.singleShot(3000, lambda: self.status_left.clear())
 
     def set_status_center(self, text: str):
         """Update the center section of the status bar."""
         self.status_center.setText(text)
+        QTimer.singleShot(3000, lambda: self.status_center.clear())
 
     def set_status_right(self, text: str):
         """Update the right section of the status bar."""
@@ -556,14 +595,22 @@ class MainWindow(QMainWindow):
                 if not sip.isdeleted(widget) and not widget.isHidden():
                     event.ignore()
                     return
+            elif isinstance(widget, WorkWindowPython) and widget.detached and widget.detached_window:
+                widget.detached_window.close()
+                if not sip.isdeleted(widget) and not widget.isHidden():
+                    event.ignore()
+                    return
+                
+            
 
         # بستن پنجره‌های داخل mdi_area
         for subwindow in self.mdi_area.subWindowList():
             widget = subwindow.widget()
-            if isinstance(widget, WorkWindow):
+            if isinstance(widget, WorkWindow) or isinstance(widget , WorkWindowPython):
                 subwindow.close()
                 if not sip.isdeleted(widget) and not widget.isHidden():
                     event.ignore()
                     return
 
         event.accept()
+

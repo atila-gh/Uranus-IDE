@@ -1,0 +1,551 @@
+ 
+import os ,base64  ,io ,builtins ,uuid , importlib , hashlib , sys,inspect , nbformat
+from nbformat.v4 import  new_output
+from contextlib import redirect_stdout, redirect_stderr
+from traitlets.config import Config
+from IPython.core.interactiveshell import InteractiveShell
+
+# Import Pyqt Feturse
+from PyQt5.QtGui import  QIcon , QKeySequence 
+from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject  , QTimer , pyqtSignal
+from PyQt5.QtWidgets import (QToolBar, QToolButton,  QShortcut, QWidget , QFrame , QMainWindow
+    , QVBoxLayout , QSpacerItem, QSizePolicy , QScrollArea,QDialog, QVBoxLayout, QLineEdit , QMdiSubWindow , QStatusBar
+    , QPushButton , QLabel, QHBoxLayout , QFileDialog, QMessageBox , QCheckBox)
+
+# Import Uranus Class
+try :
+    from Uranus.ObjectInspectorWindow import ObjectInspectorWindow
+    from Uranus.PyCodeEditor import PyCodeEditor
+except ModuleNotFoundError : 
+    from ObjectInspectorWindow import ObjectInspectorWindow
+    from PyCodeEditor import PyCodeEditor
+    
+    
+
+#from Uranus.AstDetection import RelationChartView
+
+ 
+class FindReplaceDialog(QDialog):
+    """
+        A dialog window for performing find and replace operations within a text editor.
+
+        Features:
+        - Allows users to search for specific text within the editor.
+        - Supports single replacement and bulk replacement of matched text.
+        - Displays match count and navigation between matches.
+
+        Parameters:
+        - editor (QPlainTextEdit or QTextEdit): The target editor to operate on.
+        - parent (QWidget): Optional parent widget.
+
+        Usage:
+        This dialog is typically triggered via a shortcut (Ctrl+F) and interacts directly
+        with the editor's text cursor and document model.
+        """
+
+    def __init__(self, editor, parent=None):
+        super().__init__(parent)
+
+        self.matches = []
+        self.current_index = -1
+
+        self.editor = editor
+        self.setWindowTitle("Find and Replace")
+        self.setMinimumWidth(300)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+
+        layout = QVBoxLayout(self)
+
+        self.find_input = QLineEdit()
+        self.replace_input = QLineEdit()
+
+
+        self.status_label = QLabel("No matches")
+        layout.addWidget(self.status_label)
+
+        layout.addWidget(QLabel("Find:"))
+        layout.addWidget(self.find_input)
+        layout.addWidget(QLabel("Replace with:"))
+        layout.addWidget(self.replace_input)
+
+        btn_layout = QHBoxLayout()
+        btn_find = QPushButton("Find Next")
+        btn_replace = QPushButton("Replace")
+        btn_replace_all = QPushButton("Replace All")
+
+        btn_find.clicked.connect(self.find_next)
+        btn_replace.clicked.connect(self.replace_one)
+        btn_replace_all.clicked.connect(self.replace_all)
+
+
+
+        btn_layout.addWidget(btn_find)
+        btn_layout.addWidget(btn_replace)
+        btn_layout.addWidget(btn_replace_all)
+        layout.addLayout(btn_layout)
+
+    def find_next(self):
+        text = self.find_input.text()
+        if not text:
+            return
+
+        # پیدا کردن همه موارد
+        self.matches = []
+        cursor = self.editor.textCursor()
+        doc = self.editor.document()
+        pos = 0
+        while True:
+            found = doc.find(text, pos)
+            if found.isNull():
+                break
+            self.matches.append(found)
+            pos = found.position() + 1
+
+        if not self.matches:
+            self.status_label.setText("No matches found")
+            self.current_index = -1
+            return
+
+        # حرکت به مورد بعدی
+        self.current_index = (self.current_index + 1) % len(self.matches)
+        self.editor.setTextCursor(self.matches[self.current_index])
+        self.status_label.setText(f"Match {self.current_index + 1} of {len(self.matches)}")
+
+    def replace_one(self):
+        cursor = self.editor.textCursor()
+        if cursor.hasSelection():
+            cursor.insertText(self.replace_input.text())
+        self.find_next()  # بعد از جایگزینی، برو به مورد بعدی
+
+    def replace_all(self):
+        self.status_label.setText(f"Replaced {len(self.matches)} matches")
+        self.matches = []
+        self.current_index = -1
+        find_text = self.find_input.text()
+        replace_text = self.replace_input.text()
+        if not find_text:
+            return
+        cursor = self.editor.textCursor()
+        cursor.beginEditBlock()
+        text = self.editor.toPlainText()
+        new_text = text.replace(find_text, replace_text)
+        self.editor.setPlainText(new_text)
+        cursor.endEditBlock()
+    
+class WorkWindowPython(QFrame):
+    
+    code_editor_clicked = pyqtSignal(object)
+    
+    def __init__(self, file_path=None , status_l = None , context= None
+                 , status_c = None , status_r = None  , mdi_area = None):
+        self.debug = False
+        if self.debug: print('[WorkWindowPython]->[__init__]')
+
+        super().__init__() 
+        self.file_path = file_path        
+        self.content = context
+        self.mdi_area = mdi_area # Midwindow Mainwindow Original Window Container        
+        self.status_l = status_l
+        self.status_c = status_c
+        self.status_r = status_r       
+        self.outputs = []
+        self.execution_in_progress = False     
+        self.detached = False
+        self.detached_window = None
+        self.fake_close = False
+       
+       
+        # path of temp.chk file 
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.temp_path = os.path.join(base_dir, 'temp.chk')
+        
+        # Set window title from file name
+        if self.file_path:
+            filename = os.path.basename(self.file_path)
+            self.name_only = os.path.splitext(filename)[0]
+            self.setWindowTitle(self.name_only)
+
+
+        # --------------------------- GRAPHIC -----------------------------
+        
+        # Define New QFrame
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "python_icon.png")  
+        self.setWindowIcon(QIcon(icon_path))  
+        
+        
+        self.setFrameShape(QFrame.StyledPanel)   # خط دور فریم
+        self.setFrameShadow(QFrame.Raised)       # حالت برجسته
+        self.setLineWidth(2)                     # ضخامت خط دور فریم
+ 
+        # Set minimum window size
+        self.setMinimumSize(620, 600)
+        
+        # --- Main Layout
+        layout = QVBoxLayout(self) # Biuld a main Vertical Layout and attached on window 
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addSpacing(5)  # فاصله افقی از سمت چپ
+       
+
+        # --- Top Horizontal Toolbar ---
+        self.toolbar = QToolBar()
+        self.toolbar.setOrientation(Qt.Horizontal)
+        self.toolbar.setIconSize(QSize(24, 24))
+        self.setup_top_toolbar_buttons()
+        layout.addWidget(self.toolbar)
+        
+        
+        # --- Add Editor to Layout 
+        self.editor = PyCodeEditor()
+        self.editor.cursorPositionInfo.connect(self.update_line_char_update)
+        self.editor.clicked.connect(lambda: self.code_editor_clicked.emit(self))
+        layout.addWidget(self.editor , stretch=1)        
+        
+        
+        # --- sdd Status Bar to Layout
+        self.status_bar = QStatusBar(self)
+        self.status_bar.showMessage("Ready")
+        layout.addWidget(self.status_bar)   
+        
+        # --- Editir Make Focusd     
+        QTimer.singleShot(0, self.editor.setFocus)
+
+
+        # --- write Code to Editor  ---
+        if self.content :         
+            self.editor.setPlainText(self.content)
+
+
+    def setup_top_toolbar_buttons(self):
+       
+        # Save py File
+        btn_save = QToolButton()
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "save.png")
+        btn_save.setIcon(QIcon(icon_path))
+        btn_save.setToolTip("""
+                            <b>Save File</b><br>
+                            <span style='color:gray;'>Shortcut: <kbd>Ctrl+S</kbd></span><br>
+                            Save the current File in Specific Location.
+                            """)
+
+        btn_save.clicked.connect(self.save_file)
+        self.toolbar.addWidget(btn_save)
+        self.toolbar.addSeparator()  # فاصله یا خط نازک بین دکمه‌ها
+       
+     
+         # Run Button
+        self.run_btn = QToolButton()
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "run_cell.png")
+        self.run_btn.setIcon(QIcon(icon_path))
+        self.run_btn.setToolTip("Run Cell")
+        self.run_btn.clicked.connect(self.run)
+        self.toolbar.addWidget(self.run_btn)
+        # define shortcut for run code F5
+        shortcut = QShortcut(QKeySequence("F5"), self)
+        shortcut.setContext(Qt.ApplicationShortcut)
+        shortcut.activated.connect(self.run)
+        self.run_btn.setToolTip("""
+                                <b>Run Cell</b><br>
+                                <span style='color:gray;'>Shortcut: <kbd>F5</kbd></span><br>
+                                Executes the current cell and displays the output.
+                                """)
+
+ 
+ 
+        # Memory Variable List
+        memory = QToolButton()
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "memory.png")
+        memory.setIcon(QIcon(icon_path))
+        memory.setToolTip("""
+                                   <b>Objects List</b><br>
+                                   <span style='color:gray;'>Shortcut: <kbd>F9</kbd></span><br>
+                                   Object And Variable List
+                                   """)
+        memory.clicked.connect(self.variable_table)
+        self.toolbar.addWidget(memory)
+        self.toolbar.addSeparator()
+        
+        # print 
+        print_cell = QToolButton()
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "print.png")
+        print_cell.setIcon(QIcon(icon_path))
+        print_cell.setToolTip("""
+                                   <b>Print</b><br>
+                                   
+                                   Print Focused Cell 
+                                   """)
+        print_cell.clicked.connect(self.print_cell)
+        self.toolbar.addWidget(print_cell)
+        self.toolbar.addSeparator()
+        
+        # Drawing  Graph
+        graph = QToolButton()
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "graph.png")
+        graph.setIcon(QIcon(icon_path))
+        graph.setToolTip("""
+                                   <b>Graph</b><br>                                   
+                                   Drawing Graph For Run cell Focused Cell 
+                                   """)
+        graph.clicked.connect(self.graph)
+        self.toolbar.addWidget(graph)
+        self.toolbar.addSeparator()
+        
+       
+        # Detach Check Button 
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "detach.png")
+        self.chk_detach = QCheckBox()
+        self.chk_detach.setToolTip("Toggle floating mode")
+        self.chk_detach.setIcon(QIcon(icon_path))  # یا مسیر مستقیم فایل
+        self.chk_detach.setToolTip("""
+                            <b>Detach Window</b><br>                            
+                            "Detach editor into a floating window." 
+                            """)
+        self.chk_detach.clicked.connect(self.toggle_detach_mode)
+        
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.toolbar.addWidget(spacer)         # این فاصله‌دهنده همه‌چیز رو به چپ می‌چسبونه
+        self.toolbar.addWidget(self.chk_detach)  # این می‌ره سمت راست
+
+
+    def run(self):
+        
+       
+        # 🔒 غیرفعال کردن دکمه‌ها
+        
+        self.status_l(self.file_path)
+        
+        #self.run_btn.setEnabled(False)
+        
+
+    def find_replace(self):       
+        
+        
+        if self.focused_cell :
+            if hasattr(self.focused_cell, "editor"): # for Code Editor
+                editor = self.focused_cell.editor
+                dialog = FindReplaceDialog(editor, self)
+                dialog.exec_()
+
+                
+            elif hasattr(self.focused_cell, "d_editor"):  # for  DocumentEditor
+                editor = self.focused_cell.d_editor.editor
+                dialog = FindReplaceDialog(editor, self)
+                dialog.exec_()
+
+    def save_as_file(self):
+        """
+        Prompts the user to choose a new file path and saves the notebook content there.
+        Updates self.file_path and status bar message.
+        """
+        
+
+        new_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save As",
+            self.file_path or "",
+            "Jupyter Notebook (*.ipynb)"
+        )
+
+        if not new_path:
+            return  # کاربر لغو کرده
+
+        cells = []
+        for cell in self.cell_widgets:
+            if cell.editor_type == "code":
+                cells.append(cell.get_nb_code_cell())
+            elif cell.editor_type == "markdown":
+                cells.append(cell.get_nb_markdown_cell())
+
+        nb = nbformat.v4.new_notebook()
+        nb["cells"] = cells
+
+        try:
+            with open(new_path, "w", encoding="utf-8") as f:
+                nbformat.write(nb, f)
+        except Exception as e:
+            QMessageBox.warning(self, "Save Error", f"Could not save file:\n{e}")
+        else:
+            self.file_path = new_path
+            self.status_l("Saved As: " + new_path)
+  
+    def variable_table(self, refresh=False):
+        new_data = self.ipython_kernel.inspect_all_user_attributes(self.ipython_kernel.shell)
+       
+        if not new_data :
+            self.status_c("    No Data For Showing In Table -> Run a Cell To Process " )
+            return
+
+        if hasattr(self, 'obj_table_window') and self.obj_table_window.isVisible() and refresh:
+            
+            
+            self.obj_table_window.add_objects(new_data)
+        elif not refresh:
+            
+            self.obj_table_window = ObjectInspectorWindow(file_name=self.name_only)
+            self.obj_table_window.add_objects(new_data)
+              
+    def closeEvent(self, event):
+        
+           
+            if  not self.is_notebook_modified():
+                return 
+            
+            
+            msg = QMessageBox(self)            
+            msg.setIcon(QMessageBox.Question)
+            msg.setWindowTitle("Save File")
+            msg.setText(f"Do you want to save changes to:\n\n{self.name_only}")
+            msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+            msg.setDefaultButton(QMessageBox.Save)
+
+            choice = msg.exec_()
+
+            if choice == QMessageBox.Save:
+              
+                    self.save_file()
+               
+
+            elif choice == QMessageBox.Discard:
+                parent = self.parent()
+                
+                parent.close()
+
+
+
+            elif choice == QMessageBox.Cancel:
+               
+                event.ignore()
+                return
+
+        # اگر از حلقه با موفقیت خارج شد یعنی هیچ Cancel وجود ندارد
+            event.accept()
+
+    
+    def is_notebook_modified(self):
+        code_string = self.editor.toPlainText()
+        current_hash = hashlib.md5(code_string.encode('utf-8')).hexdigest()
+        original_hash = hashlib.md5(self.content.encode('utf-8')).hexdigest()
+        if current_hash == original_hash :
+            return False
+        return True
+        
+    
+    def print_cell(self):
+        if self.focused_cell : 
+            self.focused_cell.print_full_cell()
+            
+    
+    def toggle_detach_mode(self):
+        self.fake_close = True
+        if self.chk_detach.isChecked():
+            
+            # مسیر رفت: از MDI به QMainWindow
+            mdi_subwindow = self.parent()
+            if mdi_subwindow and isinstance(mdi_subwindow, QMdiSubWindow):
+                self.setParent(None)  # قطع ارتباط با QMdiSubWindow                
+                mdi_subwindow.close()
+
+            self.detached_window = QMainWindow()
+            self.detached_window.setWindowTitle(self.windowTitle())
+            self.detached_window.setCentralWidget(self)
+            self.detached_window.closeEvent = self._handle_detached_close_event
+            self.detached_window.resize(1000, 800)
+            icon_path = os.path.join(os.path.dirname(__file__), "image", "ipynb_icon.png")  
+            icon = QIcon(icon_path)  # مسیر آیکن یا QRC
+            self.detached_window.setWindowIcon(icon)
+
+
+            # افزودن status bar
+            status_bar = QStatusBar()
+            status_bar.setStyleSheet("background-color: #f0f0f0; color: #444; font-size: 11px;")
+            status_bar.showMessage("Detached mode active")
+            self.detached_window.setStatusBar(status_bar)
+
+
+            self.detached_window.show()
+            self.detached = True
+
+        else:
+            # مسیر برگشت: از QMainWindow به MDI
+            if self.detached_window:
+                self.detached_window.takeCentralWidget()  # جلوگیری از حذف self
+                self.detached_window.close()
+                self.detached_window = None
+                self.detached = False
+
+                if self.mdi_area and hasattr(self.mdi_area, "addSubWindow"):
+                    sub_window = self.mdi_area.addSubWindow(self)
+                    sub_window.show()
+            
+
+    def _handle_detached_close_event(self, event):
+        """
+        Custom closeEvent for detached QMainWindow.
+        This ensures WorkWindow's closeEvent logic is triggered.
+        """
+        self.closeEvent(event)  # اجرای منطق ذخیره‌سازی و هشدار
+        if event.isAccepted():
+            self.detached_window = None
+            self.detached = False
+            
+            
+    def graph (self) :
+        pass
+        
+        # if hasattr(self.focused_cell , 'editor'):
+        #     text = self.focused_cell.editor.toPlainText()
+        #     self.graph_window = QMainWindow(self)
+        #     self.graph_window.setWindowTitle("Graph Window")
+        #     # ویجت گراف
+        #     chart = RelationChartView(code=text)
+        #     # قرار دادن در پنجرهٔ جدید
+        #     self.graph_window.setCentralWidget(chart)
+        #     self.graph_window.resize(800, 600)
+        #     self.graph_window.show()
+
+    def save_file(self):
+        
+        content = self.editor.toPlainText()
+        if content : 
+            try :
+                with open(self.file_path , 'w' , encoding='utf-8') as f:
+                    f.write(content)
+                self.content = content # refresh last Content 
+                self.status_l(f"File saved successfully {self.file_path}")
+
+            except Exception  as e :
+                self.status_l(f'Not Saved {e}')
+                self.status_bar.showMessage("File saved successfully", 3000)
+                
+    def update_line_char_update(self, line, column):           
+            
+            self.status_bar.showMessage(f"Line: {line} | Chr: {column}     ")    
+
+    def mousePressEvent(self, event):      
+
+        if self.debug :print('[Cell->mousePressEvent]')
+       
+        cursor = self.editor.textCursor()
+        line = cursor.blockNumber() + 1       
+        column = cursor.positionInBlock() + 1 
+        self.update_line_char_update(line,column)         
+
+
+import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+
+    # ساخت پنجرهٔ اصلی
+    main_window = QMainWindow()
+    main_window.setWindowTitle("Uranus IDE - WorkWindow Test")
+    main_window.resize(900, 700)
+
+    # اضافه کردن WorkWindow به عنوان ویجت مرکزی
+    work_window = WorkWindowPython()
+    main_window.setCentralWidget(work_window)
+
+    main_window.show()
+    sys.exit(app.exec_())

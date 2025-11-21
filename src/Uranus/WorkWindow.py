@@ -719,6 +719,19 @@ class WorkWindow(QFrame):
                                    """)
         graph.clicked.connect(self.graph)
         self.top_toolbar.addWidget(graph)
+        self.top_toolbar.addSeparator()
+        
+        
+        # IPYTON TO PY  
+        ippy = QToolButton()
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "iptopy.png")
+        ippy.setIcon(QIcon(icon_path))
+        ippy.setToolTip("""
+                                   <b>IPYTON TO PYTHON</b><br>                                   
+                                   CONVERT IPYNB TO PY 
+                                   """)
+        ippy.clicked.connect(self.iptopy)
+        self.top_toolbar.addWidget(ippy)
       
         
         # Detach Check Button 
@@ -1410,3 +1423,38 @@ class WorkWindow(QFrame):
         #     self.graph_window.resize(800, 600)
         #     self.graph_window.show()
 
+    def iptopy(self):
+        if not self.file_path :
+            return
+            
+        i = 0
+        base_dir = os.path.dirname(self.file_path)
+        new_path = os.path.join(base_dir, f'{self.name_only}.py')
+        print(new_path)
+        
+
+        with open (new_path , 'w' , encoding='utf-8') as f:
+            
+            for cell in self.cell_widgets :
+                i  = i + 1
+                if cell.editor_type == 'code' and  hasattr(cell , 'editor') and cell.editor :                    
+                                
+                    f.write('\n#--------------------------------------')
+                    f.write(f'\n# CODE CELL {i}')                                          
+                    f.write('\n#--------------------------------------')                 
+                    f.write('\n'+cell.editor.toPlainText() + '\n')
+                    
+                elif cell.editor_type == 'markdown' and hasattr(cell , 'd_editor') and cell.d_editor.editor : 
+                    
+                    f.write('\n#--------------------------------------')
+                    f.write(f'\n# DOCUMENT CELL {i}')                                          
+                    f.write('\n#--------------------------------------')     
+                    
+                    
+                    f.write('\n""" \n')
+                    f.write(cell.d_editor.editor.toPlainText()+ '\n')
+                    f.write('"""\n')
+                
+                        
+                    
+                    
