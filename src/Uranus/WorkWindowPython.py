@@ -1,25 +1,27 @@
  
-import os ,base64  ,io ,builtins ,uuid , importlib , hashlib , sys,inspect , nbformat
-from nbformat.v4 import  new_output
-from contextlib import redirect_stdout, redirect_stderr
-from traitlets.config import Config
-from IPython.core.interactiveshell import InteractiveShell
+import os ,io ,builtins ,importlib , hashlib , sys,inspect 
 
+from qtconsole.rich_jupyter_widget import RichJupyterWidget
+from qtconsole.manager import QtKernelManager
+from PyQt5.QtWidgets import QSplitter
+
+
+
+
+from IPython.core.interactiveshell import InteractiveShell
 # Import Pyqt Feturse
 from PyQt5.QtGui import  QIcon , QKeySequence , QTextCursor
-from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject  , QTimer , pyqtSignal
+from PyQt5.QtCore import  QSize , Qt,    QTimer , pyqtSignal , QProcess
 from PyQt5.QtWidgets import (QToolBar, QToolButton,  QShortcut, QWidget , QFrame , QMainWindow
-    , QVBoxLayout , QSpacerItem, QSizePolicy , QScrollArea,QDialog, QVBoxLayout, QLineEdit , QMdiSubWindow , QStatusBar
+    , QVBoxLayout ,  QSizePolicy ,QDialog, QVBoxLayout, QLineEdit , QMdiSubWindow , QStatusBar
     , QPushButton , QLabel, QHBoxLayout , QFileDialog, QMessageBox , QCheckBox)
 
-# Import Uranus Class
-try :
-    from Uranus.ObjectInspectorWindow import ObjectInspectorWindow
-    from Uranus.PyCodeEditor import PyCodeEditor
-except ModuleNotFoundError : 
-    from ObjectInspectorWindow import ObjectInspectorWindow
-    from PyCodeEditor import PyCodeEditor
-    
+
+#from Uranus.ObjectInspectorWindow import ObjectInspectorWindow
+from Uranus.PyCodeEditor import PyCodeEditor
+from qtconsole.rich_jupyter_widget import RichJupyterWidget
+from PyQt5.QtWidgets import QInputDialog
+
     
 
 #from Uranus.AstDetection import RelationChartView
@@ -196,13 +198,18 @@ class FindReplaceDialog(QDialog):
         else:
             self.status_label.setText("No matches")
 
-
+class MyConsole(RichJupyterWidget):
+    def _handle_stdin(self, msg):
+        # مسیر پیش‌فرض رو خنثی کن تا فقط WorkWindowPython جواب بده
+        print("[MyConsole] _handle_stdin suppressed")
+        return
+            
     
 class WorkWindowPython(QFrame):
     
     code_editor_clicked = pyqtSignal(object)
     
-    def __init__(self, file_path=None , status_l = None , context= ''
+    def __init__(self, file_path=None , status_l = None , context= None
                  , status_c = None , status_r = None  , mdi_area = None):
         self.debug = False
         if self.debug: print('[WorkWindowPython]->[__init__]')
@@ -219,8 +226,14 @@ class WorkWindowPython(QFrame):
         self.detached = False
         self.detached_window = None
         self.fake_close = False
+        
+        # Kernel
+        self.km = None
+        self.kc = None
+        self.console = None
+        self._start_kernel()
        
-       
+
         # path of temp.chk file 
         base_dir = os.path.dirname(os.path.abspath(__file__))
         self.temp_path = os.path.join(base_dir, 'temp.chk')
@@ -260,19 +273,34 @@ class WorkWindowPython(QFrame):
         self.setup_top_toolbar_buttons()
         layout.addWidget(self.toolbar)
         
-        
         # --- Add Editor to Layout 
         self.editor = PyCodeEditor()
         self.editor.cursorPositionInfo.connect(self.update_line_char_update)
         self.editor.clicked.connect(lambda: self.code_editor_clicked.emit(self))
-        layout.addWidget(self.editor , stretch=1)        
-        
-        
-        # --- sdd Status Bar to Layout
+        layout.addWidget(self.editor, stretch=1)
+
+        # --- Add Status Bar
         self.status_bar = QStatusBar(self)
         self.status_bar.showMessage("Ready")
-        layout.addWidget(self.status_bar)   
         
+
+        # Splitter برای ادیتور و کنسول
+        self.splitter = QSplitter(Qt.Vertical)
+        self.splitter.addWidget(self.editor)
+        layout.addWidget(self.splitter, stretch=1)
+        
+
+        # ---------------- kernel + console ----------------
+        self._create_console() # Create Consol
+        
+        # اضافه کردن کنسول به splitter
+        self.splitter.addWidget(self.console)
+        self.splitter.setStretchFactor(0, 3)
+        self.splitter.setStretchFactor(1, 1)
+        layout.addWidget(self.splitter, stretch=1)
+        layout.addWidget(self.status_bar)
+
+
         # --- Editir Make Focusd     
         QTimer.singleShot(0, self.editor.setFocus)
 
@@ -327,7 +355,7 @@ class WorkWindowPython(QFrame):
                                    <span style='color:gray;'>Shortcut: <kbd>F9</kbd></span><br>
                                    Object And Variable List
                                    """)
-        memory.clicked.connect(self.variable_table)
+        #memory.clicked.connect(self.variable_table)
         self.toolbar.addWidget(memory)
         self.toolbar.addSeparator()
         
@@ -356,6 +384,19 @@ class WorkWindowPython(QFrame):
         self.toolbar.addWidget(graph)
         self.toolbar.addSeparator()
         
+        
+        # Toggle Console Button
+        btn_toggle_console = QToolButton()
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "terminal.png")
+        btn_toggle_console.setIcon(QIcon(icon_path))
+        btn_toggle_console.setToolTip("""
+            <b>Toggle Console</b><br>
+            Show/Hide the IPython terminal
+        """)
+        btn_toggle_console.clicked.connect(self.toggle_console)
+        self.toolbar.addWidget(btn_toggle_console)
+        self.toolbar.addSeparator()
+                
        
         # Detach Check Button 
         icon_path = os.path.join(os.path.dirname(__file__), "image", "detach.png")
@@ -374,15 +415,7 @@ class WorkWindowPython(QFrame):
         self.toolbar.addWidget(self.chk_detach)  # این می‌ره سمت راست
 
 
-    def run(self):
-        
-       
-        # 🔒 غیرفعال کردن دکمه‌ها
-        
-        self.status_l(self.file_path)
-        
-        #self.run_btn.setEnabled(False)
-        
+
 
     def find_replace(self):       
      
@@ -395,7 +428,8 @@ class WorkWindowPython(QFrame):
         Prompts the user to choose a new file path and saves the notebook content there.
         Updates self.file_path and status bar message.
         """
-      
+        
+
         new_path, _ = QFileDialog.getSaveFileName(
             self,
             "Save As",
@@ -425,29 +459,14 @@ class WorkWindowPython(QFrame):
             self.file_path = new_path
             self.status_l("Saved As: " + new_path)
   
-    def variable_table(self, refresh=False):
-        new_data = self.ipython_kernel.inspect_all_user_attributes(self.ipython_kernel.shell)
-       
-        if not new_data :
-            self.status_c("    No Data For Showing In Table -> Run a Cell To Process " )
-            return
-
-        if hasattr(self, 'obj_table_window') and self.obj_table_window.isVisible() and refresh:
-            
-            
-            self.obj_table_window.add_objects(new_data)
-        elif not refresh:
-            
-            self.obj_table_window = ObjectInspectorWindow(file_name=self.name_only)
-            self.obj_table_window.add_objects(new_data)
+ 
               
-    def closeEvent(self, event):  
-            if self.fake_close :
-                self.fake_close = False
-                return     
+    def closeEvent(self, event):
+        
            
             if  not self.is_notebook_modified():
                 return 
+            
             
             msg = QMessageBox(self)            
             msg.setIcon(QMessageBox.Question)
@@ -468,6 +487,8 @@ class WorkWindowPython(QFrame):
                 
                 parent.close()
 
+
+
             elif choice == QMessageBox.Cancel:
                
                 event.ignore()
@@ -478,15 +499,12 @@ class WorkWindowPython(QFrame):
 
     
     def is_notebook_modified(self):
-        if not self.content:
-            self.content = '' # for hash calculating var mast string not None
         code_string = self.editor.toPlainText()
         current_hash = hashlib.md5(code_string.encode('utf-8')).hexdigest()
         original_hash = hashlib.md5(self.content.encode('utf-8')).hexdigest()
         if current_hash == original_hash :
             return False
-        else:
-            return True
+        return True
         
     
     def print_cell(self):
@@ -513,11 +531,14 @@ class WorkWindowPython(QFrame):
             icon = QIcon(icon_path)  # مسیر آیکن یا QRC
             self.detached_window.setWindowIcon(icon)
 
+
             # افزودن status bar
             status_bar = QStatusBar()
             status_bar.setStyleSheet("background-color: #f0f0f0; color: #444; font-size: 11px;")
             status_bar.showMessage("Detached mode active")
             self.detached_window.setStatusBar(status_bar)
+
+
             self.detached_window.show()
             self.detached = True
 
@@ -528,6 +549,7 @@ class WorkWindowPython(QFrame):
                 self.detached_window.close()
                 self.detached_window = None
                 self.detached = False
+
                 if self.mdi_area and hasattr(self.mdi_area, "addSubWindow"):
                     sub_window = self.mdi_area.addSubWindow(self)
                     sub_window.show()
@@ -567,11 +589,14 @@ class WorkWindowPython(QFrame):
                     f.write(content)
                 self.content = content # refresh last Content                 
                 self.status_bar.showMessage("File saved successfully", 2000)
-          
+                
+               
+                
+
             except Exception  as e :
                 self.status_l(f'Not Saved {e}')
                 
-                
+               
     def update_line_char_update(self, line, column):           
             
             self.status_bar.showMessage(f"Line: {line} | Chr: {column}     ")    
@@ -585,7 +610,70 @@ class WorkWindowPython(QFrame):
         column = cursor.positionInBlock() + 1 
         self.update_line_char_update(line,column)         
 
+        
+    def toggle_console(self):
+        if self.console is None:
+            return
+        if self.console.isVisible():
+            self.console.hide()
+        else:
+            self.console.show()
+       
+        
+        
+    def run(self):
+        print('run')
+        if callable(self.status_l):
+            self.status_l(self.file_path or "")
 
+        # ریست فضای نام
+        #self.kc.execute("%reset -f", silent=False)
+
+        # اجرای کد ادیتور بدون چاپ در ترمینال
+        code = self.editor.toPlainText()
+        self.kc.execute(code, silent=False)
+        
+   
+    def _handle_stdin_msg1(self, msg):
+        if msg['header']['msg_type'] == 'input_request':
+            prompt = msg['content'].get('prompt', '')
+            text, ok = QInputDialog.getText(self, "Input", prompt)
+            if ok:
+                self.kc.input(text)
+            else:
+                self.kc.input('')
+                
+                
+    def _create_console(self):
+        self.console = MyConsole()
+        self.console.kernel_manager = self.km
+        self.console.kernel_client = self.kc
+
+        try:
+            self.kc.stdin_channel.message_received.disconnect()
+        except Exception:
+            pass
+
+       
+        self.kc.stdin_channel.message_received.connect(self._handle_stdin_msg)
+        
+        
+
+    def _handle_stdin_msg(self, msg):
+        msg_type = msg.get('header', {}).get('msg_type', '')
+       
+        if msg_type == 'input_request':
+            prompt = msg.get('content', {}).get('prompt', '')
+           
+
+            text, ok = QInputDialog.getText(self, "Input", prompt)
+            answer = text if ok else ''
+            
+            self.kc.input(answer)
+        
+        
+        
+        
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
