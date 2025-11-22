@@ -202,7 +202,7 @@ class WorkWindowPython(QFrame):
     
     code_editor_clicked = pyqtSignal(object)
     
-    def __init__(self, file_path=None , status_l = None , context= None
+    def __init__(self, file_path=None , status_l = None , context= ''
                  , status_c = None , status_r = None  , mdi_area = None):
         self.debug = False
         if self.debug: print('[WorkWindowPython]->[__init__]')
@@ -395,8 +395,7 @@ class WorkWindowPython(QFrame):
         Prompts the user to choose a new file path and saves the notebook content there.
         Updates self.file_path and status bar message.
         """
-        
-
+      
         new_path, _ = QFileDialog.getSaveFileName(
             self,
             "Save As",
@@ -442,12 +441,13 @@ class WorkWindowPython(QFrame):
             self.obj_table_window = ObjectInspectorWindow(file_name=self.name_only)
             self.obj_table_window.add_objects(new_data)
               
-    def closeEvent(self, event):
-        
+    def closeEvent(self, event):  
+            if self.fake_close :
+                self.fake_close = False
+                return     
            
             if  not self.is_notebook_modified():
                 return 
-            
             
             msg = QMessageBox(self)            
             msg.setIcon(QMessageBox.Question)
@@ -468,8 +468,6 @@ class WorkWindowPython(QFrame):
                 
                 parent.close()
 
-
-
             elif choice == QMessageBox.Cancel:
                
                 event.ignore()
@@ -480,12 +478,15 @@ class WorkWindowPython(QFrame):
 
     
     def is_notebook_modified(self):
+        if not self.content:
+            self.content = '' # for hash calculating var mast string not None
         code_string = self.editor.toPlainText()
         current_hash = hashlib.md5(code_string.encode('utf-8')).hexdigest()
         original_hash = hashlib.md5(self.content.encode('utf-8')).hexdigest()
         if current_hash == original_hash :
             return False
-        return True
+        else:
+            return True
         
     
     def print_cell(self):
@@ -512,14 +513,11 @@ class WorkWindowPython(QFrame):
             icon = QIcon(icon_path)  # مسیر آیکن یا QRC
             self.detached_window.setWindowIcon(icon)
 
-
             # افزودن status bar
             status_bar = QStatusBar()
             status_bar.setStyleSheet("background-color: #f0f0f0; color: #444; font-size: 11px;")
             status_bar.showMessage("Detached mode active")
             self.detached_window.setStatusBar(status_bar)
-
-
             self.detached_window.show()
             self.detached = True
 
@@ -530,7 +528,6 @@ class WorkWindowPython(QFrame):
                 self.detached_window.close()
                 self.detached_window = None
                 self.detached = False
-
                 if self.mdi_area and hasattr(self.mdi_area, "addSubWindow"):
                     sub_window = self.mdi_area.addSubWindow(self)
                     sub_window.show()
@@ -570,10 +567,7 @@ class WorkWindowPython(QFrame):
                     f.write(content)
                 self.content = content # refresh last Content                 
                 self.status_bar.showMessage("File saved successfully", 2000)
-                
-               
-                
-
+          
             except Exception  as e :
                 self.status_l(f'Not Saved {e}')
                 

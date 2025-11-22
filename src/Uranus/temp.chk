@@ -1,5 +1,21 @@
 {
- "cells": [],
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "c762569522da161c2f2c92d76d40d8f5cc092c5c",
+   "metadata": {
+    "bg": "#BEBDBD",
+    "uranus": {
+     "origin": "uranus"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "GG"
+   ]
+  }
+ ],
  "metadata": {},
  "nbformat": 4,
  "nbformat_minor": 5

@@ -1115,7 +1115,7 @@ class WorkWindow(QFrame):
         if self.debug:
             print('[WorkWindow->ipynb_format_save_file]')
             
-            
+        open(self.temp_path, "w").close()     # to clear temp.chk file 
         cells = []
         for cell in self.cell_widgets:
             if cell.editor_type == "code":
@@ -1124,20 +1124,21 @@ class WorkWindow(QFrame):
             elif cell.editor_type == "markdown":
                 cells.append(cell.get_nb_markdown_cell())
                 self.original_sources.append(cell.d_editor.editor.toHtml().strip())
-        nb = nbformat.v4.new_notebook()        
-        nb["cells"] = cells
         
-        file_path = self.temp_path if temp else self.file_path
+        if cells :
+            nb = nbformat.v4.new_notebook()        
+            nb["cells"] = cells
+            
+            file_path = self.temp_path if temp else self.file_path
 
-        if file_path:
+            if file_path:
             
-            with open(file_path, "w", encoding="utf-8") as f:
-                nbformat.write(nb, f)
+                with open(file_path, "w", encoding="utf-8") as f:
+                    nbformat.write(nb, f)
+                
             
-         
-            if not temp :
-                print(f'[FILE {file_path} SAVED]')
-                self.status_l('Saved To : '+self.file_path)
+                if not temp :                
+                    self.status_l('Saved To : '+self.file_path)
             
   
     def load_file(self, content):
@@ -1277,7 +1278,7 @@ class WorkWindow(QFrame):
         self.run_btn.setEnabled(True)
         self.btn_run_all.setEnabled(True)
 
-    def find_replace(self):       
+    def find_replace(self):      
         
         
         if self.focused_cell :
@@ -1356,7 +1357,7 @@ class WorkWindow(QFrame):
             self.obj_table_window.add_objects(new_data)
               
     def closeEvent(self, event):
-            print('[Close Event]')
+            
             if self.fake_close :
                 self.fake_close = False
                 return
@@ -1408,7 +1409,8 @@ class WorkWindow(QFrame):
         try:
             with open(path, "rb") as f:
                 data = f.read()
-            hash_code = hashlib.md5(data).hexdigest()            
+            hash_code = hashlib.md5(data).hexdigest()    
+           
             return hash_code[:6] # return only 6 char of hashcode 
         except Exception as e:
             print(f"[compute_md5] Error: {e}")
@@ -1455,11 +1457,8 @@ class WorkWindow(QFrame):
                 self.detached_window.close()
                 self.detached_window = None
                 self.detached = False
-                if self.mdi_area :
-                    print('[sub_window]')
-                    
                 if self.mdi_area and hasattr(self.mdi_area, "addSubWindow"):
-                    
+                  
                     sub_window = self.mdi_area.addSubWindow(self)
                     sub_window.show()
             

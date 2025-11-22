@@ -323,6 +323,7 @@ class MainWindow(QMainWindow):
                         sub_window.destroyed.connect(lambda: MainWindow.open_files.pop(path, None))
                         sub_window.show()
                         MainWindow.open_files[path] = sub_window
+                        self.work_widget_list.append(work_widget)
             
             elif ext == '.py' :
                 existing_subwindow = MainWindow.open_files.get(path)
@@ -342,6 +343,7 @@ class MainWindow(QMainWindow):
                         sub_window.destroyed.connect(lambda: MainWindow.open_files.pop(path, None))
                         sub_window.show()
                         MainWindow.open_files[path] = sub_window
+                        self.work_widget_list.append(work_widget)
     
     
     def eventFilter(self, source, event):
@@ -376,7 +378,7 @@ class MainWindow(QMainWindow):
                                  , mdi_area = self.mdi_area)
         sub_window = self.mdi_area.addSubWindow(work_widget)
         icon_path = os.path.join(os.path.dirname(__file__), "image", "ipynb_icon.png")  
-        sub_window.setWindowIcon(QIcon(icon_path))  # 
+        sub_window.setWindowIcon(QIcon(icon_path))   
 
         sub_window.show()
         MainWindow.open_files[path] = sub_window
@@ -510,7 +512,6 @@ class MainWindow(QMainWindow):
         Only accepts valid Jupyter Notebook files.
         """
        
-
         path, _ = QFileDialog.getOpenFileName(
         self,
         "Open File",
@@ -593,7 +594,7 @@ class MainWindow(QMainWindow):
     
         
     def closeEvent(self, event):
-        
+        print('MDI : ',self.mdi_area.subWindowList() ,'[Float : ]' ,self.work_widget_list)
         # بستن پنجره‌های شناور
         for widget in self.work_widget_list:
             if isinstance(widget, WorkWindow) and widget.detached and widget.detached_window:
@@ -617,6 +618,8 @@ class MainWindow(QMainWindow):
                 if not sip.isdeleted(widget) and not widget.isHidden():
                     event.ignore()
                     return
-
+        
+       
+        
         event.accept()
 
