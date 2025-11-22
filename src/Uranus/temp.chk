@@ -3,7 +3,7 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "f34d33bcb5c13eae1c15faddc6054e479f74aa28",
+   "id": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
    "metadata": {
     "bg": "#BEBDBD",
     "uranus": {
@@ -11,9 +11,7 @@
     }
    },
    "outputs": [],
-   "source": [
-    "print('hi')"
-   ]
+   "source": []
   }
  ],
  "metadata": {},

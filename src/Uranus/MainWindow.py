@@ -483,27 +483,15 @@ class MainWindow(QMainWindow):
             return
 
         work_widget = active_subwindow.widget()
-        if not isinstance(work_widget, WorkWindow):
-            QMessageBox.warning(self, "Invalid Window", "Active window is not a notebook.")
-            return
 
-        new_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Save As",
-            work_widget.file_path or "",
-            "Jupyter Notebook (*.ipynb)"
-        )
-
-        if not new_path:
-            return
-
-        try:
-            work_widget.file_path = new_path
-            work_widget.ipynb_format_save_file()
+        try:           
+            
+            work_widget.save_as_file()
+               
+               
         except Exception as e:
             QMessageBox.warning(self, "Save Error", f"Could not save file:\n{e}")
-        else:
-            self.set_status_left("Saved As: " + new_path)
+       
             
             
     def open_file(self):

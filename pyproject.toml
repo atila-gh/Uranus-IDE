@@ -22,7 +22,10 @@ dependencies = [
     "nbformat",
     "markdown2",
     "html2text",    
-    "Pillow"
+    "Pillow",
+    "ipykernel",
+    "qtconsole"
+
 ]
 
 [project.urls]

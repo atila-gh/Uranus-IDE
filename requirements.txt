@@ -4,6 +4,10 @@ IPython>=8.0
 markdown2>=2.4
 html2text>=2020.1.16
 Pillow>=9.0
+qtconsole>=5.0
+ipykernel>=6.0
+
+
 
 
 

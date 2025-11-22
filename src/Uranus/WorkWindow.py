@@ -774,17 +774,17 @@ class WorkWindow(QFrame):
         self.top_toolbar.addWidget(print_cell)
         self.top_toolbar.addSeparator()
         
-        # Drawing  Graph
-        graph = QToolButton()
-        icon_path = os.path.join(os.path.dirname(__file__), "image", "graph.png")
-        graph.setIcon(QIcon(icon_path))
-        graph.setToolTip("""
-                                   <b>Graph</b><br>                                   
-                                   Drawing Graph For Run cell Focused Cell 
-                                   """)
-        graph.clicked.connect(self.graph)
-        self.top_toolbar.addWidget(graph)
-        self.top_toolbar.addSeparator()
+        # # Drawing  Graph
+        # graph = QToolButton()
+        # icon_path = os.path.join(os.path.dirname(__file__), "image", "graph.png")
+        # graph.setIcon(QIcon(icon_path))
+        # graph.setToolTip("""
+        #                            <b>Graph</b><br>                                   
+        #                            Drawing Graph For Run cell Focused Cell 
+        #                            """)
+        # graph.clicked.connect(self.graph)
+        # self.top_toolbar.addWidget(graph)
+        # self.top_toolbar.addSeparator()
         
         
         # IPYTON TO PY  

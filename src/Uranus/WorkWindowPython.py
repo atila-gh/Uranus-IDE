@@ -352,18 +352,18 @@ class WorkWindowPython(QFrame):
 
  
  
-        # Memory Variable List
-        memory = QToolButton()
-        icon_path = os.path.join(os.path.dirname(__file__), "image", "memory.png")
-        memory.setIcon(QIcon(icon_path))
-        memory.setToolTip("""
-                                   <b>Objects List</b><br>
-                                   <span style='color:gray;'>Shortcut: <kbd>F9</kbd></span><br>
-                                   Object And Variable List
-                                   """)
-        #memory.clicked.connect(self.variable_table)
-        self.toolbar.addWidget(memory)
-        self.toolbar.addSeparator()
+        # # Memory Variable List
+        # memory = QToolButton()
+        # icon_path = os.path.join(os.path.dirname(__file__), "image", "memory.png")
+        # memory.setIcon(QIcon(icon_path))
+        # memory.setToolTip("""
+        #                            <b>Objects List</b><br>
+        #                            <span style='color:gray;'>Shortcut: <kbd>F9</kbd></span><br>
+        #                            Object And Variable List
+        #                            """)
+        # #memory.clicked.connect(self.variable_table)
+        # self.toolbar.addWidget(memory)
+        # self.toolbar.addSeparator()
         
         # print 
         print_cell = QToolButton()
@@ -378,17 +378,17 @@ class WorkWindowPython(QFrame):
         self.toolbar.addWidget(print_cell)
         self.toolbar.addSeparator()
         
-        # Drawing  Graph
-        graph = QToolButton()
-        icon_path = os.path.join(os.path.dirname(__file__), "image", "graph.png")
-        graph.setIcon(QIcon(icon_path))
-        graph.setToolTip("""
-                                   <b>Graph</b><br>                                   
-                                   Drawing Graph For Run cell Focused Cell 
-                                   """)
-        graph.clicked.connect(self.graph)
-        self.toolbar.addWidget(graph)
-        self.toolbar.addSeparator()
+        # # Drawing  Graph
+        # graph = QToolButton()
+        # icon_path = os.path.join(os.path.dirname(__file__), "image", "graph.png")
+        # graph.setIcon(QIcon(icon_path))
+        # graph.setToolTip("""
+        #                            <b>Graph</b><br>                                   
+        #                            Drawing Graph For Run cell Focused Cell 
+        #                            """)
+        # graph.clicked.connect(self.graph)
+        # self.toolbar.addWidget(graph)
+        # self.toolbar.addSeparator()
         
         
         # Toggle Console Button
@@ -440,31 +440,22 @@ class WorkWindowPython(QFrame):
             self,
             "Save As",
             self.file_path or "",
-            "Jupyter Notebook (*.ipynb)"
+            "Python (*.py)"
         )
 
         if not new_path:
             return  # کاربر لغو کرده
 
-        cells = []
-        for cell in self.cell_widgets:
-            if cell.editor_type == "code":
-                cells.append(cell.get_nb_code_cell())
-            elif cell.editor_type == "markdown":
-                cells.append(cell.get_nb_markdown_cell())
-
-        nb = nbformat.v4.new_notebook()
-        nb["cells"] = cells
-
-        try:
-            with open(new_path, "w", encoding="utf-8") as f:
-                nbformat.write(nb, f)
-        except Exception as e:
-            QMessageBox.warning(self, "Save Error", f"Could not save file:\n{e}")
-        else:
-            self.file_path = new_path
-            self.status_l("Saved As: " + new_path)
-  
+        content = self.editor.toPlainText()
+        if content : 
+            try :
+                with open(new_path , 'w' , encoding='utf-8') as f:
+                    f.write(content)
+                self.content = content # refresh last Content                 
+                self.status_bar.showMessage("File saved successfully", 2000)
+            except Exception  as e :
+                self.status_l(f'Not Saved {e}')
+        
            
     def closeEvent(self, event):
         # --- منطق قبلی ذخیره‌سازی و هشدار ---
@@ -593,10 +584,7 @@ class WorkWindowPython(QFrame):
                     f.write(content)
                 self.content = content # refresh last Content                 
                 self.status_bar.showMessage("File saved successfully", 2000)
-                
-               
-                
-
+          
             except Exception  as e :
                 self.status_l(f'Not Saved {e}')
                 
