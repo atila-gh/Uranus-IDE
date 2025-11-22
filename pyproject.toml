@@ -21,8 +21,7 @@ dependencies = [
     "IPython",
     "nbformat",
     "markdown2",
-    "html2text",
-    "graphviz",
+    "html2text",    
     "Pillow"
 ]
 

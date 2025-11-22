@@ -140,6 +140,8 @@ class FileTreeView(QTreeView):
     pathChanged = pyqtSignal(str)
 
     def __init__(self):
+        self.debug = False
+        
         super().__init__()
         setting = load_setting()
 
@@ -181,6 +183,7 @@ class FileTreeView(QTreeView):
     # Selection Handling
     # ------------------------------------------------------------
     def _on_selection_changed(self, selected, deselected):
+        
         """Triggered whenever a new file/folder is selected."""
         if selected.indexes():
             index = selected.indexes()[0]
