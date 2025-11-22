@@ -1356,7 +1356,7 @@ class WorkWindow(QFrame):
             self.obj_table_window.add_objects(new_data)
               
     def closeEvent(self, event):
-        
+            print('[Close Event]')
             if self.fake_close :
                 self.fake_close = False
                 return
@@ -1445,8 +1445,6 @@ class WorkWindow(QFrame):
             status_bar.setStyleSheet("background-color: #f0f0f0; color: #444; font-size: 11px;")
             status_bar.showMessage("Detached mode active")
             self.detached_window.setStatusBar(status_bar)
-
-
             self.detached_window.show()
             self.detached = True
 
@@ -1457,8 +1455,11 @@ class WorkWindow(QFrame):
                 self.detached_window.close()
                 self.detached_window = None
                 self.detached = False
-
+                if self.mdi_area :
+                    print('[sub_window]')
+                    
                 if self.mdi_area and hasattr(self.mdi_area, "addSubWindow"):
+                    
                     sub_window = self.mdi_area.addSubWindow(self)
                     sub_window.show()
             

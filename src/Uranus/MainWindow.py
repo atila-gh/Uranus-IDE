@@ -315,7 +315,10 @@ class MainWindow(QMainWindow):
                         self.ipynb_format_load_file(path)
                         
                     else:
-                        work_widget = WorkWindow(file_path=path , status_l = self.set_status_left , status_c = self.set_status_center , status_r = self.set_status_right )
+                        work_widget = WorkWindow(file_path=path , status_l = self.set_status_left 
+                                                 , status_c = self.set_status_center 
+                                                 , status_r = self.set_status_right , mdi_area = self.mdi_area)
+                        
                         sub_window = self.mdi_area.addSubWindow(work_widget)
                         sub_window.destroyed.connect(lambda: MainWindow.open_files.pop(path, None))
                         sub_window.show()
@@ -331,8 +334,10 @@ class MainWindow(QMainWindow):
                         self.py_format_load_file(path)
                         
                     else:
-                        work_widget = WorkWindowPython(file_path=path , status_l = self.set_status_left , context = None
-                                    , status_c = self.set_status_center , status_r = self.set_status_right , mdi_area = self.mdi_area)
+                        work_widget = WorkWindowPython(file_path=path , status_l = self.set_status_left 
+                                    , context = None, status_c = self.set_status_center 
+                                    , status_r = self.set_status_right, mdi_area = self.mdi_area)
+                        
                         sub_window = self.mdi_area.addSubWindow(work_widget)
                         sub_window.destroyed.connect(lambda: MainWindow.open_files.pop(path, None))
                         sub_window.show()
@@ -367,7 +372,8 @@ class MainWindow(QMainWindow):
        
         # Make Instance Object
         work_widget = WorkWindow(file_path=path , nb_content = nb , status_l = self.set_status_left 
-                                 , status_c = self.set_status_center , status_r = self.set_status_right , mdi_area = self.mdi_area)
+                                 , status_c = self.set_status_center , status_r = self.set_status_right 
+                                 , mdi_area = self.mdi_area)
         sub_window = self.mdi_area.addSubWindow(work_widget)
         icon_path = os.path.join(os.path.dirname(__file__), "image", "ipynb_icon.png")  
         sub_window.setWindowIcon(QIcon(icon_path))  # 
@@ -390,8 +396,9 @@ class MainWindow(QMainWindow):
                      
             # Make Instance Object
             
-            work_widget = WorkWindowPython(file_path=path , status_l = self.set_status_left , context = py_code_context
-                                    , status_c = self.set_status_center , status_r = self.set_status_right , mdi_area = self.mdi_area)
+            work_widget = WorkWindowPython(file_path=path , status_l = self.set_status_left 
+                                           , context = py_code_context, status_c = self.set_status_center 
+                                           , status_r = self.set_status_right , mdi_area = self.mdi_area)
             
             sub_window = self.mdi_area.addSubWindow(work_widget)
             icon_path = os.path.join(os.path.dirname(__file__), "image", "python_icon.png")  

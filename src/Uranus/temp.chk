@@ -1,58 +1,5 @@
 {
- "cells": [
-  {
-   "cell_type": "code",
-   "execution_count": 1,
-   "id": "ce8b571bf3f66b832012ee2399e5b59684bf5f04",
-   "metadata": {
-    "bg": "#BEBDBD",
-    "uranus": {
-     "origin": "uranus"
-    }
-   },
-   "outputs": [],
-   "source": [
-    "print('hi') fv"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "d0b7a3df5312e500649d3fbdb78639c7",
-   "metadata": {
-    "bg": "#BEBDBD",
-    "height": 152,
-    "uranus": {
-     "origin": "uranus"
-    }
-   },
-   "source": [
-    "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n",
-    "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n",
-    "p, li { white-space: pre-wrap; }\n",
-    "</style></head><body style=\" font-family:'Segoe UI'; font-size:12pt; font-weight:400; font-style:normal;\">\n",
-    "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">salam</p>\n",
-    "<p dir='rtl' style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">حال شما چطوره </p>\n",
-    "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">bye</p>\n",
-    "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 1,
-   "id": "da99b42c9ed23af531bcc21988dde0e54bd97772",
-   "metadata": {
-    "bg": "#BEBDBD",
-    "uranus": {
-     "origin": "uranus"
-    }
-   },
-   "outputs": [],
-   "source": [
-    "for i in range(10):\n",
-    "    print(i)"
-   ]
-  }
- ],
+ "cells": [],
  "metadata": {},
  "nbformat": 4,
  "nbformat_minor": 5
