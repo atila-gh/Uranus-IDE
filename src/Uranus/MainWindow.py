@@ -594,7 +594,7 @@ class MainWindow(QMainWindow):
     
         
     def closeEvent(self, event):
-        print('MDI : ',self.mdi_area.subWindowList() ,'[Float : ]' ,self.work_widget_list)
+        
         # بستن پنجره‌های شناور
         for widget in self.work_widget_list:
             if isinstance(widget, WorkWindow) and widget.detached and widget.detached_window:

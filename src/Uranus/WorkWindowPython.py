@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QSplitter
 
 from IPython.core.interactiveshell import InteractiveShell
 # Import Pyqt Feturse
-from PyQt5.QtGui import  QIcon , QKeySequence , QTextCursor
+from PyQt5.QtGui import  QIcon , QKeySequence , QTextCursor , QFont
 from PyQt5.QtCore import  QSize , Qt,    QTimer , pyqtSignal , QProcess
 from PyQt5.QtWidgets import (QToolBar, QToolButton,  QShortcut, QWidget , QFrame , QMainWindow
     , QVBoxLayout ,  QSizePolicy ,QDialog, QVBoxLayout, QLineEdit , QMdiSubWindow , QStatusBar
@@ -199,6 +199,12 @@ class FindReplaceDialog(QDialog):
             self.status_label.setText("No matches")
 
 class MyConsole(RichJupyterWidget):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        font = QFont("Consolas", 12)   
+        self._set_font(font)
+
+
     def _handle_stdin(self, msg):
         # مسیر پیش‌فرض رو خنثی کن تا فقط WorkWindowPython جواب بده
         print("[MyConsole] _handle_stdin suppressed")
@@ -459,44 +465,42 @@ class WorkWindowPython(QFrame):
             self.file_path = new_path
             self.status_l("Saved As: " + new_path)
   
- 
-              
-    def closeEvent(self, event):
-        
            
-            if  not self.is_notebook_modified():
-                return 
-            
-            
-            msg = QMessageBox(self)            
-            msg.setIcon(QMessageBox.Question)
-            msg.setWindowTitle("Save File")
-            msg.setText(f"Do you want to save changes to:\n\n{self.name_only}")
-            msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
-            msg.setDefaultButton(QMessageBox.Save)
+    def closeEvent(self, event):
+        # --- منطق قبلی ذخیره‌سازی و هشدار ---
+        if not self.is_notebook_modified():
+            return 
 
-            choice = msg.exec_()
+        msg = QMessageBox(self)            
+        msg.setIcon(QMessageBox.Question)
+        msg.setWindowTitle("Save File")
+        msg.setText(f"Do you want to save changes to:\n\n{self.name_only}")
+        msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+        msg.setDefaultButton(QMessageBox.Save)
 
-            if choice == QMessageBox.Save:
-              
-                    self.save_file()
-               
+        choice = msg.exec_()
 
-            elif choice == QMessageBox.Discard:
-                parent = self.parent()
-                
+        if choice == QMessageBox.Save:
+            self.save_file()
+        elif choice == QMessageBox.Discard:
+            parent = self.parent()
+            if parent:
                 parent.close()
-
-
-
-            elif choice == QMessageBox.Cancel:
-               
-                event.ignore()
-                return
+        elif choice == QMessageBox.Cancel:
+            event.ignore()
+            return
 
         # اگر از حلقه با موفقیت خارج شد یعنی هیچ Cancel وجود ندارد
-            event.accept()
+        event.accept()
 
+        # --- بخش جدید: مدیریت کرنل ---
+        try:
+            if self.kc:
+                self.kc.stop_channels()
+            if self.km:
+                self.km.shutdown_kernel(now=True)
+        except Exception as e:
+            print(f"[WorkWindowPython] Kernel shutdown error: {e}")
     
     def is_notebook_modified(self):
         code_string = self.editor.toPlainText()
@@ -622,27 +626,18 @@ class WorkWindowPython(QFrame):
         
         
     def run(self):
-        print('run')
+        
         if callable(self.status_l):
             self.status_l(self.file_path or "")
 
         # ریست فضای نام
-        #self.kc.execute("%reset -f", silent=False)
+        self.kc.execute("%reset -f", silent=False)
 
         # اجرای کد ادیتور بدون چاپ در ترمینال
         code = self.editor.toPlainText()
         self.kc.execute(code, silent=False)
         
-   
-    def _handle_stdin_msg1(self, msg):
-        if msg['header']['msg_type'] == 'input_request':
-            prompt = msg['content'].get('prompt', '')
-            text, ok = QInputDialog.getText(self, "Input", prompt)
-            if ok:
-                self.kc.input(text)
-            else:
-                self.kc.input('')
-                
+              
                 
     def _create_console(self):
         self.console = MyConsole()
@@ -657,8 +652,7 @@ class WorkWindowPython(QFrame):
        
         self.kc.stdin_channel.message_received.connect(self._handle_stdin_msg)
         
-        
-
+   
     def _handle_stdin_msg(self, msg):
         msg_type = msg.get('header', {}).get('msg_type', '')
        
@@ -671,7 +665,15 @@ class WorkWindowPython(QFrame):
             
             self.kc.input(answer)
         
-        
+    
+    def _start_kernel(self):
+        if self.kc:
+            return
+        self.km = QtKernelManager()
+        self.km.start_kernel()
+        self.kc = self.km.client()
+        self.kc.start_channels()
+ 
         
         
 import sys
