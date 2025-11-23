@@ -12,6 +12,9 @@ REQUIRED_PACKAGES = {
     "markdown2": "markdown2",
     "html2text": "html2text",
     "Pillow": "PIL", 
+    "qtconsole":"qtconsole",
+    "ipykernel" : "ipykernel"
+    
 }
 
 def check_and_install(packages):

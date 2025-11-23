@@ -1112,8 +1112,7 @@ class WorkWindow(QFrame):
         """
         Converts all cells into nbformat-compatible structure and saves to disk.
         """
-        if self.debug:
-            print('[WorkWindow->ipynb_format_save_file]')
+       
             
         open(self.temp_path, "w").close()     # to clear temp.chk file 
         cells = []
@@ -1135,8 +1134,7 @@ class WorkWindow(QFrame):
             
                 with open(file_path, "w", encoding="utf-8") as f:
                     nbformat.write(nb, f)
-                
-            
+              
                 if not temp :                
                     self.status_l('Saved To : '+self.file_path)
             
