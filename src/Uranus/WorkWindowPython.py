@@ -1,31 +1,22 @@
  
-import os ,io ,builtins ,importlib , hashlib , sys,inspect 
-
+import os , hashlib  
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.manager import QtKernelManager
-from PyQt5.QtWidgets import QSplitter
-from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
 
 
-
-
-from IPython.core.interactiveshell import InteractiveShell
 # Import Pyqt Feturse
+from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
 from PyQt5.QtGui import  QIcon , QKeySequence , QTextCursor , QFont  , QTextDocument
-from PyQt5.QtCore import  QSize , Qt,    QTimer , pyqtSignal , QProcess
+from PyQt5.QtCore import  QSize , Qt,QTimer , pyqtSignal 
 from PyQt5.QtWidgets import (QToolBar, QToolButton,  QShortcut, QWidget , QFrame , QMainWindow
-    , QVBoxLayout ,  QSizePolicy ,QDialog, QVBoxLayout, QLineEdit , QMdiSubWindow , QStatusBar
+    , QVBoxLayout ,  QSizePolicy ,QDialog, QVBoxLayout, QLineEdit , QMdiSubWindow , QStatusBar , QSplitter , QInputDialog
     , QPushButton , QLabel, QHBoxLayout , QFileDialog, QMessageBox , QCheckBox)
 
 
-#from Uranus.ObjectInspectorWindow import ObjectInspectorWindow
+
 from Uranus.PyCodeEditor import PyCodeEditor
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
-from PyQt5.QtWidgets import QInputDialog
 
-    
-
-#from Uranus.AstDetection import RelationChartView
 
 
 class FindReplaceDialog(QDialog):
@@ -422,8 +413,6 @@ class WorkWindowPython(QFrame):
         self.toolbar.addWidget(self.chk_detach)  # این می‌ره سمت راست
 
 
-
-
     def find_replace(self):       
      
             dialog = FindReplaceDialog(self.editor, self)
@@ -482,10 +471,10 @@ class WorkWindowPython(QFrame):
             event.ignore()
             return
 
-        # اگر از حلقه با موفقیت خارج شد یعنی هیچ Cancel وجود ندارد
+    
         event.accept()
 
-        # --- بخش جدید: مدیریت کرنل ---
+
         try:
             if self.kc:
                 self.kc.stop_channels()
@@ -503,7 +492,6 @@ class WorkWindowPython(QFrame):
         return True
         
     
-   
     def toggle_detach_mode(self):
         self.fake_close = True
         if self.chk_detach.isChecked():
@@ -558,19 +546,18 @@ class WorkWindowPython(QFrame):
             self.detached = False
             
             
-    def graph (self) :
-        pass
+    # def graph (self) :        
         
-        # if hasattr(self.focused_cell , 'editor'):
-        #     text = self.focused_cell.editor.toPlainText()
-        #     self.graph_window = QMainWindow(self)
-        #     self.graph_window.setWindowTitle("Graph Window")
-        #     # ویجت گراف
-        #     chart = RelationChartView(code=text)
-        #     # قرار دادن در پنجرهٔ جدید
-        #     self.graph_window.setCentralWidget(chart)
-        #     self.graph_window.resize(800, 600)
-        #     self.graph_window.show()
+    #     if hasattr(self.focused_cell , 'editor'):
+    #         text = self.focused_cell.editor.toPlainText()
+    #         self.graph_window = QMainWindow(self)
+    #         self.graph_window.setWindowTitle("Graph Window")
+    #    
+    #         chart = RelationChartView(code=text)
+    #      
+    #         self.graph_window.setCentralWidget(chart)
+    #         self.graph_window.resize(800, 600)
+    #         self.graph_window.show()
 
     def save_file(self):
        
@@ -608,22 +595,19 @@ class WorkWindowPython(QFrame):
         else:
             self.console.show()
        
-        
-        
+ 
     def run(self):
         
         if callable(self.status_l):
             self.status_l(self.file_path or "")
 
-        # ریست فضای نام
+
         self.kc.execute("%reset -f", silent=False)
 
-        # اجرای کد ادیتور بدون چاپ در ترمینال
         code = self.editor.toPlainText()
         self.kc.execute(code, silent=False)
         
-              
-                
+             
     def _create_console(self):
         self.console = MyConsole()
         self.console.kernel_manager = self.km
@@ -649,8 +633,8 @@ class WorkWindowPython(QFrame):
             answer = text if ok else ''
             
             self.kc.input(answer)
-        
-    
+
+
     def _start_kernel(self):
         if self.kc:
             return
@@ -683,20 +667,20 @@ class WorkWindowPython(QFrame):
     
     
         
-import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
+# from PyQt5.QtWidgets import QApplication, QMainWindow
 
-    # ساخت پنجرهٔ اصلی
-    main_window = QMainWindow()
-    main_window.setWindowTitle("Uranus IDE - WorkWindow Test")
-    main_window.resize(900, 700)
+# if __name__ == "__main__":
+#     app = QApplication(sys.argv)
 
-    # اضافه کردن WorkWindow به عنوان ویجت مرکزی
-    work_window = WorkWindowPython()
-    main_window.setCentralWidget(work_window)
+#     # ساخت پنجرهٔ اصلی
+#     main_window = QMainWindow()
+#     main_window.setWindowTitle("Uranus IDE - WorkWindow Test")
+#     main_window.resize(900, 700)
 
-    main_window.show()
-    sys.exit(app.exec_())
+#     # اضافه کردن WorkWindow به عنوان ویجت مرکزی
+#     work_window = WorkWindowPython()
+#     main_window.setCentralWidget(work_window)
+
+#     main_window.show()
+#     sys.exit(app.exec_())
