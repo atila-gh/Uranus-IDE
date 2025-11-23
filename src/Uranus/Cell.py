@@ -2,7 +2,7 @@ import re ,  html2text , hashlib ,os , markdown2
 from nbformat.v4 import  new_code_cell, new_markdown_cell
 
 # PyQT Methods Import
-from PyQt5.QtGui import QFont, QTextCursor , QTextDocument, QTextCursor, QTextImageFormat
+from PyQt5.QtGui import QFont, QTextCursor , QTextDocument, QTextImageFormat
 from PyQt5.QtCore import Qt, pyqtSignal, QThread, QObject , QTimer
 from PyQt5.QtWidgets import QFrame, QHBoxLayout,QSizePolicy, QRadioButton, QButtonGroup, QVBoxLayout , QLabel, QScrollArea , QApplication
 from PyQt5.QtPrintSupport import QPrinter, QPrintDialog

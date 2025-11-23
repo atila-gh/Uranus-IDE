@@ -4,13 +4,14 @@ import os ,io ,builtins ,importlib , hashlib , sys,inspect
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.manager import QtKernelManager
 from PyQt5.QtWidgets import QSplitter
+from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
 
 
 
 
 from IPython.core.interactiveshell import InteractiveShell
 # Import Pyqt Feturse
-from PyQt5.QtGui import  QIcon , QKeySequence , QTextCursor , QFont
+from PyQt5.QtGui import  QIcon , QKeySequence , QTextCursor , QFont  , QTextDocument
 from PyQt5.QtCore import  QSize , Qt,    QTimer , pyqtSignal , QProcess
 from PyQt5.QtWidgets import (QToolBar, QToolButton,  QShortcut, QWidget , QFrame , QMainWindow
     , QVBoxLayout ,  QSizePolicy ,QDialog, QVBoxLayout, QLineEdit , QMdiSubWindow , QStatusBar
@@ -502,11 +503,7 @@ class WorkWindowPython(QFrame):
         return True
         
     
-    def print_cell(self):
-        if self.focused_cell : 
-            self.focused_cell.print_full_cell()
-            
-    
+   
     def toggle_detach_mode(self):
         self.fake_close = True
         if self.chk_detach.isChecked():
@@ -662,7 +659,29 @@ class WorkWindowPython(QFrame):
         self.kc = self.km.client()
         self.kc.start_channels()
  
-        
+    def print_cell(self, parent=None):
+        """
+        Print the full content of this cell (code/doc editor + outputs),
+        but only if each editor/output is visible.
+        """
+        printer = QPrinter(QPrinter.HighResolution)
+        dialog = QPrintDialog(printer, parent or self)
+        if dialog.exec_() != QPrintDialog.Accepted:
+            return
+
+        doc = QTextDocument()
+        cursor = QTextCursor(doc)
+
+        # --- بخش کد یا داکیومنت ---
+        if  self.editor :
+            cursor.insertText(self.editor.toPlainText())
+            cursor.insertBlock()
+
+
+        # --- پرینت کل ---
+        doc.print_(printer)
+    
+    
         
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
