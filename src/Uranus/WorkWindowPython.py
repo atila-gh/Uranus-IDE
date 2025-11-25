@@ -27,6 +27,54 @@ from PyQt5.QtWidgets import QInputDialog
 
 #from Uranus.AstDetection import RelationChartView
 
+from PyQt5.QtWidgets import QWidget
+from PyQt5.QtCore import Qt, QRect, QSize
+from PyQt5.QtGui import QPainter, QColor
+
+class LineNumberArea(QWidget):
+    def __init__(self, editor):
+        super().__init__(editor)
+        self.editor = editor
+        self.bg = QColor("#f0f0f0")# 
+        self.fg = QColor("#444444")
+        self.sep = QColor("#d0d0d0")
+
+    def sizeHint(self):
+        # عرض ستون بر اساس تعداد رقم‌ها
+        digits = len(str(max(1, self.editor.blockCount())))
+        fm = self.editor.fontMetrics()
+        return QSize(fm.horizontalAdvance("9" * digits) + 12, 0)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.fillRect(event.rect(), QColor("#2d1ad8"))
+
+        block = self.editor.firstVisibleBlock()
+        block_number = block.blockNumber()
+        top = int(self.editor.blockBoundingGeometry(block)
+                .translated(self.editor.contentOffset()).top())
+        bottom = top + int(self.editor.blockBoundingRect(block).height())
+
+        painter.setPen(QColor("#FFFFFF"))
+        painter.setFont(self.editor.font())
+
+        # آفست بسیار کوچک پیکسلی برای هماهنگی بصری (اختیاری)
+        pady = 1  # می‌تونی 0، 1 یا 2 تست کنی
+
+        while block.isValid() and top <= event.rect().bottom():
+            if block.isVisible() and bottom >= event.rect().top():
+                number = str(block_number + 1)
+                block_height = int(self.editor.blockBoundingRect(block).height())
+
+                # مستطیل کل بلاک و رسم متن در مرکز عمودی
+                rect = QRect(0, top + pady, self.width() - 4, block_height)
+                painter.drawText(rect, Qt.AlignRight | Qt.AlignVCenter, number)
+
+            block = block.next()
+            block_number += 1
+            top = bottom
+            bottom = top + int(self.editor.blockBoundingRect(block).height())
+
 
 class FindReplaceDialog(QDialog):
     """
@@ -213,18 +261,16 @@ class MyConsole(RichJupyterWidget):
             
     
 class WorkWindowPython(QFrame):
-    
+   
     code_editor_clicked = pyqtSignal(object)
     
-    def __init__(self, file_path=None , status_l = None , context= None
-                 , status_c = None , status_r = None  , mdi_area = None):
+    def __init__(self, file_path=None , status_l=None , context=None,
+                status_c=None , status_r=None , mdi_area=None):
+        super().__init__()
         self.debug = False
-        if self.debug: print('[WorkWindowPython]->[__init__]')
-
-        super().__init__() 
         self.file_path = file_path        
         self.content = context
-        self.mdi_area = mdi_area # Midwindow Mainwindow Original Window Container        
+        self.mdi_area = mdi_area        
         self.status_l = status_l
         self.status_c = status_c
         self.status_r = status_r       
@@ -239,8 +285,7 @@ class WorkWindowPython(QFrame):
         self.kc = None
         self.console = None
         self._start_kernel()
-       
-
+    
         # path of temp.chk file 
         base_dir = os.path.dirname(os.path.abspath(__file__))
         self.temp_path = os.path.join(base_dir, 'temp.chk')
@@ -251,73 +296,80 @@ class WorkWindowPython(QFrame):
             self.name_only = os.path.splitext(filename)[0]
             self.setWindowTitle(self.name_only)
 
-
         # --------------------------- GRAPHIC -----------------------------
-        
-        # Define New QFrame
         icon_path = os.path.join(os.path.dirname(__file__), "image", "python_icon.png")  
         self.setWindowIcon(QIcon(icon_path))  
         
-        
-        self.setFrameShape(QFrame.StyledPanel)   # خط دور فریم
-        self.setFrameShadow(QFrame.Raised)       # حالت برجسته
-        self.setLineWidth(2)                     # ضخامت خط دور فریم
- 
-        # Set minimum window size
+        self.setFrameShape(QFrame.StyledPanel)
+        self.setFrameShadow(QFrame.Raised)
+        self.setLineWidth(2)
         self.setMinimumSize(620, 600)
         
         # --- Main Layout
-        layout = QVBoxLayout(self) # Biuld a main Vertical Layout and attached on window 
+        layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-        layout.addSpacing(5)  # فاصله افقی از سمت چپ
-       
-
-        # --- Top Horizontal Toolbar ---
+        layout.addSpacing(5)
+    
+        # --- Toolbar ---
         self.toolbar = QToolBar()
         self.toolbar.setOrientation(Qt.Horizontal)
         self.toolbar.setIconSize(QSize(24, 24))
         self.setup_top_toolbar_buttons()
         layout.addWidget(self.toolbar)
         
-        # --- Add Editor to Layout 
+        # --- Editor + Line Numbers ---
         self.editor = PyCodeEditor()
         self.editor.cursorPositionInfo.connect(self.update_line_char_update)
         self.editor.clicked.connect(lambda: self.code_editor_clicked.emit(self))
-        layout.addWidget(self.editor, stretch=1)
 
-        # --- Add Status Bar
+        # ساخت ستون شماره خط با LineNumberArea
+        self.line_number_area = LineNumberArea(self.editor)
+        self.editor.blockCountChanged.connect(self.update_line_number_area_width)
+        self.editor.updateRequest.connect(self.update_line_number_area)
+        self.update_line_number_area_width(0)
+
+        editor_layout = QHBoxLayout()
+        editor_layout.setContentsMargins(0, 0, 0, 0)
+        editor_layout.setSpacing(0)
+        editor_layout.addWidget(self.line_number_area)
+        editor_layout.addWidget(self.editor)
+
+        editor_container = QWidget()
+        editor_container.setLayout(editor_layout)
+
+        # --- Status Bar ---
         self.status_bar = QStatusBar(self)
         self.status_bar.showMessage("Ready")
         
-
-        # Splitter برای ادیتور و کنسول
+        # --- Splitter برای ادیتور و کنسول ---
         self.splitter = QSplitter(Qt.Vertical)
-        self.splitter.addWidget(self.editor)
-        layout.addWidget(self.splitter, stretch=1)
-        
+        self.splitter.addWidget(editor_container)
 
-        # ---------------- kernel + console ----------------
-        self._create_console() # Create Consol
-        
-        # اضافه کردن کنسول به splitter
+        self._create_console()
         self.splitter.addWidget(self.console)
         self.splitter.setStretchFactor(0, 3)
         self.splitter.setStretchFactor(1, 1)
-        layout.addWidget(self.splitter, stretch=1)
+
+        layout.addWidget(self.splitter)
         layout.addWidget(self.status_bar)
 
-
-        # --- Editir Make Focusd     
+        # --- Focus Editor ---
         QTimer.singleShot(0, self.editor.setFocus)
 
-
-        # --- write Code to Editor  ---
-        if self.content :         
+        # --- Load Content ---
+        if self.content:         
             self.editor.setPlainText(self.content)
 
 
     def setup_top_toolbar_buttons(self):
+        
+        # فاصله از سمت چپ
+        left_spacer = QWidget()
+        left_spacer.setFixedWidth(50)   # مقدار فاصله (مثلاً 10px)
+        self.toolbar.addWidget(left_spacer)
+
+
        
         # Save py File
         btn_save = QToolButton()
@@ -429,7 +481,6 @@ class WorkWindowPython(QFrame):
             dialog = FindReplaceDialog(self.editor, self)
             dialog.exec_()
 
-
     def save_as_file(self):
         """
         Prompts the user to choose a new file path and saves the notebook content there.
@@ -490,7 +541,7 @@ class WorkWindowPython(QFrame):
             if self.kc:
                 self.kc.stop_channels()
             if self.km:
-                self.km.shutdown_kernel(now=True)
+                self.km.shutdown_kernel()
         except Exception as e:
             print(f"[WorkWindowPython] Kernel shutdown error: {e}")
     
@@ -681,7 +732,15 @@ class WorkWindowPython(QFrame):
         # --- پرینت کل ---
         doc.print_(printer)
     
-    
+    def update_line_number_area_width(self, _):
+        self.line_number_area.setFixedWidth(self.line_number_area.sizeHint().width())
+
+    def update_line_number_area(self, rect, dy):
+        if dy:
+            self.line_number_area.scroll(0, dy)
+        else:
+            self.line_number_area.update(0, rect.y(),
+                                        self.line_number_area.width(), rect.height())
         
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
