@@ -47,7 +47,7 @@ Uranus is a lightweight, extensible Python IDE inspired by Jupyter. It supports 
       <em>Screenshot 5</em>
     </td>
     <td align="center">
-      <img src="https://raw.githubusercontent.com/atila-gh/Uranus-IDE/main/docs/images/Uranus-IDE-7.png"
+      <img src="https://raw.githubusercontent.com/atila-gh/Uranus-IDE/main/docs/images/Uranus-IDE-6.png"
            alt="Uranus IDE project manager by Atila Ghashghaie - آتیلا قشقایی "
            title="Uranus IDE - Project Manager by Atila Ghashghaie - آتیلا قشقایی "
            width="300"><br>
