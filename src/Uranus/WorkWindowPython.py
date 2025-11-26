@@ -292,7 +292,7 @@ class WorkWindowPython(QFrame):
         self.detached = False
         self.detached_window = None
         self.fake_close = False
-        self.terminal_opened = False   # فقط یک بار ساخته می‌شود
+
 
 
 

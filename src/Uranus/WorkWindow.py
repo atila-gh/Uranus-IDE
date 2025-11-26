@@ -1,5 +1,6 @@
  
-import os ,base64  ,io ,builtins ,uuid , importlib , hashlib , sys,inspect , nbformat , sys
+import os ,base64  ,io ,builtins ,uuid , importlib , hashlib , sys,inspect , nbformat 
+import subprocess, sys, os ,tempfile 
 from nbformat.v4 import  new_output
 from contextlib import redirect_stdout, redirect_stderr
 from traitlets.config import Config
@@ -18,6 +19,55 @@ from Uranus.ObjectInspectorWindow import ObjectInspectorWindow
 #from Uranus.AstDetection import RelationChartView
 
 
+
+class TerminalRunner:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(TerminalRunner, cls).__new__(cls)
+        return cls._instance
+
+    def run_code(self, code_text: str):
+        """اجرای کد پایتون در ترمینال متناسب با سیستم‌عامل"""
+        # ذخیرهٔ کد در فایل موقت
+        temp_file = os.path.join(tempfile.gettempdir(), "uranus_temp.py")
+        with open(temp_file, "w", encoding="utf-8") as f:
+            f.write(code_text)
+
+        python_exe = sys.executable
+
+        # انتخاب دستور بر اساس سیستم‌عامل
+        if sys.platform.startswith("win"):
+            # ویندوز
+            cmd = f'start cmd /k "{python_exe} -u {temp_file}"'
+            # cmd = f'start /min cmd /k "{python_exe} -u {temp_file}"'
+
+
+            subprocess.Popen(cmd, shell=True)
+
+        elif sys.platform.startswith("linux"):
+            # لینوکس (gnome-terminal)
+            cmd = f'gnome-terminal -- bash -c "{python_exe} -u {temp_file}; exec bash"'
+            
+            subprocess.Popen(cmd, shell=True)
+
+        elif sys.platform == "darwin":
+            # macOS (AppleScript برای باز کردن ترمینال)
+            apple_script = f'''
+            tell application "Terminal"
+                do script "{python_exe} -u {temp_file}"
+                activate
+            end tell
+            '''
+
+            subprocess.Popen(["osascript", "-e", apple_script])
+
+        else:
+            raise OSError(f"Unsupported platform: {sys.platform}")
+        
+        
+        
 class FindReplaceDialog(QDialog):
     """
     Find/replace with preindexed matches. No overlapping search. Navigation and replacement
@@ -302,9 +352,6 @@ class IPythonKernel:
         self.input_waiter = InputWaiter()
         self.object_store = {}
 
-
-       
-
     def run_cell(self, code: str, callback):
 
         builtins.input = self.input_waiter.wait_for_input
@@ -314,21 +361,58 @@ class IPythonKernel:
             injected = "import matplotlib; matplotlib.use('Agg')\n"
             code = injected + code.replace("plt.show()", "plt.savefig('plot.png')")
 
+
         outputs = []
         stdout_catcher = StreamCatcher("stdout", callback)
         stderr_buffer = io.StringIO()
-
-        with redirect_stdout(stdout_catcher), redirect_stderr(stderr_buffer):
-            result = self.shell.run_cell(code)
-       
-        
-       
-
-
-        obj = result.result
-        stderr_text = stderr_buffer.getvalue().strip()
         
         
+         # 🚫 Block problematic event-loop libraries in one condition
+        if (
+            "tkinter" in code or "Tk(" in code or
+            "PyQt5" in code or "PySide2" in code or "QApplication(" in code or
+            "asyncio" in code or "await " in code or "async def" in code
+        ):
+            
+            terminal = TerminalRunner()        
+            terminal.run_code(code)  # اجرای متن در همان ترمینال
+            tb_lines = [
+                "⚠️ Code execution blocked.",
+                "Reason: Event-loop based libraries (Tkinter, Qt, asyncio) conflict with IPython/QThread execution.",
+                "These libraries manage their own GUI or async loops which cannot be safely re-entered in Uranus IDE cells.",
+                "Therefore, we need to run your code using the standard Python interpreter instead."
+            ]
+            out = new_output(
+                "error",
+                ename="EventLoopBlocked",
+                evalue="Execution of Tkinter/Qt/asyncio code is not supported inside Uranus IDE cells",
+                traceback=tb_lines
+            )
+            outputs.append(out)
+            callback(out)
+            return outputs
+        
+
+
+
+
+
+               
+ 
+        try : 
+            with redirect_stdout(stdout_catcher), redirect_stderr(stderr_buffer):
+                result = self.shell.run_cell(code)         
+            obj = result.result
+            stderr_text = stderr_buffer.getvalue().strip()
+        except Exception as e : 
+            tb_lines = [f"Exception: {str(e)}"]
+            out = new_output("error", ename="Exception", evalue=str(e), traceback=tb_lines)
+            outputs.append(out)
+            callback(out)
+            return outputs
+        else :
+            return outputs
+            
 
         # 🖼️ image
         if os.path.exists("plot.png"):
@@ -421,6 +505,22 @@ class IPythonKernel:
         
         return outputs
     
+    def clear_namespace(self):
+        """
+        Clears all user-defined variables and objects from the IPython kernel namespace.
+        Equivalent to the %reset magic in IPython.
+        """
+        # پاک کردن فضای نام کاربر
+        self.shell.user_ns.clear()
+
+        # دوباره مقداردهی اولیه برای builtins و متغیرهای ضروری
+        self.shell.user_ns.update({
+            "__builtins__": __builtins__,
+        })
+
+        # پاک کردن object_store داخلی
+        self.object_store.clear()
+
     
     def inspect_all_user_attributes(self, shell):
         user_ns = shell.user_ns
@@ -774,17 +874,17 @@ class WorkWindow(QFrame):
         self.top_toolbar.addWidget(print_cell)
         self.top_toolbar.addSeparator()
         
-        # # Drawing  Graph
-        # graph = QToolButton()
-        # icon_path = os.path.join(os.path.dirname(__file__), "image", "graph.png")
-        # graph.setIcon(QIcon(icon_path))
-        # graph.setToolTip("""
-        #                            <b>Graph</b><br>                                   
-        #                            Drawing Graph For Run cell Focused Cell 
-        #                            """)
-        # graph.clicked.connect(self.graph)
-        # self.top_toolbar.addWidget(graph)
-        # self.top_toolbar.addSeparator()
+        #Reset Kernel Memory
+        clean = QToolButton()
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "clear.png")
+        clean.setIcon(QIcon(icon_path))
+        clean.setToolTip("""
+                                   <b>Graph</b><br>                                   
+                                   Drawing Graph For Run cell Focused Cell 
+                                   """)
+        clean.clicked.connect(self.ipython_kernel.clear_namespace)
+        self.top_toolbar.addWidget(clean)
+        self.top_toolbar.addSeparator()
         
         
         # IPYTON TO PY  
@@ -962,7 +1062,7 @@ class WorkWindow(QFrame):
 
         # اتصال پایان اجرا به فعال‌سازی دکمه‌ها
         def on_done():
-            print("[run_focused_cell] execution finished")
+            #print("[run_focused_cell] execution finished")
             self.run_btn.setEnabled(True)
             self.btn_run_all.setEnabled(True)
             self.variable_table(True)
@@ -1518,6 +1618,4 @@ class WorkWindow(QFrame):
                     f.write(cell.d_editor.editor.toPlainText()+ '\n')
                     f.write('"""\n')
                 
-                        
-                    
-                    
+            

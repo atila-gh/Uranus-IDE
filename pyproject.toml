@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "Uranus-IDE"
-version = "2.0.1a16"
+version = "2.0.1a17"
 description = "A lightweight, extensible Python IDE inspired by Jupyter, built with PyQt5."
 authors = [
     { name = "Atila Ghashghaie", email = "atila.gh@gmail.com" }
@@ -23,8 +23,7 @@ dependencies = [
     "markdown2",
     "html2text",    
     "Pillow",
-    "ipykernel",
-    "qtconsole"
+
 
 ]
 
