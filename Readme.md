@@ -121,8 +121,7 @@ These features are designed and implemented by [Atila Ghashghaie](https://github
 
 ### Python Script Editor 
 This module provides a dedicated Python editor and console inside Uranus IDE.  
-It can display and edit `.py` files, run them in an integrated IPython kernel, and show outputs interactively.  
-Additional features include find/replace, notebook export, console toggling, and detachable window support.
+It can display and edit `.py` files, run them in Python kernel.
 
 
 

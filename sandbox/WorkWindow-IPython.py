@@ -1,61 +1,27 @@
+ 
+import os , hashlib  
+from qtconsole.rich_jupyter_widget import RichJupyterWidget
+from qtconsole.manager import QtKernelManager
 
-import subprocess, sys, os ,tempfile ,hashlib
+
 # Import Pyqt Feturse
 from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
-from PyQt5.QtGui import  QIcon , QKeySequence , QTextCursor ,QTextDocument 
-from PyQt5.QtCore import  QSize , Qt,QTimer , pyqtSignal  
+from PyQt5.QtGui import  QIcon , QKeySequence , QTextCursor , QFont  , QTextDocument
+from PyQt5.QtCore import  QSize , Qt,QTimer , pyqtSignal 
 from PyQt5.QtWidgets import (QToolBar, QToolButton,  QShortcut, QWidget , QFrame , QMainWindow
     , QVBoxLayout ,  QSizePolicy ,QDialog, QVBoxLayout, QLineEdit , QMdiSubWindow , QStatusBar , QSplitter , QInputDialog
-    , QPushButton , QLabel, QHBoxLayout , QFileDialog, QMessageBox , QCheckBox,)
+    , QPushButton , QLabel, QHBoxLayout , QFileDialog, QMessageBox , QCheckBox)
+
+
 
 from Uranus.PyCodeEditor import PyCodeEditor
+from qtconsole.rich_jupyter_widget import RichJupyterWidget
+
+
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtCore import Qt, QRect, QSize
 from PyQt5.QtGui import QPainter, QColor
 
-
-class TerminalRunner:
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(TerminalRunner, cls).__new__(cls)
-        return cls._instance
-
-    def run_code(self, code_text: str):
-        """اجرای کد پایتون در ترمینال متناسب با سیستم‌عامل"""
-        # ذخیرهٔ کد در فایل موقت
-        temp_file = os.path.join(tempfile.gettempdir(), "uranus_temp.py")
-        with open(temp_file, "w", encoding="utf-8") as f:
-            f.write(code_text)
-
-        python_exe = sys.executable
-
-        # انتخاب دستور بر اساس سیستم‌عامل
-        if sys.platform.startswith("win"):
-            # ویندوز
-            cmd = f'start cmd /k "{python_exe} -u {temp_file}"'
-            subprocess.Popen(cmd, shell=True)
-
-        elif sys.platform.startswith("linux"):
-            # لینوکس (gnome-terminal)
-            cmd = f'gnome-terminal -- bash -c "{python_exe} -u {temp_file}; exec bash"'
-            subprocess.Popen(cmd, shell=True)
-
-        elif sys.platform == "darwin":
-            # macOS (AppleScript برای باز کردن ترمینال)
-            apple_script = f'''
-            tell application "Terminal"
-                do script "{python_exe} -u {temp_file}"
-                activate
-            end tell
-            '''
-            subprocess.Popen(["osascript", "-e", apple_script])
-
-        else:
-            raise OSError(f"Unsupported platform: {sys.platform}")
-        
-        
 class LineNumberArea(QWidget):
     def __init__(self, editor):
         super().__init__(editor)
@@ -272,6 +238,18 @@ class FindReplaceDialog(QDialog):
         else:
             self.status_label.setText("No matches")
 
+class MyConsole(RichJupyterWidget):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        font = QFont("Consolas", 12)   
+        self._set_font(font)
+
+
+    def _handle_stdin(self, msg):
+        # مسیر پیش‌فرض رو خنثی کن تا فقط WorkWindowPython جواب بده
+        print("[MyConsole] _handle_stdin suppressed")
+        return
+            
     
 class WorkWindowPython(QFrame):
    
@@ -292,13 +270,12 @@ class WorkWindowPython(QFrame):
         self.detached = False
         self.detached_window = None
         self.fake_close = False
-        self.terminal_opened = False   # فقط یک بار ساخته می‌شود
-
-
-
-
-
-       
+        
+        # Kernel
+        self.km = None
+        self.kc = None
+        self.console = None
+        self._start_kernel()
     
         # path of temp.chk file 
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -359,13 +336,9 @@ class WorkWindowPython(QFrame):
         # --- Splitter برای ادیتور و کنسول ---
         self.splitter = QSplitter(Qt.Vertical)
         self.splitter.addWidget(editor_container)
-        
-        #self.splitter.addWidget(self.terminal)
 
-
-
-
-        
+        self._create_console()
+        self.splitter.addWidget(self.console)
         self.splitter.setStretchFactor(0, 3)
         self.splitter.setStretchFactor(1, 1)
 
@@ -470,7 +443,7 @@ class WorkWindowPython(QFrame):
             <b>Toggle Console</b><br>
             Show/Hide the IPython terminal
         """)
-        # btn_toggle_console.clicked.connect(self.toggle_console)
+        btn_toggle_console.clicked.connect(self.toggle_console)
         self.toolbar.addWidget(btn_toggle_console)
         self.toolbar.addSeparator()
                 
@@ -664,7 +637,63 @@ class WorkWindowPython(QFrame):
         column = cursor.positionInBlock() + 1 
         self.update_line_char_update(line,column)         
 
-  
+        
+    def toggle_console(self):
+        if self.console is None:
+            return
+        if self.console.isVisible():
+            self.console.hide()
+        else:
+            self.console.show()
+       
+ 
+    def run(self):
+        
+        if callable(self.status_l):
+            self.status_l(self.file_path or "")
+
+
+        self.kc.execute("%reset -f", silent=False)
+
+        code = self.editor.toPlainText()
+        self.kc.execute(code, silent=False)
+        
+             
+    def _create_console(self):
+        self.console = MyConsole()
+        self.console.kernel_manager = self.km
+        self.console.kernel_client = self.kc
+
+        try:
+            self.kc.stdin_channel.message_received.disconnect()
+        except Exception:
+            pass
+
+       
+        self.kc.stdin_channel.message_received.connect(self._handle_stdin_msg)
+        
+   
+    def _handle_stdin_msg(self, msg):
+        msg_type = msg.get('header', {}).get('msg_type', '')
+       
+        if msg_type == 'input_request':
+            prompt = msg.get('content', {}).get('prompt', '')
+           
+
+            text, ok = QInputDialog.getText(self, "Input", prompt)
+            answer = text if ok else ''
+            
+            self.kc.input(answer)
+
+
+    def _start_kernel(self):
+        if self.kc:
+            return
+        self.km = QtKernelManager()
+        self.km.start_kernel()
+        self.kc = self.km.client()
+        self.kc.start_channels()
+ 
     def print_cell(self, parent=None):
         """
         Print the full content of this cell (code/doc editor + outputs),
@@ -697,36 +726,20 @@ class WorkWindowPython(QFrame):
             self.line_number_area.update(0, rect.y(),
                                         self.line_number_area.width(), rect.height())
         
-   
 
-    def run(self):
-        """خواندن متن ادیتور و ارسال به ترمینال"""
-        editor_text = self.editor.toPlainText() if hasattr(self, "editor") else ""
-        if not editor_text.strip():
-            return  # اگر ادیتور خالی است، کاری نکن
+# from PyQt5.QtWidgets import QApplication, QMainWindow
 
-        
-        terminal = TerminalRunner()        
-        terminal.run_code(editor_text)  # اجرای متن در همان ترمینال
+# if __name__ == "__main__":
+#     app = QApplication(sys.argv)
 
+#     # ساخت پنجرهٔ اصلی
+#     main_window = QMainWindow()
+#     main_window.setWindowTitle("Uranus IDE - WorkWindow Test")
+#     main_window.resize(900, 700)
 
+#     # اضافه کردن WorkWindow به عنوان ویجت مرکزی
+#     work_window = WorkWindowPython()
+#     main_window.setCentralWidget(work_window)
 
-
-
-
-from PyQt5.QtWidgets import QApplication, QMainWindow
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-
-    # ساخت پنجرهٔ اصلی
-    main_window = QMainWindow()
-    main_window.setWindowTitle("Uranus IDE - WorkWindow Test")
-    main_window.resize(900, 700)
-
-    # اضافه کردن WorkWindow به عنوان ویجت مرکزی
-    work_window = WorkWindowPython()
-    main_window.setCentralWidget(work_window)
-
-    main_window.show()
-    sys.exit(app.exec_())
+#     main_window.show()
+#     sys.exit(app.exec_())
