@@ -1,5 +1,10 @@
 from PyQt5.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor, QFont
 from PyQt5.QtCore import QRegExp,QRegularExpression
+from Uranus.SettingWindow import load_setting
+
+
+
+
 
 class CodeHighlighter(QSyntaxHighlighter):
     """
@@ -36,6 +41,10 @@ class CodeHighlighter(QSyntaxHighlighter):
     def __init__(self, document):
         super().__init__(document)
         self.rules = []
+        setting = load_setting()
+        
+        # ------ Setting 
+        code_font_size  = setting['Code Font Size']
 
 
 
@@ -196,17 +205,23 @@ class CodeHighlighter(QSyntaxHighlighter):
 
         # Numbers (123, 3.14)
         number_format = QTextCharFormat()
-        number_format.setForeground(QColor("#1C00CF"))
-        # number_format.setFontWeight(QFont.Bold)
+        number_format.setForeground(QColor("#424244"))
+        number_format.setFontWeight(QFont.Bold)
         # number_format.setFontItalic(True)
         
-
-        
-
-        # Comments (# توضیح)
+        # Normal comments
         self.comment_format = QTextCharFormat()
-        self.comment_format.setForeground(QColor("#777777"))
-        self.comment_format.setFont(QFont("Ubuntu Mono", 13))
+        self.comment_format.setForeground(QColor("#787878"))
+        self.comment_format.setFontPointSize(14)   # سایز پایه فیکس
+
+        # ## heading comments
+        self.comment_h2_format = QTextCharFormat(self.comment_format)
+        self.comment_h2_format.setFontPointSize(code_font_size+2)  
+
+        # ### heading comments
+        self.comment_h3_format = QTextCharFormat(self.comment_format)
+        self.comment_h3_format.setFontPointSize(code_font_size+4)  
+        self.comment_h3_format.setFontWeight(QFont.Bold)
 
         # Structure (class, self, __init__)
         structure_format = QTextCharFormat()
@@ -320,6 +335,8 @@ class CodeHighlighter(QSyntaxHighlighter):
 
 
     # this method is Override QtGui Standard Method dont Touch This 
+   
+
     def highlightBlock(self, text):
         self.setCurrentBlockState(0)
         block_start = self.currentBlock().position()
@@ -330,7 +347,7 @@ class CodeHighlighter(QSyntaxHighlighter):
             self.triple_quote_ranges = self.find_triple_quote_blocks()
             self.cached_text = full_text
 
-        # بررسی رشته‌های سه‌تایی
+        # ===== بررسی triple quotes =====
         in_string_block = False
         for start_offset, end_offset in self.triple_quote_ranges:
             if start_offset <= block_end and end_offset >= block_start:
@@ -339,26 +356,50 @@ class CodeHighlighter(QSyntaxHighlighter):
                 end = min(end_offset, block_end) - block_start
                 self.setFormat(start, end - start, self.string_format)
 
+        # ===== بررسی رشته‌های تک‌خطی =====
+        single_match = self.single_quote_pattern.match(text)
+        double_match = self.double_quote_pattern.match(text)
+
+        if single_match.hasMatch():
+            in_string_block = True
+            self.setFormat(single_match.capturedStart(), single_match.capturedLength(), self.string_format)
+
+        if double_match.hasMatch():
+            in_string_block = True
+            self.setFormat(double_match.capturedStart(), double_match.capturedLength(), self.string_format)
+
+        # اگر داخل رشته هستیم، هیچ قاعده دیگری اعمال نشود
         if in_string_block:
             return
 
-        # پیدا کردن شروع کامنت
+        # ===== ادامه قواعد (کامنت‌ها و بقیه) =====
         comment_start = text.find('#')
         if comment_start < 0:
             comment_start = len(text)
 
-        # اجرای قواعد فقط تا قبل از کامنت
+        # اجرای قواعد عمومی تا قبل از کامنت
         for pattern, fmt in self.rules:
             index = pattern.indexIn(text)
             while index >= 0:
                 length = pattern.matchedLength()
                 if index >= comment_start:
-                    break  # بعد از کامنت هیچ قاعده‌ای اعمال نشه
+                    break
                 if index + length > comment_start:
                     length = comment_start - index
                 self.setFormat(index, length, fmt)
                 index = pattern.indexIn(text, index + length)
 
-        # رنگ کردن کل بخش کامنت
+        # رنگ کردن کل بخش کامنت با فرمت مناسب
         if comment_start < len(text):
-            self.setFormat(comment_start, len(text) - comment_start, self.comment_format)
+            comment_text = text[comment_start:]
+            if comment_text.startswith("###"):
+                fmt = QTextCharFormat(self.comment_format)
+                fmt.setFontPointSize(self.comment_format.fontPointSize() + 4)
+                fmt.setFontWeight(QFont.Bold)
+                self.setFormat(comment_start, len(text) - comment_start, fmt)
+            elif comment_text.startswith("##"):
+                fmt = QTextCharFormat(self.comment_format)
+                fmt.setFontPointSize(self.comment_format.fontPointSize() + 2)
+                self.setFormat(comment_start, len(text) - comment_start, fmt)
+            else:
+                self.setFormat(comment_start, len(text) - comment_start, self.comment_format)

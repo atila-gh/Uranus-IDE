@@ -123,7 +123,20 @@ These features are designed and implemented by [Atila Ghashghaie](https://github
 This module provides a dedicated Python editor and console inside Uranus IDE.  
 It can display and edit `.py` files, run them in Python kernel.
 
+### 📝 Comment Headings
 
+Uranus IDE now supports special formatting for comments:
+
+- `##` makes the comment font **2 points larger** than normal.  
+- `###` makes the comment font **4 points larger** and **bold**.  
+
+This allows you to create **visual headings inside your code** for better readability and teaching.
+
+<p align="center">
+  <img src="comment.png" alt="Comment Heading Example" width="400">
+</p>
+
+---
 
 ## Installation and Run Project After GitHub Cloning 
 
