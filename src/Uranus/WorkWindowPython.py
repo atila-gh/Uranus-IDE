@@ -462,17 +462,17 @@ class WorkWindowPython(QFrame):
         # self.toolbar.addSeparator()
         
         
-        # Toggle Console Button
-        btn_toggle_console = QToolButton()
-        icon_path = os.path.join(os.path.dirname(__file__), "image", "terminal.png")
-        btn_toggle_console.setIcon(QIcon(icon_path))
-        btn_toggle_console.setToolTip("""
-            <b>Toggle Console</b><br>
-            Show/Hide the IPython terminal
-        """)
-        # btn_toggle_console.clicked.connect(self.toggle_console)
-        self.toolbar.addWidget(btn_toggle_console)
-        self.toolbar.addSeparator()
+        # # Toggle Console Button
+        # btn_toggle_console = QToolButton()
+        # icon_path = os.path.join(os.path.dirname(__file__), "image", "terminal.png")
+        # btn_toggle_console.setIcon(QIcon(icon_path))
+        # btn_toggle_console.setToolTip("""
+        #     <b>Toggle Console</b><br>
+        #     Show/Hide the IPython terminal
+        # """)
+        # # btn_toggle_console.clicked.connect(self.toggle_console)
+        # self.toolbar.addWidget(btn_toggle_console)
+        # self.toolbar.addSeparator()
                 
        
         # Detach Check Button 
@@ -526,6 +526,10 @@ class WorkWindowPython(QFrame):
         
            
     def closeEvent(self, event):
+        
+        if self.fake_close :
+            self.fake_close = False
+            return
         # --- منطق قبلی ذخیره‌سازی و هشدار ---
         if not self.is_notebook_modified():
             return 
@@ -549,7 +553,6 @@ class WorkWindowPython(QFrame):
             event.ignore()
             return
 
-    
         event.accept()
 
 
@@ -612,7 +615,7 @@ class WorkWindowPython(QFrame):
                     sub_window = self.mdi_area.addSubWindow(self)
                     sub_window.show()
             
-
+    
     def _handle_detached_close_event(self, event):
         """
         Custom closeEvent for detached QMainWindow.
