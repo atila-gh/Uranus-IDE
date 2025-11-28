@@ -396,7 +396,7 @@ class WorkWindowPython(QFrame):
         btn_save.setToolTip("""
                             <b>Save File</b><br>
                             <span style='color:gray;'>Shortcut: <kbd>Ctrl+S</kbd></span><br>
-                            Save the current File in Specific Location.
+                            Save the current File.
                             """)
 
         btn_save.clicked.connect(self.save_file)
@@ -408,7 +408,7 @@ class WorkWindowPython(QFrame):
         self.run_btn = QToolButton()
         icon_path = os.path.join(os.path.dirname(__file__), "image", "run_cell.png")
         self.run_btn.setIcon(QIcon(icon_path))
-        self.run_btn.setToolTip("Run Cell")
+        self.run_btn.setToolTip("Run Module")
         self.run_btn.clicked.connect(self.run)
         self.toolbar.addWidget(self.run_btn)
         # define shortcut for run code F5
@@ -416,9 +416,9 @@ class WorkWindowPython(QFrame):
         shortcut.setContext(Qt.ApplicationShortcut)
         shortcut.activated.connect(self.run)
         self.run_btn.setToolTip("""
-                                <b>Run Cell</b><br>
+                                <b>Run Module</b><br>
                                 <span style='color:gray;'>Shortcut: <kbd>F5</kbd></span><br>
-                                Executes the current cell and displays the output.
+                                Executes Module and show output in Terminal.
                                 """)
 
  
@@ -441,9 +441,8 @@ class WorkWindowPython(QFrame):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "print.png")
         print_cell.setIcon(QIcon(icon_path))
         print_cell.setToolTip("""
-                                   <b>Print</b><br>
-                                   
-                                   Print Focused Cell 
+                                   <b>Print</b><br>                                   
+                                   Print Module 
                                    """)
         print_cell.clicked.connect(self.print_cell)
         self.toolbar.addWidget(print_cell)

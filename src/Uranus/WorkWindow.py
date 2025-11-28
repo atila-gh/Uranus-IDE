@@ -815,7 +815,7 @@ class WorkWindow(QFrame):
         btn_color.setIcon(QIcon(icon_path))
         btn_color.setToolTip("""
                             <b>Choose Color</b><br>
-                            Can Change Border Color .
+                            Change Border Color .
                             """)
         btn_color.clicked.connect(self.choose_border_color)
         self.top_toolbar.addWidget(btn_color)
@@ -827,8 +827,8 @@ class WorkWindow(QFrame):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "run_all.png")
         self.btn_run_all.setIcon(QIcon(icon_path))        
         self.btn_run_all.setToolTip("""
-                            <b>Choose Run All Code</b><br>
-                            Executes the All Code cell and displays the outputs
+                            <b>Run All Code Cells</b><br>
+                            Executes the All Code Cells
                             """)
         self.btn_run_all.clicked.connect(self.run_all_cells)
         self.top_toolbar.addWidget(self.btn_run_all)
@@ -855,7 +855,7 @@ class WorkWindow(QFrame):
         memory.setToolTip("""
                                    <b>Objects List</b><br>
                                    <span style='color:gray;'>Shortcut: <kbd>F9</kbd></span><br>
-                                   Object And Variable List
+                                   shows Objects And Variables Types in Table
                                    """)
         memory.clicked.connect(self.variable_table)
         self.top_toolbar.addWidget(memory)
@@ -866,8 +866,7 @@ class WorkWindow(QFrame):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "print.png")
         print_cell.setIcon(QIcon(icon_path))
         print_cell.setToolTip("""
-                                   <b>Print</b><br>
-                                   
+                                   <b>Print</b><br>                                   
                                    Print Focused Cell 
                                    """)
         print_cell.clicked.connect(self.print_cell)
@@ -879,11 +878,10 @@ class WorkWindow(QFrame):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "clear.png")
         clean.setIcon(QIcon(icon_path))
         clean.setToolTip("""
-                                   <b>Graph</b><br>                                   
-                                   Drawing Graph For Run cell Focused Cell 
-                                   """)
+                                   <b>Reset Kernel Memory</b><br>                                   
+                                    """)
         clean.clicked.connect(self.ipython_kernel.clear_namespace)
-        self.top_toolbar.addWidget(clean)
+        self.top_toolbar.addWidget(clean)   
         self.top_toolbar.addSeparator()
         
         
@@ -892,9 +890,8 @@ class WorkWindow(QFrame):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "iptopy.png")
         ippy.setIcon(QIcon(icon_path))
         ippy.setToolTip("""
-                                   <b>IPYTON TO PYTHON</b><br>                                   
-                                   CONVERT IPYNB TO PY 
-                                   """)
+                                   <b>Ipthon To Python</b><br>                            
+                                    """)
         ippy.clicked.connect(self.iptopy)
         self.top_toolbar.addWidget(ippy)
       

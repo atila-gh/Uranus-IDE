@@ -55,7 +55,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         
 
-        self.debug = True
+        self.debug = False
         self.work_widget_list = []
         self.setting = load_setting()
 
