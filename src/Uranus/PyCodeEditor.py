@@ -374,7 +374,10 @@ class PyCodeEditor(QPlainTextEdit):
                         # حذف کامنت
                         index = line_text.find("#")
                         if index != -1:
-                            line_cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, index + 1)
+                            after_hash = line_text[index+1:].lstrip()
+                            end_index = len(line_text) - len(after_hash)
+
+                            line_cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, end_index)
                             line_cursor.removeSelectedText()
                     else:
                         # اضافه کردن کامنت
@@ -390,7 +393,10 @@ class PyCodeEditor(QPlainTextEdit):
                 if block_text.strip().startswith("#"):
                     index = block_text.find("#")
                     if index != -1:
-                        line_cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, index + 1)
+                        after_hash = block_text[index+1:].lstrip()
+                        end_index = len(block_text) - len(after_hash)
+
+                        line_cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor,end_index)
                         line_cursor.removeSelectedText()
                 else:
                     line_cursor.insertText("# ")

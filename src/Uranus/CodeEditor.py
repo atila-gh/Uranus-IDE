@@ -1,14 +1,12 @@
 from math import ceil
 from PyQt5.QtGui import  QFont,QFontMetrics,QTextCursor
 from PyQt5.QtCore import Qt,pyqtSignal,QEvent 
-from PyQt5.QtWidgets import QPlainTextEdit,QApplication                        
+from PyQt5.QtWidgets import QPlainTextEdit,QApplication                     
 
-try :
-    from Uranus.CodeHighlight import CodeHighlighter
-    from Uranus.SettingWindow import load_setting  
-except ImportError :
-    from CodeHighlight import CodeHighlighter
-    from SettingWindow import load_setting  
+
+from Uranus.CodeHighlight import CodeHighlighter
+from Uranus.SettingWindow import load_setting  
+
     
 
 class CodeEditor(QPlainTextEdit):
@@ -41,7 +39,7 @@ class CodeEditor(QPlainTextEdit):
         """
 
     def __init__(self, parent=None):
-        # print('[CodeEditor->__init__]')
+        print('[CodeEditor->__init__]')
 
         super().__init__(parent)
         setting = load_setting()
@@ -370,6 +368,7 @@ class CodeEditor(QPlainTextEdit):
                     check_block = check_block.next()
 
                 # اعمال تغییرات
+                # اعمال تغییرات
                 while block.isValid() and block.position() <= end_block.position():
                     line_cursor = QTextCursor(block)
                     line_text = block.text()
@@ -378,7 +377,10 @@ class CodeEditor(QPlainTextEdit):
                         # حذف کامنت
                         index = line_text.find("#")
                         if index != -1:
-                            line_cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, index + 1)
+                            after_hash = line_text[index+1:].lstrip()
+                            end_index = len(line_text) - len(after_hash)
+
+                            line_cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, end_index)
                             line_cursor.removeSelectedText()
                     else:
                         # اضافه کردن کامنت
@@ -394,7 +396,10 @@ class CodeEditor(QPlainTextEdit):
                 if block_text.strip().startswith("#"):
                     index = block_text.find("#")
                     if index != -1:
-                        line_cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, index + 1)
+                        after_hash = block_text[index+1:].lstrip()
+                        end_index = len(block_text) - len(after_hash)
+
+                        line_cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor,end_index)
                         line_cursor.removeSelectedText()
                 else:
                     line_cursor.insertText("# ")
