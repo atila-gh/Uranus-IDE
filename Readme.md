@@ -133,7 +133,7 @@ Uranus IDE now supports special formatting for comments:
 This allows you to create **visual headings inside your code** for better readability and teaching.
 
 <p align="center">
-  <img src="comment.png" alt="Comment Heading Example" width="400">
+  <img src="https://raw.githubusercontent.com/atila-gh/Uranus-IDE/main/docs/images/comment.png"  width="400">
 </p>
 
 ---
