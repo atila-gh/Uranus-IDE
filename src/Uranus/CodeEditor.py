@@ -39,7 +39,7 @@ class CodeEditor(QPlainTextEdit):
         """
 
     def __init__(self, parent=None):
-        print('[CodeEditor->__init__]')
+        #print('[CodeEditor->__init__]')
 
         super().__init__(parent)
         setting = load_setting()

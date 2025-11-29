@@ -1,15 +1,12 @@
 from math import ceil
-from PyQt5.QtGui import  QFont,QFontMetrics,QTextCursor
-from PyQt5.QtCore import Qt,pyqtSignal,QEvent 
+from PyQt5.QtGui import  QFont,QTextCursor
+from PyQt5.QtCore import Qt,pyqtSignal 
 from PyQt5.QtWidgets import QPlainTextEdit,QApplication                        
 
-try :
-    from Uranus.CodeHighlight import CodeHighlighter
-    from Uranus.SettingWindow import load_setting  
-except ImportError :
-    from CodeHighlight import CodeHighlighter
-    from SettingWindow import load_setting  
-    
+
+from Uranus.CodeHighlight import CodeHighlighter
+from Uranus.SettingWindow import load_setting  
+
 
 class PyCodeEditor(QPlainTextEdit):
     cursorPositionInfo = pyqtSignal(int, int)   # سیگنال ارسال شماره خط و کاراکتر 
@@ -58,7 +55,6 @@ class PyCodeEditor(QPlainTextEdit):
         
         
         self.setFont(QFont(code_font, code_font_size,QFont.Bold))  # تست با فونت معتبر        
-       
         self.installEventFilter(self)
         self.setTabStopDistance(self.tab_size * self.fontMetrics().horizontalAdvance(' ')) # adjust Tab From 8 Char to 4
 
@@ -404,10 +400,7 @@ class PyCodeEditor(QPlainTextEdit):
             cursor.endEditBlock()
             delayed_emit()
             return    
-
-
-
-        
+  
         # ---------- Auto Indent for Enter after : ----------
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
             cursor = self.textCursor()
@@ -445,8 +438,6 @@ class PyCodeEditor(QPlainTextEdit):
 
             delayed_emit()
             return
-
-
 
         # ---------- Default ----------
         super().keyPressEvent(event)        

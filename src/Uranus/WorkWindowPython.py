@@ -293,13 +293,6 @@ class WorkWindowPython(QFrame):
         self.detached_window = None
         self.fake_close = False
 
-
-
-
-
-
-       
-    
         # path of temp.chk file 
         base_dir = os.path.dirname(os.path.abspath(__file__))
         self.temp_path = os.path.join(base_dir, 'temp.chk')
@@ -336,6 +329,22 @@ class WorkWindowPython(QFrame):
         self.editor = PyCodeEditor()
         self.editor.cursorPositionInfo.connect(self.update_line_char_update)
         self.editor.clicked.connect(lambda: self.code_editor_clicked.emit(self))
+        # LTR
+        self.editor.setLayoutDirection(Qt.LeftToRight)
+
+        # اجبار جهت پیش‌فرض سند به LTR
+        opt = self.editor.document().defaultTextOption()
+        opt.setTextDirection(Qt.LeftToRight)
+        self.editor.document().setDefaultTextOption(opt)
+        
+        # # define F5 Shortcut on Editor to run 
+        # shortcut = QShortcut(QKeySequence("F5"), self.editor)
+        # shortcut.setContext(Qt.WidgetShortcut)
+        # shortcut.activated.connect(self.run)
+
+
+
+
 
         # ساخت ستون شماره خط با LineNumberArea
         self.line_number_area = LineNumberArea(self.editor)
@@ -359,13 +368,7 @@ class WorkWindowPython(QFrame):
         # --- Splitter برای ادیتور و کنسول ---
         self.splitter = QSplitter(Qt.Vertical)
         self.splitter.addWidget(editor_container)
-        
-        #self.splitter.addWidget(self.terminal)
 
-
-
-
-        
         self.splitter.setStretchFactor(0, 3)
         self.splitter.setStretchFactor(1, 1)
 
@@ -412,15 +415,7 @@ class WorkWindowPython(QFrame):
         self.run_btn.clicked.connect(self.run)
         self.toolbar.addWidget(self.run_btn)
         # define shortcut for run code F5
-        shortcut = QShortcut(QKeySequence("F5"), self)
-        shortcut.setContext(Qt.ApplicationShortcut)
-        shortcut.activated.connect(self.run)
-        self.run_btn.setToolTip("""
-                                <b>Run Module</b><br>
-                                <span style='color:gray;'>Shortcut: <kbd>F5</kbd></span><br>
-                                Executes Module and show output in Terminal.
-                                """)
-
+      
  
  
         # # Memory Variable List

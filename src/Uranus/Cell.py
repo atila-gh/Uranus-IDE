@@ -344,6 +344,13 @@ class Cell(QFrame):
             self.line_number.setVisible(True)
             self.editor.cursorPositionInfo.connect(self.update_line_char_update)
             self.editor.clicked.connect(lambda: self.code_editor_clicked.emit(self))
+            # LTR
+            self.editor.setLayoutDirection(Qt.LeftToRight)
+            # اجبار جهت پیش‌فرض سند به LTR
+            opt = self.editor.document().defaultTextOption()
+            opt.setTextDirection(Qt.LeftToRight)
+            self.editor.document().setDefaultTextOption(opt)
+            
             # Add editor to layout
             self.main_layout.addWidget(self.editor)
             # Apply content and styling

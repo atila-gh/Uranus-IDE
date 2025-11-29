@@ -91,9 +91,6 @@ class MainWindow(QMainWindow):
         self.mainwindow_statusbar.addPermanentWidget(self.status_center, 1)
         self.mainwindow_statusbar.addPermanentWidget(self.status_right)
 
-        
-        
-
         # Initialize UI components
         self.init_ui()
 
@@ -174,6 +171,16 @@ class MainWindow(QMainWindow):
         find_action.setShortcut("Ctrl+F")
         find_action.triggered.connect(self.trigger_find_on_active_workwindow)
         edit_menu.addAction(find_action)
+        
+        # --- RUN Menu ---
+        run_menu = menubar.addMenu("Run")
+
+        run_action = QAction("Rub", self)
+        run_action.setShortcut("F5")
+        run_action.triggered.connect(self.trigger_run_active_workwindow)
+        run_menu.addAction(run_action)
+        run_menu.addSeparator()
+
 
 
          # --- Window Menu ---
@@ -491,9 +498,7 @@ class MainWindow(QMainWindow):
                
         except Exception as e:
             QMessageBox.warning(self, "Save Error", f"Could not save file:\n{e}")
-       
-            
-            
+           
     def open_file(self):
         """
         Opens a file dialog to select a .ipynb file and loads it into a new WorkWindow.
@@ -528,8 +533,7 @@ class MainWindow(QMainWindow):
        
         
     def trigger_save_on_active_workwindow(self):
-        active_subwindow = self.mdi_area.activeSubWindow()
-        
+        active_subwindow = self.mdi_area.activeSubWindow()        
         if not active_subwindow:
             return
         work_widget = active_subwindow.widget()
@@ -545,7 +549,21 @@ class MainWindow(QMainWindow):
         work_widget = active_subwindow.widget()
         if hasattr(work_widget, "find_replace"):
             work_widget.find_replace()
-           
+    
+    
+    def trigger_run_active_workwindow(self):
+        print('hi')
+        active_subwindow = self.mdi_area.activeSubWindow()
+        if not active_subwindow:
+            return
+        work_widget = active_subwindow.widget()
+        if hasattr(work_widget, "run_focused_cell"):
+            work_widget.run_focused_cell()
+        elif  hasattr(work_widget, "run"):
+            work_widget.run()
+            
+            
+                   
     def sync_working_directory(self, subwindow):
         """
         Syncs the system working directory with the active WorkWindow's file path.
@@ -577,10 +595,7 @@ class MainWindow(QMainWindow):
     def set_status_right(self, text: str):
         """Update the right section of the status bar."""
         self.status_right.setText(text)
-
-
     
-        
     def closeEvent(self, event):
         
         # بستن پنجره‌های شناور

@@ -1,6 +1,6 @@
  
 import os ,base64  ,io ,builtins ,uuid , importlib , hashlib , sys,inspect , nbformat 
-import subprocess, sys, os ,tempfile 
+import subprocess,  tempfile 
 from nbformat.v4 import  new_output
 from contextlib import redirect_stdout, redirect_stderr
 from traitlets.config import Config
@@ -965,14 +965,14 @@ class WorkWindow(QFrame):
         self.run_btn.clicked.connect(self.run_focused_cell)
         self.toolbar.addWidget(self.run_btn)
         # define shortcut for run code F5
-        shortcut = QShortcut(QKeySequence("F5"), self)
-        shortcut.setContext(Qt.ApplicationShortcut)
-        shortcut.activated.connect(self.run_focused_cell)
-        self.run_btn.setToolTip("""
-                                <b>Run Cell</b><br>
-                                <span style='color:gray;'>Shortcut: <kbd>F5</kbd></span><br>
-                                Executes the current cell and displays the output.
-                                """)
+        # shortcut = QShortcut(QKeySequence("F5"), self)
+        # shortcut.setContext(Qt.ApplicationShortcut)
+        # shortcut.activated.connect(self.run_focused_cell)
+        # self.run_btn.setToolTip("""
+        #                         <b>Run Cell</b><br>
+        #                         <span style='color:gray;'>Shortcut: <kbd>F5</kbd></span><br>
+        #                         Executes the current cell and displays the output.
+        #                         """)
 
     def add_cell(self, editor_type=None, nb_cell=None,
              src_content=None, border_color=None,
