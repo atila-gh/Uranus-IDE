@@ -551,8 +551,7 @@ class MainWindow(QMainWindow):
             work_widget.find_replace()
     
     
-    def trigger_run_active_workwindow(self):
-        print('hi')
+    def trigger_run_active_workwindow(self):        
         active_subwindow = self.mdi_area.activeSubWindow()
         if not active_subwindow:
             return
