@@ -1,5 +1,5 @@
-import re ,  html2text , hashlib ,os , doc_editor2
-from nbformat.v4 import  new_code_cell, new_doc_editor_cell
+import re ,  html2text , hashlib ,os ,markdown2
+from nbformat.v4 import  new_code_cell, new_markdown_cell
 
 # PyQT Methods Import
 from PyQt5.QtGui import QFont, QTextCursor , QTextDocument, QTextImageFormat
@@ -14,6 +14,7 @@ from Uranus.OutputEditor import OutputEditor
 from Uranus.CodeEditor import CodeEditor
 from Uranus.DataOutputEditor import DataFrameWidget
 from Uranus.ImageOutput import ImageOutput
+from Uranus.MarkdownEditor import MarkdownEditor
 
 
 
@@ -367,15 +368,13 @@ class Cell(QFrame):
             if self.outputs:
                 self.inject_outputs(self.outputs)
 
-
-
         # Cell.initialize_editor (شاخه‌ی doc_editor)
         elif editor_type == "doc_editor":
             self.d_editor = DocumentEditor()
             self.main_layout.addWidget(self.d_editor)
 
             if self.src_content:
-                if getattr(self, "origin", None) == "jupyter":
+                if getattr(self, "origin", None) == "uranus":
                     # 1) تبدیل doc_editor به HTML
                     html = doc_editor2.doc_editor(self.src_content)
 
@@ -429,68 +428,38 @@ class Cell(QFrame):
             
             # Markdown 
         elif editor_type == "markdown":
-            self.d_editor = DocumentEditor()
-            self.main_layout.addWidget(self.d_editor)
+            self.m_editor = MarkdownEditor()
+            self.main_layout.addWidget(self.m_editor)
 
             if self.src_content:
-                if getattr(self, "origin", None) == "jupyter":
-                    # 1) تبدیل doc_editor به HTML
-                    html = doc_editor2.doc_editor(self.src_content)
+               self.m_editor.toggle_mode()
+            else:
+                # محتوای تولیدشده توسط اورانوس معمولاً HTML است
+                self.m_editor.editor.setHtml(self.src_content)
 
-                    # 2) جایگزینی attachment:image.png با data URL از nb_cell.attachments
-                    attachments = getattr(self.nb_cell, "attachments", {}) or {}
-                    # attachments شکل: {"image.png": {"image/png": "base64string", ...}, ...}
-                    for name, mime_map in attachments.items():
-                        # اولویت با image/png
-                        b64 = None
-                        if "image/png" in mime_map:
-                            b64 = mime_map["image/png"]
-                            html = html.replace(
-                                f"attachment:{name}",
-                                f"data:image/png;base64,{b64}"
-                            )
-                        elif "image/jpeg" in mime_map:
-                            b64 = mime_map["image/jpeg"]
-                            html = html.replace(
-                                f"attachment:{name}",
-                                f"data:image/jpeg;base64,{b64}"
-                            )
-                        # سایر MIMEها هم قابل اضافه شدن‌اند
-
-                    self.d_editor.editor.setHtml(html)
-                else:
-                    # محتوای تولیدشده توسط اورانوس معمولاً HTML است
-                    self.d_editor.editor.setHtml(self.src_content)
-
-                self.d_editor.activate_readonly_mode(init=True)
+                # self.m_editor.activate_readonly_mode(init=True)
 
             self.set_color(border_color)
    
             
             if self.editor_height < 100 :
                 #print('[EDITOR HEIGHT < 100]' , self.editor_height)
-                self.d_editor.editor.document().adjustSize()
+                self.m_editor.editor.document().adjustSize()
                 QApplication.processEvents()          
-                QTimer.singleShot(0, self.d_editor.adjust_height_document_editor) # adjust after cell rendering
+                QTimer.singleShot(0, self.m_editor.adjust_height_document_editor) # adjust after cell rendering
                 
             else :
                 #print('[EDITOR HEIGHT > 100] ', self.editor_height) 
-                QTimer.singleShot(0, lambda  : self.d_editor.set_fixed_height(self.editor_height)) # adjust after cell rendering
+                QTimer.singleShot(0, lambda  : self.m_editor.set_fixed_height(self.editor_height)) # adjust after cell rendering
           
             
-            self.d_editor.clicked.connect(lambda: self.doc_editor_clicked.emit(self))
-            self.d_editor.editor.clicked.connect(lambda: self.doc_editor_clicked.emit(self))
-            self.d_editor.editor.doubleClicked.connect(lambda: self.doc_editor_editor_clicked.emit(self))                
-            self.d_editor.editor.textChanged.connect(self.d_editor.adjust_height_document_editor)
-            self.d_editor.editor.setFocus(True)
+            # self.m_editor.clicked.connect(lambda: self.doc_editor_clicked.emit(self))
+            # self.m_editor.editor.clicked.connect(lambda: self.doc_editor_clicked.emit(self))
+            # self.m_editor.editor.doubleClicked.connect(lambda: self._editor_clicked.emit(self))                
+            self.m_editor.editor.textChanged.connect(self.m_editor.adjust_height_document_editor)
+            self.m_editor.editor.setFocus(True)
             
-            
-            
-            
-            
-            
-            
-
+ 
     def append_output(self, out):
         if out.output_type == "display_data":
             editor_target = out.metadata.get("editor", "")
@@ -694,10 +663,8 @@ class Cell(QFrame):
             edited = False
 
         # 🎯 تولید ID پایدار بر اساس محتوای سلول
-        hash_id = hashlib.md5(content.encode("utf-8")).hexdigest()
-        
-        cell = new_doc_editor_cell(source=content)
-        
+        hash_id = hashlib.md5(content.encode("utf-8")).hexdigest()        
+        cell = new_markdown_cell(source=content)        
         cell['id'] = hash_id  # ✅ تثبیت ID
         cell['metadata']['bg'] = self.border_color
         cell['metadata']['uranus'] = { "origin": origin, "edited": edited } if edited else {"origin": origin }

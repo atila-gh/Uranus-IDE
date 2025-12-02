@@ -588,17 +588,11 @@ class WorkWindow(QFrame):
         # --------------------------- GRAPHIC -----------------------------
         
         # Define New QFrame
-        
-        
-       
+    
         self.setFrameShape(QFrame.StyledPanel)   # خط دور فریم
         self.setFrameShadow(QFrame.Raised)       # حالت برجسته
         self.setLineWidth(2)                      # ضخامت خط دور فریم
 
-
-    
-        
-        
         # Set minimum window size
         self.setMinimumSize(620, 600)
 
@@ -1112,8 +1106,7 @@ class WorkWindow(QFrame):
         """
         Converts all cells into nbformat-compatible structure and saves to disk.
         """
-       
-            
+          
         open(self.temp_path, "w").close()     # to clear temp.chk file 
         cells = []
         for cell in self.cell_widgets:

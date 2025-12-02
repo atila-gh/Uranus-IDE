@@ -911,16 +911,4 @@ class DocumentEditor(QWidget):
         # print(f"viewport.h: {self.scroll_area.viewport().size().height()}")
         # print(f"editor.h before: {self.editor.height()}")
      
-    def set_fixed_height(self , height = 0):
-        """Set editor to exact pixel height (from metadata)"""
-        #print('[SET FIXED HEIGHT METHOD] ' ,height)
-      
-        self.setFixedHeight(height)   # دقیقاً همون ارتفاع
-        self.resize(self.width(), height)  # اگر داخل layout باشه، این هم کمک می‌کنه
-        self.updateGeometry()
-
-
-        
-        
-    
-
+  
