@@ -1,6 +1,5 @@
  
-import os ,base64  ,io ,builtins ,uuid , importlib , hashlib , sys,inspect , nbformat 
-import subprocess,  tempfile 
+import os ,base64  ,io ,builtins ,uuid , importlib , hashlib , sys,inspect , nbformat , sys
 from nbformat.v4 import  new_output
 from contextlib import redirect_stdout, redirect_stderr
 from traitlets.config import Config
@@ -19,55 +18,6 @@ from Uranus.ObjectInspectorWindow import ObjectInspectorWindow
 #from Uranus.AstDetection import RelationChartView
 
 
-
-class TerminalRunner:
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(TerminalRunner, cls).__new__(cls)
-        return cls._instance
-
-    def run_code(self, code_text: str):
-        """اجرای کد پایتون در ترمینال متناسب با سیستم‌عامل"""
-        # ذخیرهٔ کد در فایل موقت
-        temp_file = os.path.join(tempfile.gettempdir(), "uranus_temp.py")
-        with open(temp_file, "w", encoding="utf-8") as f:
-            f.write(code_text)
-
-        python_exe = sys.executable
-
-        # انتخاب دستور بر اساس سیستم‌عامل
-        if sys.platform.startswith("win"):
-            # ویندوز
-            cmd = f'start cmd /k "{python_exe} -u {temp_file}"'
-            # cmd = f'start /min cmd /k "{python_exe} -u {temp_file}"'
-
-
-            subprocess.Popen(cmd, shell=True)
-
-        elif sys.platform.startswith("linux"):
-            # لینوکس (gnome-terminal)
-            cmd = f'gnome-terminal -- bash -c "{python_exe} -u {temp_file}; exec bash"'
-            
-            subprocess.Popen(cmd, shell=True)
-
-        elif sys.platform == "darwin":
-            # macOS (AppleScript برای باز کردن ترمینال)
-            apple_script = f'''
-            tell application "Terminal"
-                do script "{python_exe} -u {temp_file}"
-                activate
-            end tell
-            '''
-
-            subprocess.Popen(["osascript", "-e", apple_script])
-
-        else:
-            raise OSError(f"Unsupported platform: {sys.platform}")
-        
-        
-        
 class FindReplaceDialog(QDialog):
     """
     Find/replace with preindexed matches. No overlapping search. Navigation and replacement
@@ -352,6 +302,9 @@ class IPythonKernel:
         self.input_waiter = InputWaiter()
         self.object_store = {}
 
+
+       
+
     def run_cell(self, code: str, callback):
 
         builtins.input = self.input_waiter.wait_for_input
@@ -361,58 +314,21 @@ class IPythonKernel:
             injected = "import matplotlib; matplotlib.use('Agg')\n"
             code = injected + code.replace("plt.show()", "plt.savefig('plot.png')")
 
-
         outputs = []
         stdout_catcher = StreamCatcher("stdout", callback)
         stderr_buffer = io.StringIO()
+
+        with redirect_stdout(stdout_catcher), redirect_stderr(stderr_buffer):
+            result = self.shell.run_cell(code)
+       
+        
+       
+
+
+        obj = result.result
+        stderr_text = stderr_buffer.getvalue().strip()
         
         
-         # 🚫 Block problematic event-loop libraries in one condition
-        if (
-            "tkinter" in code or "Tk(" in code or
-            "PyQt5" in code or "PySide2" in code or "QApplication(" in code or
-            "asyncio" in code or "await " in code or "async def" in code
-        ):
-            
-            terminal = TerminalRunner()        
-            terminal.run_code(code)  # اجرای متن در همان ترمینال
-            tb_lines = [
-                "⚠️ Code execution blocked.",
-                "Reason: Event-loop based libraries (Tkinter, Qt, asyncio) conflict with IPython/QThread execution.",
-                "These libraries manage their own GUI or async loops which cannot be safely re-entered in Uranus IDE cells.",
-                "Therefore, we need to run your code using the standard Python interpreter instead."
-            ]
-            out = new_output(
-                "error",
-                ename="EventLoopBlocked",
-                evalue="Execution of Tkinter/Qt/asyncio code is not supported inside Uranus IDE cells",
-                traceback=tb_lines
-            )
-            outputs.append(out)
-            callback(out)
-            return outputs
-        
-
-
-
-
-
-               
- 
-        try : 
-            with redirect_stdout(stdout_catcher), redirect_stderr(stderr_buffer):
-                result = self.shell.run_cell(code)         
-            obj = result.result
-            stderr_text = stderr_buffer.getvalue().strip()
-        except Exception as e : 
-            tb_lines = [f"Exception: {str(e)}"]
-            out = new_output("error", ename="Exception", evalue=str(e), traceback=tb_lines)
-            outputs.append(out)
-            callback(out)
-            return outputs
-        else :
-            return outputs
-            
 
         # 🖼️ image
         if os.path.exists("plot.png"):
@@ -505,22 +421,6 @@ class IPythonKernel:
         
         return outputs
     
-    def clear_namespace(self):
-        """
-        Clears all user-defined variables and objects from the IPython kernel namespace.
-        Equivalent to the %reset magic in IPython.
-        """
-        # پاک کردن فضای نام کاربر
-        self.shell.user_ns.clear()
-
-        # دوباره مقداردهی اولیه برای builtins و متغیرهای ضروری
-        self.shell.user_ns.update({
-            "__builtins__": __builtins__,
-        })
-
-        # پاک کردن object_store داخلی
-        self.object_store.clear()
-
     
     def inspect_all_user_attributes(self, shell):
         user_ns = shell.user_ns
@@ -619,7 +519,7 @@ class WorkWindow(QFrame):
        The main notebook interface for Uranus IDE.
 
        Responsibilities:
-       - Hosts and manages multiple Cell instances (code/markdown).
+       - Hosts and manages multiple Cell instances (code/doc_editor).
        - Provides toolbars for cell manipulation, execution, and styling.
        - Integrates with IPythonKernel for backend execution.
        - Supports undo stack for deleted cells and find/replace dialog.
@@ -815,7 +715,7 @@ class WorkWindow(QFrame):
         btn_color.setIcon(QIcon(icon_path))
         btn_color.setToolTip("""
                             <b>Choose Color</b><br>
-                            Change Border Color .
+                            Can Change Border Color .
                             """)
         btn_color.clicked.connect(self.choose_border_color)
         self.top_toolbar.addWidget(btn_color)
@@ -827,8 +727,8 @@ class WorkWindow(QFrame):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "run_all.png")
         self.btn_run_all.setIcon(QIcon(icon_path))        
         self.btn_run_all.setToolTip("""
-                            <b>Run All Code Cells</b><br>
-                            Executes the All Code Cells
+                            <b>Choose Run All Code</b><br>
+                            Executes the All Code cell and displays the outputs
                             """)
         self.btn_run_all.clicked.connect(self.run_all_cells)
         self.top_toolbar.addWidget(self.btn_run_all)
@@ -855,7 +755,7 @@ class WorkWindow(QFrame):
         memory.setToolTip("""
                                    <b>Objects List</b><br>
                                    <span style='color:gray;'>Shortcut: <kbd>F9</kbd></span><br>
-                                   shows Objects And Variables Types in Table
+                                   Object And Variable List
                                    """)
         memory.clicked.connect(self.variable_table)
         self.top_toolbar.addWidget(memory)
@@ -866,23 +766,25 @@ class WorkWindow(QFrame):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "print.png")
         print_cell.setIcon(QIcon(icon_path))
         print_cell.setToolTip("""
-                                   <b>Print</b><br>                                   
+                                   <b>Print</b><br>
+                                   
                                    Print Focused Cell 
                                    """)
         print_cell.clicked.connect(self.print_cell)
         self.top_toolbar.addWidget(print_cell)
         self.top_toolbar.addSeparator()
         
-        #Reset Kernel Memory
-        clean = QToolButton()
-        icon_path = os.path.join(os.path.dirname(__file__), "image", "clear.png")
-        clean.setIcon(QIcon(icon_path))
-        clean.setToolTip("""
-                                   <b>Reset Kernel Memory</b><br>                                   
-                                    """)
-        clean.clicked.connect(self.ipython_kernel.clear_namespace)
-        self.top_toolbar.addWidget(clean)   
-        self.top_toolbar.addSeparator()
+        # # Drawing  Graph
+        # graph = QToolButton()
+        # icon_path = os.path.join(os.path.dirname(__file__), "image", "graph.png")
+        # graph.setIcon(QIcon(icon_path))
+        # graph.setToolTip("""
+        #                            <b>Graph</b><br>                                   
+        #                            Drawing Graph For Run cell Focused Cell 
+        #                            """)
+        # graph.clicked.connect(self.graph)
+        # self.top_toolbar.addWidget(graph)
+        # self.top_toolbar.addSeparator()
         
         
         # IPYTON TO PY  
@@ -890,8 +792,9 @@ class WorkWindow(QFrame):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "iptopy.png")
         ippy.setIcon(QIcon(icon_path))
         ippy.setToolTip("""
-                                   <b>Ipthon To Python</b><br>                            
-                                    """)
+                                   <b>IPYTON TO PYTHON</b><br>                                   
+                                   CONVERT IPYNB TO PY 
+                                   """)
         ippy.clicked.connect(self.iptopy)
         self.top_toolbar.addWidget(ippy)
       
@@ -965,14 +868,14 @@ class WorkWindow(QFrame):
         self.run_btn.clicked.connect(self.run_focused_cell)
         self.toolbar.addWidget(self.run_btn)
         # define shortcut for run code F5
-        # shortcut = QShortcut(QKeySequence("F5"), self)
-        # shortcut.setContext(Qt.ApplicationShortcut)
-        # shortcut.activated.connect(self.run_focused_cell)
-        # self.run_btn.setToolTip("""
-        #                         <b>Run Cell</b><br>
-        #                         <span style='color:gray;'>Shortcut: <kbd>F5</kbd></span><br>
-        #                         Executes the current cell and displays the output.
-        #                         """)
+        shortcut = QShortcut(QKeySequence("F5"), self)
+        shortcut.setContext(Qt.ApplicationShortcut)
+        shortcut.activated.connect(self.run_focused_cell)
+        self.run_btn.setToolTip("""
+                                <b>Run Cell</b><br>
+                                <span style='color:gray;'>Shortcut: <kbd>F5</kbd></span><br>
+                                Executes the current cell and displays the output.
+                                """)
 
     def add_cell(self, editor_type=None, nb_cell=None,
              src_content=None, border_color=None,
@@ -1059,7 +962,7 @@ class WorkWindow(QFrame):
 
         # اتصال پایان اجرا به فعال‌سازی دکمه‌ها
         def on_done():
-            #print("[run_focused_cell] execution finished")
+            print("[run_focused_cell] execution finished")
             self.run_btn.setEnabled(True)
             self.btn_run_all.setEnabled(True)
             self.variable_table(True)
@@ -1150,11 +1053,11 @@ class WorkWindow(QFrame):
             # استخراج محتوا بسته به نوع سلول
             if self.focused_cell.editor_type == 'code':
                 content = self.focused_cell.editor.toPlainText()
-            elif self.focused_cell.editor_type == 'markdown':
+            elif self.focused_cell.editor_type == 'doc_editor':
                 content = self.focused_cell.d_editor.editor.toHtml()
 
             # ذخیره اطلاعات در پشته
-            if self.focused_cell.editor_type in ('code', 'markdown'):
+            if self.focused_cell.editor_type in ('code', 'doc_editor'):
                 self.deleted_cells_stack.append({
                     "index": index,
                     "cell_type": self.focused_cell.editor_type,
@@ -1217,8 +1120,8 @@ class WorkWindow(QFrame):
             if cell.editor_type == "code":
                 cells.append(cell.get_nb_code_cell())
                 self.original_sources.append(cell.editor.toPlainText().strip())
-            elif cell.editor_type == "markdown":
-                cells.append(cell.get_nb_markdown_cell())
+            elif cell.editor_type == "doc_editor":
+                cells.append(cell.get_nb_doc_editor_cell())
                 self.original_sources.append(cell.d_editor.editor.toHtml().strip())
         
         if cells :
@@ -1249,7 +1152,7 @@ class WorkWindow(QFrame):
 
         # WorkWindow.load_file
         for cell_data in content.cells:
-            editor_type = "code" if cell_data.cell_type == "code" else "markdown"
+            editor_type = "code" if cell_data.cell_type == "code" else "doc_editor"
             source = cell_data.source
             metadata = cell_data.get("metadata", {})
             border_color = metadata.get("bg")
@@ -1409,8 +1312,8 @@ class WorkWindow(QFrame):
         for cell in self.cell_widgets:
             if cell.editor_type == "code":
                 cells.append(cell.get_nb_code_cell())
-            elif cell.editor_type == "markdown":
-                cells.append(cell.get_nb_markdown_cell())
+            elif cell.editor_type == "doc_editor":
+                cells.append(cell.get_nb_doc_editor_cell())
 
         nb = nbformat.v4.new_notebook()
         nb["cells"] = cells
@@ -1604,7 +1507,7 @@ class WorkWindow(QFrame):
                     f.write('\n#--------------------------------------')                 
                     f.write('\n'+cell.editor.toPlainText() + '\n')
                     
-                elif cell.editor_type == 'markdown' and hasattr(cell , 'd_editor') and cell.d_editor.editor : 
+                elif cell.editor_type == 'doc_editor' and hasattr(cell , 'd_editor') and cell.d_editor.editor : 
                     
                     f.write('\n#--------------------------------------')
                     f.write(f'\n# DOCUMENT CELL {i}')                                          
@@ -1615,4 +1518,6 @@ class WorkWindow(QFrame):
                     f.write(cell.d_editor.editor.toPlainText()+ '\n')
                     f.write('"""\n')
                 
-            
+                        
+                    
+                    
