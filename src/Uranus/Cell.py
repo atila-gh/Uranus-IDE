@@ -1,4 +1,4 @@
-import re ,  html2text , hashlib ,os ,markdown2
+import re ,  hashlib ,os ,markdown2
 from nbformat.v4 import  new_code_cell, new_markdown_cell
 
 # PyQT Methods Import
@@ -245,18 +245,15 @@ class Cell(QFrame):
             
             self.main_layout.addLayout(radio_layout)
 
+            
+
+
             self.radio_code.toggled.connect(lambda checked: self.initialize_editor("code") if checked else None)
-            self.radio_doc.toggled.connect(lambda checked: self.initialize_editor("doc_editor" , original = True) if checked else None)
-            self.radio_mark.toggled.connect(lambda checked: self.initialize_editor("markdown" , original = True) if checked else None)
+            self.radio_doc.toggled.connect(lambda checked: self.initialize_editor("doc_editor") if checked else None)
+            self.radio_mark.toggled.connect(lambda checked: self.initialize_editor("markdown") if checked else None)
 
-        elif self.editor_type == 'code':
-            self.initialize_editor("code", content=self.src_content, border_color=self.border_color)
-
-        elif self.editor_type == 'doc_editor':
-            self.initialize_editor("doc_editor", content=self.src_content, border_color=self.border_color)
-        
-        elif self.editor_type == 'markdown':
-            self.initialize_editor("markdown", content=self.src_content, border_color=self.border_color)
+        else :
+            self.initialize_editor(editor_type = self.editor_type)
 
 
     def run(self):
@@ -333,7 +330,7 @@ class Cell(QFrame):
         ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
         return ansi_escape.sub('', text)
 
-    def initialize_editor(self, editor_type, content=None, border_color=None , original = False ):
+    def initialize_editor(self , editor_type ) :
         """
         Initializes the editor based on the selected cell type.
         Removes the type selector and inserts the appropriate editor.
@@ -342,15 +339,16 @@ class Cell(QFrame):
         if self.debug:
             print('[Cell->initialize_editor]')
 
+        self.editor_type = editor_type
+
         # Hide type selector radio buttons if present
         if hasattr(self, 'radio_code') and hasattr(self, 'radio_doc') and hasattr(self, 'radio_mark'):
             self.radio_code.hide()
             self.radio_doc.hide()
             self.radio_mark.hide()
 
-        self.editor_type = editor_type
-
-        if editor_type == "code":
+        # Code Cell
+        if self.editor_type == "code":
             # Create code editor
             self.editor = CodeEditor()
             # Line number method Caller
@@ -360,9 +358,9 @@ class Cell(QFrame):
             # Add editor to layout
             self.main_layout.addWidget(self.editor)
             # Apply content and styling
-            if content:
-                self.editor.setPlainText(content)
-            self.set_color(border_color)
+            if self.src_content:
+                self.editor.setPlainText(self.src_content)
+            self.set_color(self.border_color)
             self.editor.adjust_height_code()
             self.editor.textChanged.connect(self.editor.adjust_height_code)
             self.editor.setFocus()
@@ -370,8 +368,8 @@ class Cell(QFrame):
             if self.outputs:
                 self.inject_outputs(self.outputs)
 
-        # Cell.initialize_editor (شاخه‌ی doc_editor)
-        elif editor_type == "doc_editor":
+        # Document Cell
+        elif self.editor_type == "doc_editor":
             self.d_editor = DocumentEditor()
             self.main_layout.addWidget(self.d_editor)
 
@@ -406,7 +404,7 @@ class Cell(QFrame):
                     self.d_editor.editor.setHtml(self.src_content)
                 self.d_editor.activate_readonly_mode(init=True)
 
-            self.set_color(border_color)
+            self.set_color(self.border_color)
    
             
             if self.editor_height < 100 :
@@ -427,22 +425,22 @@ class Cell(QFrame):
             self.d_editor.editor.setFocus(True)
             
             
-            # Markdown 
-        elif editor_type == "markdown":
-            self.m_editor = MarkdownEditor(image = self.image)
+        # Markdown Cell
+        elif self.editor_type == "markdown":
+            self.m_editor = MarkdownEditor(image = self.image , text = self.src_content)
             self.main_layout.addWidget(self.m_editor)
 
             if self.src_content:
                 self.m_editor.editor.setPlainText(self.src_content)
+                print(self.src_content)
                 self.m_editor.toggle()
             else:
                 print('[noting to place in markdown]')
-                # محتوای تولیدشده توسط اورانوس معمولاً HTML است
-                #self.m_editor.editor.setHtml(self.src_content)
+            
 
            
 
-            self.set_color(border_color)
+            self.set_color(self.border_color)
    
             
             if self.editor_height < 100 :

@@ -986,7 +986,8 @@ class WorkWindow(QFrame):
                 notify_done=self.execution_done,
                 origin="uranus"  ,
                 status_c = self.status_c ,
-                status_r = self.status_r
+                status_r = self.status_r,
+                nb_cell={}
                 
                 
             )
@@ -1017,7 +1018,8 @@ class WorkWindow(QFrame):
                 notify_done=self.execution_done,
                 origin="uranus" ,
                 status_c = self.status_c ,
-                status_r = self.status_r
+                status_r = self.status_r,
+                nb_cell={}
             )
 
             cell.clicked.connect(lambda c=cell: self.set_focus(c))

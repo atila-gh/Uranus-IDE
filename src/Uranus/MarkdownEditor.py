@@ -12,12 +12,14 @@ class MarkdownCell(QTextEdit):
     clicked = pyqtSignal()
     doubleClicked = pyqtSignal()
 
-    def __init__(self, image ):
+    def __init__(self, image , text = ''):
         super().__init__()
         self.is_rendered = False
-        self.images = image
-        self.raw_text = ""
-
+        self.images = image        
+        self.raw_text = text
+        print(self.raw_text)
+       
+       
     def insertFromMimeData(self, source):
         if source.hasImage():
             image = source.imageData()
@@ -38,10 +40,6 @@ class MarkdownCell(QTextEdit):
                 self.insertPlainText(markdown_img)
         else:
             super().insertFromMimeData(source)
-
-
-
-
 
     def toggle_mode(self):
         if not self.is_rendered:
@@ -86,7 +84,7 @@ class MarkdownEditor(QWidget):
     doc_returnPressed = pyqtSignal()
     clicked = pyqtSignal()
 
-    def __init__(self, image ,parent=None  ):
+    def __init__(self, image ,text ,parent=None  ):
         super().__init__(parent)
 
         setting = load_setting()
@@ -98,7 +96,7 @@ class MarkdownEditor(QWidget):
         
         self.editor_height = 0
 
-        self.editor = MarkdownCell(image)
+        self.editor = MarkdownCell(image , text)
         
         self.editor.setFont(QFont(metadata_font, metadata_font_size))
         self.editor.setStyleSheet(f"""
@@ -158,8 +156,6 @@ class MarkdownEditor(QWidget):
         self.editor.toggle_mode()
         self.editor.setFocus()
         QTimer.singleShot(0, self.adjust_height_document_editor)
-
-
 
     def eventFilter(self, obj, event):
         if obj == self.editor:
@@ -236,7 +232,7 @@ class MarkdownEditor(QWidget):
             final_height = max(min_height, min(new_height, max_height))
             self.setMinimumHeight(final_height)
             self.setMaximumHeight(final_height)
-            
+           
             
     def set_fixed_height(self , height = 0):
         """Set editor to exact pixel height (from metadata)"""
