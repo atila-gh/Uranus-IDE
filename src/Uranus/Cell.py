@@ -88,9 +88,9 @@ class Cell(QFrame):
         - get_nb_doc_editor_cell(): Converts cell to nbformat doc_editor cell.
         """
 
-    def __init__(self, editor_type=None, src_content=None, border_color=None,
+    def __init__(self,nb_cell ,editor_type=None, src_content=None, border_color=None,
              kernel=None, notify_done=None, origin='uranus', outputs=None,
-             status_c=None, status_r=None, height=0, nb_cell=None):
+             status_c=None, status_r=None, height=0 ):
 
         
         
@@ -114,7 +114,9 @@ class Cell(QFrame):
         self.status_c = status_c
         self.status_r = status_r
         self.editor_height = height
-        self.nb_cell = nb_cell
+        self.nb_cell = nb_cell     
+        self.image = nb_cell.get('attachments' , {}) 
+        print(self.image.keys())
 
 
         # Load settings
@@ -376,7 +378,7 @@ class Cell(QFrame):
             if self.src_content:
                 if getattr(self, "origin", None) == "uranus":
                     # 1) تبدیل doc_editor به HTML
-                    html = doc_editor2.doc_editor(self.src_content)
+                    html = markdown2.markdown(self.src_content)
 
                     # 2) جایگزینی attachment:image.png با data URL از nb_cell.attachments
                     attachments = getattr(self.nb_cell, "attachments", {}) or {}
@@ -402,7 +404,6 @@ class Cell(QFrame):
                 else:
                     # محتوای تولیدشده توسط اورانوس معمولاً HTML است
                     self.d_editor.editor.setHtml(self.src_content)
-
                 self.d_editor.activate_readonly_mode(init=True)
 
             self.set_color(border_color)
@@ -428,16 +429,18 @@ class Cell(QFrame):
             
             # Markdown 
         elif editor_type == "markdown":
-            self.m_editor = MarkdownEditor()
+            self.m_editor = MarkdownEditor(image = self.image)
             self.main_layout.addWidget(self.m_editor)
 
             if self.src_content:
-               self.m_editor.toggle_mode()
+                self.m_editor.editor.setPlainText(self.src_content)
+                self.m_editor.toggle()
             else:
+                print('[noting to place in markdown]')
                 # محتوای تولیدشده توسط اورانوس معمولاً HTML است
-                self.m_editor.editor.setHtml(self.src_content)
+                #self.m_editor.editor.setHtml(self.src_content)
 
-                # self.m_editor.activate_readonly_mode(init=True)
+           
 
             self.set_color(border_color)
    
@@ -566,7 +569,7 @@ class Cell(QFrame):
         
         
         # Generate md5 static hash code acording to context of cell
-        hash_id = hashlib.sha1(code.encode("utf-8")).hexdigest()
+        hash_id = hashlib.sha1(code.encode("utf-8")).hexdigest()[:8]
         cell['id'] = hash_id
 
         return cell
@@ -647,27 +650,16 @@ class Cell(QFrame):
         Assigns a stable ID based on content hash to avoid unnecessary file changes.
         """
 
-        html = self.d_editor.editor.toHtml()
-
-        if self.origin != "uranus":
-            converter = html2text.HTML2Text()
-            converter.ignore_links = False
-            converter.body_width = 0
-            doc_editor = converter.handle(html)
-            content = doc_editor
-            origin = "jupyter"
-            edited = True
-        else:
-            content = html
-            origin = "uranus"
-            edited = False
+        content = self.d_editor.editor.toHtml()    
+       
+        origin = "uranus"       
 
         # 🎯 تولید ID پایدار بر اساس محتوای سلول
-        hash_id = hashlib.md5(content.encode("utf-8")).hexdigest()        
+        hash_id = hashlib.md5(content.encode("utf-8")).hexdigest()[:8]     
         cell = new_markdown_cell(source=content)        
         cell['id'] = hash_id  # ✅ تثبیت ID
         cell['metadata']['bg'] = self.border_color
-        cell['metadata']['uranus'] = { "origin": origin, "edited": edited } if edited else {"origin": origin }
+        cell['metadata']['uranus'] = {"origin": origin} 
         if self.d_editor.flag_doc_height_adjust : # if is recalculted height in document editor 
             cell['metadata']['height'] = self.d_editor.editor_height  # height of editor in pixcel
             #print('[CELL-> FLAGED]' , self.d_editor.editor_height)
@@ -724,4 +716,36 @@ class Cell(QFrame):
         # --- پرینت کل ---
         doc.print_(printer)
     
-    
+    def get_nb_markdown_cell(self):
+        """
+        Converts the current cell's content to a Jupyter-compatible doc_editor cell.
+        Assigns a stable ID based on content hash to avoid unnecessary file changes.
+        """
+        
+        # collect editor content in raw_text that saved before in markdown editor 
+        content = self.m_editor.editor.raw_text
+        
+
+
+        print('[Content : ]',content)
+        # 🎯 تولید ID پایدار بر اساس محتوای سلول
+             
+        cell = new_markdown_cell(source=str(content))        
+        
+        
+        # افزودن attachments طبق nbformat4
+        attachments = {}
+        for filename, b64 in self.m_editor.editor.images.items():
+            attachments[filename] = {"image/png": b64}
+        if attachments:
+            cell["attachments"] = attachments
+           
+        # متادیتاهای پایدار  
+        hash_id = hashlib.md5(content.encode("utf-8")).hexdigest()[:8]  
+        cell['id'] = hash_id  # ✅ تثبیت ID
+        cell['metadata']['bg'] = self.border_color  
+        cell['metadata']['uranus'] = {"origin": "jupyter"} 
+
+
+            
+        return cell

@@ -871,7 +871,7 @@ class WorkWindow(QFrame):
                                 Executes the current cell and displays the output.
                                 """)
 
-    def add_cell(self, editor_type=None, nb_cell=None,
+    def add_cell(self, editor_type=None, nb_cell={},
              src_content=None, border_color=None,
              origin="uranus", outputs=None, height=0):
         
@@ -1116,6 +1116,12 @@ class WorkWindow(QFrame):
             elif cell.editor_type == "doc_editor":
                 cells.append(cell.get_nb_doc_editor_cell())
                 self.original_sources.append(cell.d_editor.editor.toHtml().strip())
+                
+            elif cell.editor_type == "markdown":
+                cells.append(cell.get_nb_markdown_cell())
+                self.original_sources.append(cell.m_editor.editor.toPlainText())
+                
+                
         
         if cells :
             nb = nbformat.v4.new_notebook()        
@@ -1144,21 +1150,27 @@ class WorkWindow(QFrame):
         self.cell_widgets.clear()
 
         # WorkWindow.load_file
+        
         for cell_data in content.cells:
-            editor_type = "code" if cell_data.cell_type == "code" else "doc_editor"
-            source = cell_data.source
-            metadata = cell_data.get("metadata", {})
+            metadata = cell_data["metadata"]
+            origin = metadata.get('uranus',{}).get('origin' , 'jupyter') # after Save all Jupyter Notebook Get Jupyter Origin
+            
+            
+            if cell_data.cell_type == "code" : 
+                editor_type = "code" 
+            elif cell_data.cell_type == "markdown" and origin == 'uranus':
+                editor_type = "doc_editor" 
+                print('[Code Editor]',origin)
+            elif cell_data.cell_type == "markdown" and origin != 'uranus':
+                editor_type = 'markdown'                
+                print('[Markdown Editor]',origin)
+            
+            
+            source = cell_data.source            
             border_color = metadata.get("bg")
-
-            if "uranus" not in metadata:
-                metadata["uranus"] = {}
-            if "origin" not in metadata["uranus"]:
-                metadata["uranus"]["origin"] = "jupyter"
-
-            origin = metadata["uranus"]["origin"]
             height = metadata.get('height', 0)
-
             outputs = None
+            
             if editor_type == "code" and hasattr(cell_data, "outputs"):
                 outputs = [
                     out for out in cell_data.outputs

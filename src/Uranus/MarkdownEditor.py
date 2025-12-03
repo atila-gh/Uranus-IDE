@@ -12,10 +12,10 @@ class MarkdownCell(QTextEdit):
     clicked = pyqtSignal()
     doubleClicked = pyqtSignal()
 
-    def __init__(self):
+    def __init__(self, image ):
         super().__init__()
         self.is_rendered = False
-        self.images = {}
+        self.images = image
         self.raw_text = ""
 
     def insertFromMimeData(self, source):
@@ -30,22 +30,34 @@ class MarkdownCell(QTextEdit):
 
                 full_hash = hashlib.sha1(data).hexdigest()
                 short_hash = full_hash[-6:]
+                filename = f"image-{short_hash}.png"
                 b64 = base64.b64encode(data).decode("utf-8")
 
-                self.images[short_hash] = b64
-                markdown_img = f"\n![pasted image](data:image/png;base64,{short_hash})\n"
+                self.images[filename] = b64
+                markdown_img = f"\n![pasted image](attachment:{filename})\n"
                 self.insertPlainText(markdown_img)
         else:
             super().insertFromMimeData(source)
+
+
+
+
 
     def toggle_mode(self):
         if not self.is_rendered:
             self.raw_text = self.toPlainText()
             text = self.raw_text
-            for key, b64 in self.images.items():
-                text = text.replace(f"data:image/png;base64,{key}", f"data:image/png;base64,{b64}")
+            for filename, b64 in self.images.items():
+             
+                text = text.replace(f"attachment:{filename}",
+                f"data:image/png;base64,{b64}")
 
-            html = markdown2.markdown(text, extras=["fenced-code-blocks", "tables", "strike", "task_list"])
+
+            html = markdown2.markdown(text
+                                      , extras=["fenced-code-blocks"
+                                                    , "tables"
+                                                    , "strike"
+                                                    , "task_list"])
             self.setHtml(html)
             self.setReadOnly(True)
             self.is_rendered = True
@@ -74,7 +86,7 @@ class MarkdownEditor(QWidget):
     doc_returnPressed = pyqtSignal()
     clicked = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, image ,parent=None  ):
         super().__init__(parent)
 
         setting = load_setting()
@@ -86,8 +98,8 @@ class MarkdownEditor(QWidget):
         
         self.editor_height = 0
 
-        self.editor = MarkdownCell()
-        self.editor.setAcceptRichText(True)
+        self.editor = MarkdownCell(image)
+        
         self.editor.setFont(QFont(metadata_font, metadata_font_size))
         self.editor.setStyleSheet(f"""
             QTextEdit {{
@@ -224,3 +236,12 @@ class MarkdownEditor(QWidget):
             final_height = max(min_height, min(new_height, max_height))
             self.setMinimumHeight(final_height)
             self.setMaximumHeight(final_height)
+            
+            
+    def set_fixed_height(self , height = 0):
+        """Set editor to exact pixel height (from metadata)"""
+        #print('[SET FIXED HEIGHT METHOD] ' ,height)
+      
+        self.setFixedHeight(height)   # دقیقاً همون ارتفاع
+        self.resize(self.width(), height)  # اگر داخل layout باشه، این هم کمک می‌کنه
+        self.updateGeometry()
