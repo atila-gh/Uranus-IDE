@@ -1,5 +1,5 @@
-import os, base64, hashlib, sys
-import markdown2
+import os, base64, hashlib, sys , markdown2
+
 from PyQt5.QtGui import (
     QFont, QFontMetrics, QTextCharFormat, QTextCursor, QImage, QMouseEvent
 )
@@ -12,12 +12,14 @@ class MarkdownCell(QTextEdit):
     clicked = pyqtSignal()
     doubleClicked = pyqtSignal()
 
-    def __init__(self, image , text = ''):
+    def __init__(self, image ):
         super().__init__()
         self.is_rendered = False
         self.images = image        
-        self.raw_text = text
-        print(self.raw_text)
+        self.raw_text = ''
+        self.setFocusPolicy(Qt.ClickFocus)
+        self.setCursor(Qt.IBeamCursor)
+        
        
        
     def insertFromMimeData(self, source):
@@ -45,10 +47,13 @@ class MarkdownCell(QTextEdit):
         if not self.is_rendered:
             self.raw_text = self.toPlainText()
             text = self.raw_text
+           
+            
             for filename, b64 in self.images.items():
              
                 text = text.replace(f"attachment:{filename}",
                 f"data:image/png;base64,{b64}")
+                
 
 
             html = markdown2.markdown(text
@@ -56,6 +61,7 @@ class MarkdownCell(QTextEdit):
                                                     , "tables"
                                                     , "strike"
                                                     , "task_list"])
+            
             self.setHtml(html)
             self.setReadOnly(True)
             self.is_rendered = True
@@ -65,10 +71,14 @@ class MarkdownCell(QTextEdit):
             self.is_rendered = False
 
     def mousePressEvent(self, event: QMouseEvent):
-        self.clicked.emit()
+       
         super().mousePressEvent(event)
+        self.setFocus(Qt.MouseFocusReason)
+        self.clicked.emit()
+
 
     def mouseDoubleClickEvent(self, event: QMouseEvent):
+        
         self.doubleClicked.emit()
         super().mouseDoubleClickEvent(event)
 
@@ -80,11 +90,16 @@ class MarkdownCell(QTextEdit):
             event.ignore()
 
 
+
+        
+        
 class MarkdownEditor(QWidget):
     doc_returnPressed = pyqtSignal()
     clicked = pyqtSignal()
+    
+    
 
-    def __init__(self, image ,text ,parent=None  ):
+    def __init__(self, image  ,parent=None  ):
         super().__init__(parent)
 
         setting = load_setting()
@@ -95,8 +110,10 @@ class MarkdownEditor(QWidget):
         self.tab_size = 4
         
         self.editor_height = 0
+        
 
-        self.editor = MarkdownCell(image , text)
+        self.editor = MarkdownCell(image)
+        self.setFocusProxy(self.editor)
         
         self.editor.setFont(QFont(metadata_font, metadata_font_size))
         self.editor.setStyleSheet(f"""
@@ -142,10 +159,12 @@ class MarkdownEditor(QWidget):
 
     def mousePressEvent(self, event):
         super().mousePressEvent(event)
-        if self.parent():
-            self.parent().mousePressEvent(event)
+        if self.editor:
+            self.editor.setFocus()   # 🔑 فوکوس روی ادیتور داخلی
+        self.clicked.emit()      # سیگنال کلیک خودت
 
-    def toggle(self):
+    def toggle(self):        
+        
         if not self.editor.is_rendered:
             self.editor.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             self.editor.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -234,10 +253,3 @@ class MarkdownEditor(QWidget):
             self.setMaximumHeight(final_height)
            
             
-    def set_fixed_height(self , height = 0):
-        """Set editor to exact pixel height (from metadata)"""
-        #print('[SET FIXED HEIGHT METHOD] ' ,height)
-      
-        self.setFixedHeight(height)   # دقیقاً همون ارتفاع
-        self.resize(self.width(), height)  # اگر داخل layout باشه، این هم کمک می‌کنه
-        self.updateGeometry()

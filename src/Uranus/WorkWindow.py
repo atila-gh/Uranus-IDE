@@ -895,6 +895,8 @@ class WorkWindow(QFrame):
         cell.clicked.connect(lambda c=cell: self.set_focus(c))
         cell.doc_editor_clicked.connect(lambda c=cell: self.set_focus(c))
         cell.doc_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+        cell.markdown_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+        cell.markdown_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
 
         self.cell_widgets.append(cell)  # cell append to list of cells
         self.cell_layout.addWidget(cell)  # for showing cell add cell to layout
@@ -995,6 +997,8 @@ class WorkWindow(QFrame):
             cell.clicked.connect(lambda c=cell: self.set_focus(c))
             cell.doc_editor_clicked.connect(lambda c=cell: self.set_focus(c))
             cell.doc_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+            cell.markdown_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+            cell.markdown_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
 
             self.cell_widgets.insert(index, cell)
             self.cell_layout.insertWidget(index, cell)
@@ -1025,6 +1029,8 @@ class WorkWindow(QFrame):
             cell.clicked.connect(lambda c=cell: self.set_focus(c))
             cell.doc_editor_clicked.connect(lambda c=cell: self.set_focus(c))
             cell.doc_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+            cell.markdown_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+            cell.markdown_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
 
             self.cell_widgets.insert(index + 1, cell)
             self.cell_layout.insertWidget(index + 1, cell)
@@ -1039,11 +1045,14 @@ class WorkWindow(QFrame):
         if self.debug:
             print('[WorkWindow->delete_active_cell]')
 
-        if  len(self.cell_widgets) <=1 :
-            self.status_l('You can`t delete the last cell — at least one cell is required. Create a new one first, then you can delete this one.')
+        if len(self.cell_widgets) <= 1:
+            self.status_l(
+                'You can`t delete the last cell — at least one cell is required. '
+                'Create a new one first, then you can delete this one.'
+            )
             return
-        
-        if self.focused_cell and self.cell_widgets :
+
+        if self.focused_cell and self.cell_widgets:
             index = self.cell_widgets.index(self.focused_cell)
 
             # استخراج محتوا بسته به نوع سلول
@@ -1051,18 +1060,26 @@ class WorkWindow(QFrame):
                 content = self.focused_cell.editor.toPlainText()
             elif self.focused_cell.editor_type == 'doc_editor':
                 content = self.focused_cell.d_editor.editor.toHtml()
+            elif self.focused_cell.editor_type == 'markdown':
+                # 🔑 برای سلول مارک‌دان: متن خام را ذخیره کن
+                content = self.focused_cell.m_editor.editor.raw_text
 
             # ذخیره اطلاعات در پشته
-            if self.focused_cell.editor_type in ('code', 'doc_editor'):
-                self.deleted_cells_stack.append({
+            if self.focused_cell.editor_type in ('code', 'doc_editor', 'markdown'):
+                
+                context = {
                     "index": index,
                     "cell_type": self.focused_cell.editor_type,
                     "source": content,
                     "color": self.focused_cell.border_color,
-                    "origin": self.focused_cell.origin , # ← فقط این خط اضافه شده
-                    "nb_cell" : self.focused_cell.nb_cell
+                    "origin": self.focused_cell.origin,
+                    "nb_cell": self.focused_cell.nb_cell,                    
                     
-                })
+                }
+                context['nb_cell']['attachments'] = self.focused_cell.m_editor.editor.images or {} # markdown images
+                print(context.items())
+                self.deleted_cells_stack.append(context)
+                # print('nb_cell   :  ', self.focused_cell.m_editor.editor.images)
 
             # حذف سلول از رابط کاربری و لیست
             self.cell_layout.removeWidget(self.focused_cell)
@@ -1073,7 +1090,9 @@ class WorkWindow(QFrame):
             if self.cell_widgets:
                 new_index = max(0, index - 1)
                 self.set_focus(self.cell_widgets[new_index])
-
+                
+                
+                
     # Connected to a Button 4
     def choose_border_color(self):
         """
@@ -1229,6 +1248,8 @@ class WorkWindow(QFrame):
         color = cell_info["color"]
         origin = cell_info['origin']
         nb_cell = cell_info['nb_cell']
+        # nb_cell['attachments'] = cell_info['images']
+        # print(nb_cell.keys())
 
         cell = Cell(
             editor_type=cell_type,
@@ -1241,11 +1262,14 @@ class WorkWindow(QFrame):
             status_r = self.status_r,
             nb_cell = nb_cell
             
+            
         )
 
         cell.clicked.connect(lambda c=cell: self.set_focus(c))
         cell.doc_editor_clicked.connect(lambda c=cell: self.set_focus(c))
         cell.doc_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+        cell.markdown_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+        cell.markdown_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
 
         self.cell_widgets.insert(index, cell)
         self.cell_layout.insertWidget(index, cell)

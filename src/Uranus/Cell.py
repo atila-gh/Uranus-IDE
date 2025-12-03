@@ -53,6 +53,8 @@ class Cell(QFrame):
     code_editor_clicked = pyqtSignal(object)
     doc_editor_clicked  = pyqtSignal(object)
     doc_editor_editor_clicked = pyqtSignal(object)
+    markdown_editor_clicked  = pyqtSignal(object)
+    markdown_editor_editor_clicked = pyqtSignal(object)
  
 
     """
@@ -114,9 +116,8 @@ class Cell(QFrame):
         self.status_c = status_c
         self.status_r = status_r
         self.editor_height = height
-        self.nb_cell = nb_cell     
-        self.image = nb_cell.get('attachments' , {}) 
-        print(self.image.keys())
+        self.nb_cell = nb_cell             
+        
 
 
         # Load settings
@@ -244,9 +245,6 @@ class Cell(QFrame):
             radio_layout.addWidget(self.radio_mark)
             
             self.main_layout.addLayout(radio_layout)
-
-            
-
 
             self.radio_code.toggled.connect(lambda checked: self.initialize_editor("code") if checked else None)
             self.radio_doc.toggled.connect(lambda checked: self.initialize_editor("doc_editor") if checked else None)
@@ -427,15 +425,35 @@ class Cell(QFrame):
             
         # Markdown Cell
         elif self.editor_type == "markdown":
-            self.m_editor = MarkdownEditor(image = self.image , text = self.src_content)
+            # self.src_content = self.nb_cell.get("source", "")
+
+            # 🔑 نرمالایز کردن attachments
+            attachments = self.nb_cell.get("attachments", {})
+            images = {}
+            for filename, data in attachments.items():
+                if isinstance(data, dict):
+                    images[filename] = data.get("image/png", "")
+                else:
+                    images[filename] = data
+
+            self.image = images
+
+            # ساخت ادیتور با متن و تصاویر درست
+            self.m_editor = MarkdownEditor(image=self.image)
             self.main_layout.addWidget(self.m_editor)
 
             if self.src_content:
                 self.m_editor.editor.setPlainText(self.src_content)
-                print(self.src_content)
                 self.m_editor.toggle()
             else:
-                print('[noting to place in markdown]')
+                print('[nothing to place in markdown]')
+            
+            self.m_editor.clicked.connect(lambda: self.markdown_editor_clicked.emit(self))
+            self.m_editor.editor.clicked.connect(lambda: self.markdown_editor_clicked.emit(self))
+            self.m_editor.editor.doubleClicked.connect(lambda: self.markdown_editor_editor_clicked.emit(self))  
+            
+                        
+            
             
 
            
@@ -454,9 +472,7 @@ class Cell(QFrame):
                 QTimer.singleShot(0, lambda  : self.m_editor.set_fixed_height(self.editor_height)) # adjust after cell rendering
           
             
-            # self.m_editor.clicked.connect(lambda: self.doc_editor_clicked.emit(self))
-            # self.m_editor.editor.clicked.connect(lambda: self.doc_editor_clicked.emit(self))
-            # self.m_editor.editor.doubleClicked.connect(lambda: self._editor_clicked.emit(self))                
+               
             self.m_editor.editor.textChanged.connect(self.m_editor.adjust_height_document_editor)
             self.m_editor.editor.setFocus(True)
             
@@ -716,34 +732,33 @@ class Cell(QFrame):
     
     def get_nb_markdown_cell(self):
         """
-        Converts the current cell's content to a Jupyter-compatible doc_editor cell.
+        Converts the current cell's content to a Jupyter-compatible markdown cell.
         Assigns a stable ID based on content hash to avoid unnecessary file changes.
         """
-        
-        # collect editor content in raw_text that saved before in markdown editor 
-        content = self.m_editor.editor.raw_text
-        
 
+        content = self.m_editor.editor.raw_text or self.m_editor.editor.toPlainText()
+        print('[Content : ]', content)
 
-        print('[Content : ]',content)
-        # 🎯 تولید ID پایدار بر اساس محتوای سلول
-             
-        cell = new_markdown_cell(source=str(content))        
-        
-        
-        # افزودن attachments طبق nbformat4
+        cell = new_markdown_cell(source=str(content))
+
+        # build attachments correctly
         attachments = {}
         for filename, b64 in self.m_editor.editor.images.items():
-            attachments[filename] = {"image/png": b64}
+            # اگر b64 خودش دیکشنری بود، فقط مقدار رشته را بردار
+            if isinstance(b64, dict):
+                # معمولاً {"image/png": "..."} است
+                data = b64.get("image/png", "")
+            else:
+                data = b64
+            attachments[filename] = {"image/png": data}
+
         if attachments:
             cell["attachments"] = attachments
-           
-        # متادیتاهای پایدار  
-        hash_id = hashlib.md5(content.encode("utf-8")).hexdigest()[:8]  
-        cell['id'] = hash_id  # ✅ تثبیت ID
-        cell['metadata']['bg'] = self.border_color  
-        cell['metadata']['uranus'] = {"origin": "jupyter"} 
 
+        # stable metadata
+        hash_id = hashlib.md5(content.encode("utf-8")).hexdigest()[:8]
+        cell["id"] = hash_id
+        cell["metadata"]["bg"] = self.border_color
+        cell["metadata"]["uranus"] = {"origin": "jupyter"}
 
-            
         return cell
