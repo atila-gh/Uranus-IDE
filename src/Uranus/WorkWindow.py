@@ -4,7 +4,7 @@ from nbformat.v4 import  new_output
 from contextlib import redirect_stdout, redirect_stderr
 from traitlets.config import Config
 from IPython.core.interactiveshell import InteractiveShell
-
+import subprocess,  tempfile
 # Import Pyqt Feturse
 from PyQt5.QtGui import  QIcon , QKeySequence , QTextCursor
 from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject ,QEventLoop 
@@ -17,6 +17,53 @@ from Uranus.Cell import Cell
 from Uranus.ObjectInspectorWindow import ObjectInspectorWindow
 #from Uranus.AstDetection import RelationChartView
 
+
+
+class TerminalRunner:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(TerminalRunner, cls).__new__(cls)
+        return cls._instance
+
+    def run_code(self, code_text: str):
+        """اجرای کد پایتون در ترمینال متناسب با سیستم‌عامل"""
+        # ذخیرهٔ کد در فایل موقت
+        temp_file = os.path.join(tempfile.gettempdir(), "uranus_temp.py")
+        with open(temp_file, "w", encoding="utf-8") as f:
+            f.write(code_text)
+
+        python_exe = sys.executable
+
+        # انتخاب دستور بر اساس سیستم‌عامل
+        if sys.platform.startswith("win"):
+            # ویندوز
+            cmd = f'start cmd /k "{python_exe} -u {temp_file}"'
+            # cmd = f'start /min cmd /k "{python_exe} -u {temp_file}"'
+
+
+            subprocess.Popen(cmd, shell=True)
+
+        elif sys.platform.startswith("linux"):
+            # لینوکس (gnome-terminal)
+            cmd = f'gnome-terminal -- bash -c "{python_exe} -u {temp_file}; exec bash"'
+            
+            subprocess.Popen(cmd, shell=True)
+
+        elif sys.platform == "darwin":
+            # macOS (AppleScript برای باز کردن ترمینال)
+            apple_script = f'''
+            tell application "Terminal"
+                do script "{python_exe} -u {temp_file}"
+                activate
+            end tell
+            '''
+
+            subprocess.Popen(["osascript", "-e", apple_script])
+
+        else:
+            raise OSError(f"Unsupported platform: {sys.platform}")
 
 class FindReplaceDialog(QDialog):
     """
@@ -302,9 +349,6 @@ class IPythonKernel:
         self.input_waiter = InputWaiter()
         self.object_store = {}
 
-
-       
-
     def run_cell(self, code: str, callback):
 
         builtins.input = self.input_waiter.wait_for_input
@@ -317,17 +361,38 @@ class IPythonKernel:
         outputs = []
         stdout_catcher = StreamCatcher("stdout", callback)
         stderr_buffer = io.StringIO()
+        
+        # 🚫 Block problematic event-loop libraries in one condition
+        if (
+            "tkinter" in code or "Tk(" in code or
+            "PyQt5" in code or "PySide2" in code or "QApplication(" in code or
+            "asyncio" in code or "await " in code or "async def" in code
+        ):
+            
+            terminal = TerminalRunner()        
+            terminal.run_code(code)  # اجرای متن در همان ترمینال
+            tb_lines = [
+                "⚠️ Code execution blocked.",
+                "Reason: Event-loop based libraries (Tkinter, Qt, asyncio) conflict with IPython/QThread execution.",
+                "These libraries manage their own GUI or async loops which cannot be safely re-entered in Uranus IDE cells.",
+                "Therefore, we need to run your code using the standard Python interpreter instead."
+            ]
+            out = new_output(
+                "error",
+                ename="EventLoopBlocked",
+                evalue="Execution of Tkinter/Qt/asyncio code is not supported inside Uranus IDE cells",
+                traceback=tb_lines
+            )
+            outputs.append(out)
+            callback(out)
+            return outputs
+        
 
         with redirect_stdout(stdout_catcher), redirect_stderr(stderr_buffer):
             result = self.shell.run_cell(code)
        
-        
-       
-
-
         obj = result.result
-        stderr_text = stderr_buffer.getvalue().strip()
-        
+        stderr_text = stderr_buffer.getvalue().strip()      
         
 
         # 🖼️ image
@@ -770,8 +835,7 @@ class WorkWindow(QFrame):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "clear.png")
         clear_memory.setIcon(QIcon(icon_path))
         clear_memory.setToolTip("""
-                                   <b>Reset Memory</b><br>  
-                                   Reset Ipython Memory                                
+                                   <b>Reset Ipython Memory</b><br>                                   
                                    """)
         clear_memory.clicked.connect(self.clear_memory)
         self.top_toolbar.addWidget(clear_memory)
@@ -808,8 +872,8 @@ class WorkWindow(QFrame):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "iptopy.png")
         ippy.setIcon(QIcon(icon_path))
         ippy.setToolTip("""
-                                   <b>Ipynb To Py</b><br>                                   
-                                   Convert Ipython To Py File
+                                   <b>IPYTON TO PYTHON</b><br>                                   
+                                   Convert Ipython To py 
                                    """)
         ippy.clicked.connect(self.iptopy)
         self.top_toolbar.addWidget(ippy)
@@ -1420,20 +1484,14 @@ class WorkWindow(QFrame):
 
             choice = msg.exec_()
 
-            if choice == QMessageBox.Save:
-              
-                    self.ipynb_format_save_file()
-               
+            if choice == QMessageBox.Save:              
+                    self.ipynb_format_save_file()            
 
             elif choice == QMessageBox.Discard:
-                parent = self.parent()
-                
+                parent = self.parent()                
                 parent.close()
 
-
-
             elif choice == QMessageBox.Cancel:
-               
                 event.ignore()
                 return
 

@@ -282,7 +282,7 @@ class WorkWindowPython(QFrame):
         super().__init__()
         self.debug = False
         self.file_path = file_path        
-        self.content = context
+        self.content = context or ''
         self.mdi_area = mdi_area        
         self.status_l = status_l
         self.status_c = status_c
@@ -592,8 +592,6 @@ class WorkWindowPython(QFrame):
             status_bar.setStyleSheet("background-color: #f0f0f0; color: #444; font-size: 11px;")
             status_bar.showMessage("Detached mode active")
             self.detached_window.setStatusBar(status_bar)
-
-
             self.detached_window.show()
             self.detached = True
 
@@ -620,19 +618,7 @@ class WorkWindowPython(QFrame):
             self.detached_window = None
             self.detached = False
             
-            
-    # def graph (self) :        
-        
-    #     if hasattr(self.focused_cell , 'editor'):
-    #         text = self.focused_cell.editor.toPlainText()
-    #         self.graph_window = QMainWindow(self)
-    #         self.graph_window.setWindowTitle("Graph Window")
-    #    
-    #         chart = RelationChartView(code=text)
-    #      
-    #         self.graph_window.setCentralWidget(chart)
-    #         self.graph_window.resize(800, 600)
-    #         self.graph_window.show()
+
 
     def save_file(self):
        
@@ -701,8 +687,7 @@ class WorkWindowPython(QFrame):
         editor_text = self.editor.toPlainText() if hasattr(self, "editor") else ""
         if not editor_text.strip():
             return  # اگر ادیتور خالی است، کاری نکن
-
-        
+ 
         terminal = TerminalRunner()        
         terminal.run_code(editor_text)  # اجرای متن در همان ترمینال
 
