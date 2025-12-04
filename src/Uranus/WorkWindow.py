@@ -770,9 +770,8 @@ class WorkWindow(QFrame):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "clear.png")
         clear_memory.setIcon(QIcon(icon_path))
         clear_memory.setToolTip("""
-                                   <b>Objects List</b><br>
-                                   <span style='color:gray;'>Shortcut: <kbd>F9</kbd></span><br>
-                                   Object And Variable List
+                                   <b>Reset Memory</b><br>  
+                                   Reset Ipython Memory                                
                                    """)
         clear_memory.clicked.connect(self.clear_memory)
         self.top_toolbar.addWidget(clear_memory)
@@ -784,8 +783,7 @@ class WorkWindow(QFrame):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "print.png")
         print_cell.setIcon(QIcon(icon_path))
         print_cell.setToolTip("""
-                                   <b>Print</b><br>
-                                   
+                                   <b>Print</b><br>                                   
                                    Print Focused Cell 
                                    """)
         print_cell.clicked.connect(self.print_cell)
@@ -810,8 +808,8 @@ class WorkWindow(QFrame):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "iptopy.png")
         ippy.setIcon(QIcon(icon_path))
         ippy.setToolTip("""
-                                   <b>IPYTON TO PYTHON</b><br>                                   
-                                   CONVERT IPYNB TO PY 
+                                   <b>Ipynb To Py</b><br>                                   
+                                   Convert Ipython To Py File
                                    """)
         ippy.clicked.connect(self.iptopy)
         self.top_toolbar.addWidget(ippy)
@@ -881,14 +879,9 @@ class WorkWindow(QFrame):
         # Run Button
         self.run_btn = QToolButton()
         icon_path = os.path.join(os.path.dirname(__file__), "image", "run_cell.png")
-        self.run_btn.setIcon(QIcon(icon_path))
-        self.run_btn.setToolTip("Run Cell")
+        self.run_btn.setIcon(QIcon(icon_path))        
         self.run_btn.clicked.connect(self.run_focused_cell)
-        self.toolbar.addWidget(self.run_btn)
-        # define shortcut for run code F5
-        shortcut = QShortcut(QKeySequence("F5"), self)
-        shortcut.setContext(Qt.ApplicationShortcut)
-        shortcut.activated.connect(self.run_focused_cell)
+        self.toolbar.addWidget(self.run_btn)    
         self.run_btn.setToolTip("""
                                 <b>Run Cell</b><br>
                                 <span style='color:gray;'>Shortcut: <kbd>F5</kbd></span><br>
