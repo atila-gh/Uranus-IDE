@@ -342,6 +342,15 @@ class IPythonKernel:
             except Exception:
                 pass
             finally:
+                
+                try:
+                    user_ns = self.shell.user_ns
+                    if "plt" in user_ns:
+                        user_ns["plt"].close("all")
+
+                except Exception:
+                    pass
+
                 try :
                      os.remove("plot.png")
                 except Exception:
@@ -755,6 +764,21 @@ class WorkWindow(QFrame):
         self.top_toolbar.addWidget(memory)
         self.top_toolbar.addSeparator()
         
+        
+        # Memory Reset
+        clear_memory = QToolButton()
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "clear.png")
+        clear_memory.setIcon(QIcon(icon_path))
+        clear_memory.setToolTip("""
+                                   <b>Objects List</b><br>
+                                   <span style='color:gray;'>Shortcut: <kbd>F9</kbd></span><br>
+                                   Object And Variable List
+                                   """)
+        clear_memory.clicked.connect(self.clear_memory)
+        self.top_toolbar.addWidget(clear_memory)
+        self.top_toolbar.addSeparator()
+        
+       
         # print cell
         print_cell = QToolButton()
         icon_path = os.path.join(os.path.dirname(__file__), "image", "print.png")
@@ -958,7 +982,7 @@ class WorkWindow(QFrame):
 
         # اتصال پایان اجرا به فعال‌سازی دکمه‌ها
         def on_done():
-            print("[run_focused_cell] execution finished")
+            #print("[run_focused_cell] execution finished")
             self.run_btn.setEnabled(True)
             self.btn_run_all.setEnabled(True)
             self.variable_table(True)
@@ -1077,9 +1101,9 @@ class WorkWindow(QFrame):
                     
                 }
                 context['nb_cell']['attachments'] = self.focused_cell.m_editor.editor.images or {} # markdown images
-                print(context.items())
+                
                 self.deleted_cells_stack.append(context)
-                # print('nb_cell   :  ', self.focused_cell.m_editor.editor.images)
+                
 
             # حذف سلول از رابط کاربری و لیست
             self.cell_layout.removeWidget(self.focused_cell)
@@ -1181,10 +1205,10 @@ class WorkWindow(QFrame):
                 editor_type = "code" 
             elif cell_data.cell_type == "markdown" and origin == 'uranus':
                 editor_type = "doc_editor" 
-                print('[Code Editor]',origin)
+                
             elif cell_data.cell_type == "markdown" and origin != 'uranus':
                 editor_type = 'markdown'                
-                print('[Markdown Editor]',origin)
+                
             
             
             source = cell_data.source            
@@ -1248,8 +1272,7 @@ class WorkWindow(QFrame):
         color = cell_info["color"]
         origin = cell_info['origin']
         nb_cell = cell_info['nb_cell']
-        # nb_cell['attachments'] = cell_info['images']
-        # print(nb_cell.keys())
+        
 
         cell = Cell(
             editor_type=cell_type,
@@ -1292,7 +1315,7 @@ class WorkWindow(QFrame):
                 self.set_focus(self.focused_cell)
 
     def run_all_cells(self):
-        print('[WorkWindow->run_all_cells]')
+        
 
         # 🔒 غیرفعال کردن دکمه‌ها
         self.run_btn.setEnabled(False)
@@ -1362,7 +1385,7 @@ class WorkWindow(QFrame):
         loop = QEventLoop()
 
         def on_done():
-            print("[run_cell_blocking] cell finished")
+            
             loop.quit()
 
         cell.notify_done = on_done
@@ -1524,7 +1547,7 @@ class WorkWindow(QFrame):
         i = 0
         base_dir = os.path.dirname(self.file_path)
         new_path = os.path.join(base_dir, f'{self.name_only}.py')
-        print(new_path)
+        
         
 
         with open (new_path , 'w' , encoding='utf-8') as f:
@@ -1548,7 +1571,31 @@ class WorkWindow(QFrame):
                     f.write('\n""" \n')
                     f.write(cell.d_editor.editor.toPlainText()+ '\n')
                     f.write('"""\n')
-                
-                        
                     
+                elif cell.editor_type == 'markdown' and hasattr(cell , 'm_editor') and cell.m_editor.editor : 
+                    
+                    f.write('\n#--------------------------------------')
+                    f.write(f'\n# MARKDOWN CELL {i}')                                          
+                    f.write('\n#--------------------------------------')     
+                    
+                    
+                    f.write('\n""" \n')
+                    f.write(cell.m_editor.editor.toPlainText()+ '\n')
+                    f.write('"""\n')
+                
+    def clear_memory(self):
+       
+        """
+        Clear all user-defined variables from the IPython kernel memory.
+        Keeps builtins and special variables intact.
+        """
+        try:
+            if self.ipython_kernel and self.ipython_kernel.shell:
+                # پاک کردن فضای نام کاربر
+                self.ipython_kernel.shell.user_ns.clear()
+                # دوباره مقداردهی اولیه برای builtins و متغیرهای ضروری
+                self.ipython_kernel.shell.init_user_ns()
+                print("[WorkWindow] IPython memory cleared.")
+        except Exception as e:
+            print("[WorkWindow] Error clearing memory:", e)
                     

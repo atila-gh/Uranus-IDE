@@ -406,13 +406,13 @@ class Cell(QFrame):
    
             
             if self.editor_height < 100 :
-                #print('[EDITOR HEIGHT < 100]' , self.editor_height)
+                
                 self.d_editor.editor.document().adjustSize()
                 QApplication.processEvents()          
                 QTimer.singleShot(0, self.d_editor.adjust_height_document_editor) # adjust after cell rendering
                 
             else :
-                #print('[EDITOR HEIGHT > 100] ', self.editor_height) 
+                
                 QTimer.singleShot(0, lambda  : self.d_editor.set_fixed_height(self.editor_height)) # adjust after cell rendering
           
             
@@ -445,8 +445,7 @@ class Cell(QFrame):
             if self.src_content:
                 self.m_editor.editor.setPlainText(self.src_content)
                 self.m_editor.toggle()
-            else:
-                print('[nothing to place in markdown]')
+            
             
             self.m_editor.clicked.connect(lambda: self.markdown_editor_clicked.emit(self))
             self.m_editor.editor.clicked.connect(lambda: self.markdown_editor_clicked.emit(self))
@@ -462,13 +461,13 @@ class Cell(QFrame):
    
             
             if self.editor_height < 100 :
-                #print('[EDITOR HEIGHT < 100]' , self.editor_height)
+                
                 self.m_editor.editor.document().adjustSize()
                 QApplication.processEvents()          
                 QTimer.singleShot(0, self.m_editor.adjust_height_document_editor) # adjust after cell rendering
                 
             else :
-                #print('[EDITOR HEIGHT > 100] ', self.editor_height) 
+                
                 QTimer.singleShot(0, lambda  : self.m_editor.set_fixed_height(self.editor_height)) # adjust after cell rendering
           
             
@@ -676,10 +675,10 @@ class Cell(QFrame):
         cell['metadata']['uranus'] = {"origin": origin} 
         if self.d_editor.flag_doc_height_adjust : # if is recalculted height in document editor 
             cell['metadata']['height'] = self.d_editor.editor_height  # height of editor in pixcel
-            #print('[CELL-> FLAGED]' , self.d_editor.editor_height)
+            
         else :
             cell['metadata']['height'] = self.editor_height  # height of editor in pixcel
-            #print('[CELL-> NOT FLAGED]' , self.editor_height)
+           
         return cell
     
     def print_full_cell(self, parent=None):
@@ -703,6 +702,12 @@ class Cell(QFrame):
         elif self.editor_type == "doc_editor" and hasattr(self, "d_editor") and self.d_editor.isVisible():
             cursor.insertHtml(self.d_editor.editor.toHtml())
             cursor.insertBlock()
+            
+        elif self.editor_type == "markdown" and hasattr(self, "m_editor") and self.m_editor.isVisible():
+            cursor.insertHtml(self.m_editor.editor.toHtml())
+            cursor.insertBlock()
+            
+        
 
         # --- خروجی متنی ---
         if hasattr(self, "output_editor") and self.output_editor.isVisible():
@@ -737,7 +742,7 @@ class Cell(QFrame):
         """
 
         content = self.m_editor.editor.raw_text or self.m_editor.editor.toPlainText()
-        print('[Content : ]', content)
+        
 
         cell = new_markdown_cell(source=str(content))
 
