@@ -1,4 +1,4 @@
-import re ,  html2text , hashlib ,os , markdown2
+import re ,  hashlib ,os ,markdown2
 from nbformat.v4 import  new_code_cell, new_markdown_cell
 
 # PyQT Methods Import
@@ -14,6 +14,7 @@ from Uranus.OutputEditor import OutputEditor
 from Uranus.CodeEditor import CodeEditor
 from Uranus.DataOutputEditor import DataFrameWidget
 from Uranus.ImageOutput import ImageOutput
+from Uranus.MarkdownEditor import MarkdownEditor
 
 
 
@@ -52,10 +53,12 @@ class Cell(QFrame):
     code_editor_clicked = pyqtSignal(object)
     doc_editor_clicked  = pyqtSignal(object)
     doc_editor_editor_clicked = pyqtSignal(object)
+    markdown_editor_clicked  = pyqtSignal(object)
+    markdown_editor_editor_clicked = pyqtSignal(object)
  
 
     """
-        Represents a single notebook cell in the Uranus IDE, supporting both code and markdown types.
+        Represents a single notebook cell in the Uranus IDE, supporting both code and doc_editor types.
 
         Features:
         - Dynamically switches between CodeEditor and DocumentEditor based on cell type.
@@ -64,7 +67,7 @@ class Cell(QFrame):
         - Supports visual styling, border color, and output toggling.
 
         Parameters:
-        - editor_type: "code" or "markdown" to determine initial editor type.
+        - editor_type: "code" or "doc_editor" to determine initial editor type.
         - content: Initial content to load into the editor.
         - border_color: Optional color for the cell border.
         - kernel: IPythonKernel instance for code execution.
@@ -84,12 +87,12 @@ class Cell(QFrame):
 
         Notebook Integration:
         - get_nb_code_cell(): Converts cell to nbformat code cell.
-        - get_nb_markdown_cell(): Converts cell to nbformat markdown cell.
+        - get_nb_doc_editor_cell(): Converts cell to nbformat doc_editor cell.
         """
 
-    def __init__(self, editor_type=None, src_content=None, border_color=None,
+    def __init__(self,nb_cell ,editor_type=None, src_content=None, border_color=None,
              kernel=None, notify_done=None, origin='uranus', outputs=None,
-             status_c=None, status_r=None, height=0, nb_cell=None):
+             status_c=None, status_r=None, height=0 ):
 
         
         
@@ -113,7 +116,8 @@ class Cell(QFrame):
         self.status_c = status_c
         self.status_r = status_r
         self.editor_height = height
-        self.nb_cell = nb_cell
+        self.nb_cell = nb_cell             
+        
 
 
         # Load settings
@@ -224,27 +228,30 @@ class Cell(QFrame):
         font = QFont("Technology", 16)
         self.radio_code = QRadioButton("Code")
         self.radio_doc = QRadioButton("Document")
+        self.radio_mark = QRadioButton("MarkDown")
         self.radio_code.setFont(font)
         self.radio_doc.setFont(font)
+        self.radio_mark.setFont(font)
 
         self.radio_group = QButtonGroup()
         self.radio_group.addButton(self.radio_code)
         self.radio_group.addButton(self.radio_doc)
+        self.radio_group.addButton(self.radio_mark)
 
         if not self.editor_type:
             radio_layout = QHBoxLayout()
             radio_layout.addWidget(self.radio_code)
             radio_layout.addWidget(self.radio_doc)
+            radio_layout.addWidget(self.radio_mark)
+            
             self.main_layout.addLayout(radio_layout)
 
             self.radio_code.toggled.connect(lambda checked: self.initialize_editor("code") if checked else None)
-            self.radio_doc.toggled.connect(lambda checked: self.initialize_editor("markdown" , original = True) if checked else None)
+            self.radio_doc.toggled.connect(lambda checked: self.initialize_editor("doc_editor") if checked else None)
+            self.radio_mark.toggled.connect(lambda checked: self.initialize_editor("markdown") if checked else None)
 
-        elif self.editor_type == 'code':
-            self.initialize_editor("code", content=self.src_content, border_color=self.border_color)
-
-        elif self.editor_type == 'markdown':
-            self.initialize_editor("markdown", content=self.src_content, border_color=self.border_color)
+        else :
+            self.initialize_editor(editor_type = self.editor_type)
 
 
     def run(self):
@@ -321,7 +328,7 @@ class Cell(QFrame):
         ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
         return ansi_escape.sub('', text)
 
-    def initialize_editor(self, editor_type, content=None, border_color=None , original = False ):
+    def initialize_editor(self , editor_type ) :
         """
         Initializes the editor based on the selected cell type.
         Removes the type selector and inserts the appropriate editor.
@@ -330,33 +337,28 @@ class Cell(QFrame):
         if self.debug:
             print('[Cell->initialize_editor]')
 
-        # Hide type selector radio buttons if present
-        if hasattr(self, 'radio_code') and hasattr(self, 'radio_doc'):
-            self.radio_code.hide()
-            self.radio_doc.hide()
-
         self.editor_type = editor_type
 
-        if editor_type == "code":
+        # Hide type selector radio buttons if present
+        if hasattr(self, 'radio_code') and hasattr(self, 'radio_doc') and hasattr(self, 'radio_mark'):
+            self.radio_code.hide()
+            self.radio_doc.hide()
+            self.radio_mark.hide()
+
+        # Code Cell
+        if self.editor_type == "code":
             # Create code editor
             self.editor = CodeEditor()
             # Line number method Caller
             self.line_number.setVisible(True)
             self.editor.cursorPositionInfo.connect(self.update_line_char_update)
             self.editor.clicked.connect(lambda: self.code_editor_clicked.emit(self))
-            # LTR
-            self.editor.setLayoutDirection(Qt.LeftToRight)
-            # اجبار جهت پیش‌فرض سند به LTR
-            opt = self.editor.document().defaultTextOption()
-            opt.setTextDirection(Qt.LeftToRight)
-            self.editor.document().setDefaultTextOption(opt)
-            
             # Add editor to layout
             self.main_layout.addWidget(self.editor)
             # Apply content and styling
-            if content:
-                self.editor.setPlainText(content)
-            self.set_color(border_color)
+            if self.src_content:
+                self.editor.setPlainText(self.src_content)
+            self.set_color(self.border_color)
             self.editor.adjust_height_code()
             self.editor.textChanged.connect(self.editor.adjust_height_code)
             self.editor.setFocus()
@@ -364,16 +366,14 @@ class Cell(QFrame):
             if self.outputs:
                 self.inject_outputs(self.outputs)
 
-
-
-        # Cell.initialize_editor (شاخه‌ی markdown)
-        elif editor_type == "markdown":
+        # Document Cell
+        elif self.editor_type == "doc_editor":
             self.d_editor = DocumentEditor()
             self.main_layout.addWidget(self.d_editor)
 
             if self.src_content:
-                if getattr(self, "origin", None) == "jupyter":
-                    # 1) تبدیل Markdown به HTML
+                if getattr(self, "origin", None) == "uranus":
+                    # 1) تبدیل doc_editor به HTML
                     html = markdown2.markdown(self.src_content)
 
                     # 2) جایگزینی attachment:image.png با data URL از nb_cell.attachments
@@ -400,20 +400,19 @@ class Cell(QFrame):
                 else:
                     # محتوای تولیدشده توسط اورانوس معمولاً HTML است
                     self.d_editor.editor.setHtml(self.src_content)
-
                 self.d_editor.activate_readonly_mode(init=True)
 
-            self.set_color(border_color)
+            self.set_color(self.border_color)
    
             
             if self.editor_height < 100 :
-                #print('[EDITOR HEIGHT < 100]' , self.editor_height)
+                
                 self.d_editor.editor.document().adjustSize()
                 QApplication.processEvents()          
                 QTimer.singleShot(0, self.d_editor.adjust_height_document_editor) # adjust after cell rendering
                 
             else :
-                #print('[EDITOR HEIGHT > 100] ', self.editor_height) 
+                
                 QTimer.singleShot(0, lambda  : self.d_editor.set_fixed_height(self.editor_height)) # adjust after cell rendering
           
             
@@ -422,7 +421,61 @@ class Cell(QFrame):
             self.d_editor.editor.doubleClicked.connect(lambda: self.doc_editor_editor_clicked.emit(self))                
             self.d_editor.editor.textChanged.connect(self.d_editor.adjust_height_document_editor)
             self.d_editor.editor.setFocus(True)
+            
+            
+        # Markdown Cell
+        elif self.editor_type == "markdown":
+            # self.src_content = self.nb_cell.get("source", "")
 
+            # 🔑 نرمالایز کردن attachments
+            attachments = self.nb_cell.get("attachments", {})
+            images = {}
+            for filename, data in attachments.items():
+                if isinstance(data, dict):
+                    images[filename] = data.get("image/png", "")
+                else:
+                    images[filename] = data
+
+            self.image = images
+
+            # ساخت ادیتور با متن و تصاویر درست
+            self.m_editor = MarkdownEditor(image=self.image)
+            self.main_layout.addWidget(self.m_editor)
+
+            if self.src_content:
+                self.m_editor.editor.setPlainText(self.src_content)
+                self.m_editor.toggle()
+            
+            
+            self.m_editor.clicked.connect(lambda: self.markdown_editor_clicked.emit(self))
+            self.m_editor.editor.clicked.connect(lambda: self.markdown_editor_clicked.emit(self))
+            self.m_editor.editor.doubleClicked.connect(lambda: self.markdown_editor_editor_clicked.emit(self))  
+            
+                        
+            
+            
+
+           
+
+            self.set_color(self.border_color)
+   
+            
+            if self.editor_height < 100 :
+                
+                self.m_editor.editor.document().adjustSize()
+                QApplication.processEvents()          
+                QTimer.singleShot(0, self.m_editor.adjust_height_document_editor) # adjust after cell rendering
+                
+            else :
+                
+                QTimer.singleShot(0, lambda  : self.m_editor.set_fixed_height(self.editor_height)) # adjust after cell rendering
+          
+            
+               
+            self.m_editor.editor.textChanged.connect(self.m_editor.adjust_height_document_editor)
+            self.m_editor.editor.setFocus(True)
+            
+ 
     def append_output(self, out):
         if out.output_type == "display_data":
             editor_target = out.metadata.get("editor", "")
@@ -529,7 +582,7 @@ class Cell(QFrame):
         
         
         # Generate md5 static hash code acording to context of cell
-        hash_id = hashlib.sha1(code.encode("utf-8")).hexdigest()
+        hash_id = hashlib.sha1(code.encode("utf-8")).hexdigest()[:8]
         cell['id'] = hash_id
 
         return cell
@@ -604,41 +657,28 @@ class Cell(QFrame):
 
         self.outputs = outputs
       
-    def get_nb_markdown_cell(self):
+    def get_nb_doc_editor_cell(self):
         """
-        Converts the current cell's content to a Jupyter-compatible Markdown cell.
+        Converts the current cell's content to a Jupyter-compatible doc_editor cell.
         Assigns a stable ID based on content hash to avoid unnecessary file changes.
         """
 
-        html = self.d_editor.editor.toHtml()
-
-        if self.origin != "uranus":
-            converter = html2text.HTML2Text()
-            converter.ignore_links = False
-            converter.body_width = 0
-            markdown = converter.handle(html)
-            content = markdown
-            origin = "jupyter"
-            edited = True
-        else:
-            content = html
-            origin = "uranus"
-            edited = False
+        content = self.d_editor.editor.toHtml()    
+       
+        origin = "uranus"       
 
         # 🎯 تولید ID پایدار بر اساس محتوای سلول
-        hash_id = hashlib.md5(content.encode("utf-8")).hexdigest()
-        
-        cell = new_markdown_cell(source=content)
-        
+        hash_id = hashlib.md5(content.encode("utf-8")).hexdigest()[:8]     
+        cell = new_markdown_cell(source=content)        
         cell['id'] = hash_id  # ✅ تثبیت ID
         cell['metadata']['bg'] = self.border_color
-        cell['metadata']['uranus'] = { "origin": origin, "edited": edited } if edited else {"origin": origin }
+        cell['metadata']['uranus'] = {"origin": origin} 
         if self.d_editor.flag_doc_height_adjust : # if is recalculted height in document editor 
             cell['metadata']['height'] = self.d_editor.editor_height  # height of editor in pixcel
-            #print('[CELL-> FLAGED]' , self.d_editor.editor_height)
+            
         else :
             cell['metadata']['height'] = self.editor_height  # height of editor in pixcel
-            #print('[CELL-> NOT FLAGED]' , self.editor_height)
+           
         return cell
     
     def print_full_cell(self, parent=None):
@@ -659,9 +699,15 @@ class Cell(QFrame):
             cursor.insertText(self.editor.toPlainText())
             cursor.insertBlock()
 
-        elif self.editor_type == "markdown" and hasattr(self, "d_editor") and self.d_editor.isVisible():
+        elif self.editor_type == "doc_editor" and hasattr(self, "d_editor") and self.d_editor.isVisible():
             cursor.insertHtml(self.d_editor.editor.toHtml())
             cursor.insertBlock()
+            
+        elif self.editor_type == "markdown" and hasattr(self, "m_editor") and self.m_editor.isVisible():
+            cursor.insertHtml(self.m_editor.editor.toHtml())
+            cursor.insertBlock()
+            
+        
 
         # --- خروجی متنی ---
         if hasattr(self, "output_editor") and self.output_editor.isVisible():
@@ -689,4 +735,35 @@ class Cell(QFrame):
         # --- پرینت کل ---
         doc.print_(printer)
     
-    
+    def get_nb_markdown_cell(self):
+        """
+        Converts the current cell's content to a Jupyter-compatible markdown cell.
+        Assigns a stable ID based on content hash to avoid unnecessary file changes.
+        """
+
+        content = self.m_editor.editor.raw_text or self.m_editor.editor.toPlainText()
+        
+
+        cell = new_markdown_cell(source=str(content))
+
+        # build attachments correctly
+        attachments = {}
+        for filename, b64 in self.m_editor.editor.images.items():
+            # اگر b64 خودش دیکشنری بود، فقط مقدار رشته را بردار
+            if isinstance(b64, dict):
+                # معمولاً {"image/png": "..."} است
+                data = b64.get("image/png", "")
+            else:
+                data = b64
+            attachments[filename] = {"image/png": data}
+
+        if attachments:
+            cell["attachments"] = attachments
+
+        # stable metadata
+        hash_id = hashlib.md5(content.encode("utf-8")).hexdigest()[:8]
+        cell["id"] = hash_id
+        cell["metadata"]["bg"] = self.border_color
+        cell["metadata"]["uranus"] = {"origin": "jupyter"}
+
+        return cell

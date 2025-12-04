@@ -1,6 +1,5 @@
  
-import os ,base64  ,io ,builtins ,uuid , importlib , hashlib , sys,inspect , nbformat 
-import subprocess,  tempfile 
+import os ,base64  ,io ,builtins ,uuid , importlib , hashlib , sys,inspect , nbformat , sys
 from nbformat.v4 import  new_output
 from contextlib import redirect_stdout, redirect_stderr
 from traitlets.config import Config
@@ -19,55 +18,6 @@ from Uranus.ObjectInspectorWindow import ObjectInspectorWindow
 #from Uranus.AstDetection import RelationChartView
 
 
-
-class TerminalRunner:
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(TerminalRunner, cls).__new__(cls)
-        return cls._instance
-
-    def run_code(self, code_text: str):
-        """اجرای کد پایتون در ترمینال متناسب با سیستم‌عامل"""
-        # ذخیرهٔ کد در فایل موقت
-        temp_file = os.path.join(tempfile.gettempdir(), "uranus_temp.py")
-        with open(temp_file, "w", encoding="utf-8") as f:
-            f.write(code_text)
-
-        python_exe = sys.executable
-
-        # انتخاب دستور بر اساس سیستم‌عامل
-        if sys.platform.startswith("win"):
-            # ویندوز
-            cmd = f'start cmd /k "{python_exe} -u {temp_file}"'
-            # cmd = f'start /min cmd /k "{python_exe} -u {temp_file}"'
-
-
-            subprocess.Popen(cmd, shell=True)
-
-        elif sys.platform.startswith("linux"):
-            # لینوکس (gnome-terminal)
-            cmd = f'gnome-terminal -- bash -c "{python_exe} -u {temp_file}; exec bash"'
-            
-            subprocess.Popen(cmd, shell=True)
-
-        elif sys.platform == "darwin":
-            # macOS (AppleScript برای باز کردن ترمینال)
-            apple_script = f'''
-            tell application "Terminal"
-                do script "{python_exe} -u {temp_file}"
-                activate
-            end tell
-            '''
-
-            subprocess.Popen(["osascript", "-e", apple_script])
-
-        else:
-            raise OSError(f"Unsupported platform: {sys.platform}")
-        
-        
-        
 class FindReplaceDialog(QDialog):
     """
     Find/replace with preindexed matches. No overlapping search. Navigation and replacement
@@ -352,6 +302,9 @@ class IPythonKernel:
         self.input_waiter = InputWaiter()
         self.object_store = {}
 
+
+       
+
     def run_cell(self, code: str, callback):
 
         builtins.input = self.input_waiter.wait_for_input
@@ -361,58 +314,21 @@ class IPythonKernel:
             injected = "import matplotlib; matplotlib.use('Agg')\n"
             code = injected + code.replace("plt.show()", "plt.savefig('plot.png')")
 
-
         outputs = []
         stdout_catcher = StreamCatcher("stdout", callback)
         stderr_buffer = io.StringIO()
+
+        with redirect_stdout(stdout_catcher), redirect_stderr(stderr_buffer):
+            result = self.shell.run_cell(code)
+       
+        
+       
+
+
+        obj = result.result
+        stderr_text = stderr_buffer.getvalue().strip()
         
         
-         # 🚫 Block problematic event-loop libraries in one condition
-        if (
-            "tkinter" in code or "Tk(" in code or
-            "PyQt5" in code or "PySide2" in code or "QApplication(" in code or
-            "asyncio" in code or "await " in code or "async def" in code
-        ):
-            
-            terminal = TerminalRunner()        
-            terminal.run_code(code)  # اجرای متن در همان ترمینال
-            tb_lines = [
-                "⚠️ Code execution blocked.",
-                "Reason: Event-loop based libraries (Tkinter, Qt, asyncio) conflict with IPython/QThread execution.",
-                "These libraries manage their own GUI or async loops which cannot be safely re-entered in Uranus IDE cells.",
-                "Therefore, we need to run your code using the standard Python interpreter instead."
-            ]
-            out = new_output(
-                "error",
-                ename="EventLoopBlocked",
-                evalue="Execution of Tkinter/Qt/asyncio code is not supported inside Uranus IDE cells",
-                traceback=tb_lines
-            )
-            outputs.append(out)
-            callback(out)
-            return outputs
-        
-
-
-
-
-
-               
- 
-        try : 
-            with redirect_stdout(stdout_catcher), redirect_stderr(stderr_buffer):
-                result = self.shell.run_cell(code)         
-            obj = result.result
-            stderr_text = stderr_buffer.getvalue().strip()
-        except Exception as e : 
-            tb_lines = [f"Exception: {str(e)}"]
-            out = new_output("error", ename="Exception", evalue=str(e), traceback=tb_lines)
-            outputs.append(out)
-            callback(out)
-            return outputs
-        else :
-            return outputs
-            
 
         # 🖼️ image
         if os.path.exists("plot.png"):
@@ -426,6 +342,15 @@ class IPythonKernel:
             except Exception:
                 pass
             finally:
+                
+                try:
+                    user_ns = self.shell.user_ns
+                    if "plt" in user_ns:
+                        user_ns["plt"].close("all")
+
+                except Exception:
+                    pass
+
                 try :
                      os.remove("plot.png")
                 except Exception:
@@ -505,22 +430,6 @@ class IPythonKernel:
         
         return outputs
     
-    def clear_namespace(self):
-        """
-        Clears all user-defined variables and objects from the IPython kernel namespace.
-        Equivalent to the %reset magic in IPython.
-        """
-        # پاک کردن فضای نام کاربر
-        self.shell.user_ns.clear()
-
-        # دوباره مقداردهی اولیه برای builtins و متغیرهای ضروری
-        self.shell.user_ns.update({
-            "__builtins__": __builtins__,
-        })
-
-        # پاک کردن object_store داخلی
-        self.object_store.clear()
-
     
     def inspect_all_user_attributes(self, shell):
         user_ns = shell.user_ns
@@ -619,7 +528,7 @@ class WorkWindow(QFrame):
        The main notebook interface for Uranus IDE.
 
        Responsibilities:
-       - Hosts and manages multiple Cell instances (code/markdown).
+       - Hosts and manages multiple Cell instances (code/doc_editor).
        - Provides toolbars for cell manipulation, execution, and styling.
        - Integrates with IPythonKernel for backend execution.
        - Supports undo stack for deleted cells and find/replace dialog.
@@ -688,17 +597,11 @@ class WorkWindow(QFrame):
         # --------------------------- GRAPHIC -----------------------------
         
         # Define New QFrame
-        
-        
-       
+    
         self.setFrameShape(QFrame.StyledPanel)   # خط دور فریم
         self.setFrameShadow(QFrame.Raised)       # حالت برجسته
         self.setLineWidth(2)                      # ضخامت خط دور فریم
 
-
-    
-        
-        
         # Set minimum window size
         self.setMinimumSize(620, 600)
 
@@ -815,7 +718,7 @@ class WorkWindow(QFrame):
         btn_color.setIcon(QIcon(icon_path))
         btn_color.setToolTip("""
                             <b>Choose Color</b><br>
-                            Change Border Color .
+                            Can Change Border Color .
                             """)
         btn_color.clicked.connect(self.choose_border_color)
         self.top_toolbar.addWidget(btn_color)
@@ -827,8 +730,8 @@ class WorkWindow(QFrame):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "run_all.png")
         self.btn_run_all.setIcon(QIcon(icon_path))        
         self.btn_run_all.setToolTip("""
-                            <b>Run All Code Cells</b><br>
-                            Executes the All Code Cells
+                            <b>Choose Run All Code</b><br>
+                            Executes the All Code cell and displays the outputs
                             """)
         self.btn_run_all.clicked.connect(self.run_all_cells)
         self.top_toolbar.addWidget(self.btn_run_all)
@@ -855,34 +758,51 @@ class WorkWindow(QFrame):
         memory.setToolTip("""
                                    <b>Objects List</b><br>
                                    <span style='color:gray;'>Shortcut: <kbd>F9</kbd></span><br>
-                                   shows Objects And Variables Types in Table
+                                   Object And Variable List
                                    """)
         memory.clicked.connect(self.variable_table)
         self.top_toolbar.addWidget(memory)
         self.top_toolbar.addSeparator()
         
+        
+        # Memory Reset
+        clear_memory = QToolButton()
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "clear.png")
+        clear_memory.setIcon(QIcon(icon_path))
+        clear_memory.setToolTip("""
+                                   <b>Objects List</b><br>
+                                   <span style='color:gray;'>Shortcut: <kbd>F9</kbd></span><br>
+                                   Object And Variable List
+                                   """)
+        clear_memory.clicked.connect(self.clear_memory)
+        self.top_toolbar.addWidget(clear_memory)
+        self.top_toolbar.addSeparator()
+        
+       
         # print cell
         print_cell = QToolButton()
         icon_path = os.path.join(os.path.dirname(__file__), "image", "print.png")
         print_cell.setIcon(QIcon(icon_path))
         print_cell.setToolTip("""
-                                   <b>Print</b><br>                                   
+                                   <b>Print</b><br>
+                                   
                                    Print Focused Cell 
                                    """)
         print_cell.clicked.connect(self.print_cell)
         self.top_toolbar.addWidget(print_cell)
         self.top_toolbar.addSeparator()
         
-        #Reset Kernel Memory
-        clean = QToolButton()
-        icon_path = os.path.join(os.path.dirname(__file__), "image", "clear.png")
-        clean.setIcon(QIcon(icon_path))
-        clean.setToolTip("""
-                                   <b>Reset Kernel Memory</b><br>                                   
-                                    """)
-        clean.clicked.connect(self.ipython_kernel.clear_namespace)
-        self.top_toolbar.addWidget(clean)   
-        self.top_toolbar.addSeparator()
+        # # Drawing  Graph
+        # graph = QToolButton()
+        # icon_path = os.path.join(os.path.dirname(__file__), "image", "graph.png")
+        # graph.setIcon(QIcon(icon_path))
+        # graph.setToolTip("""
+        #                            <b>Graph</b><br>                                   
+        #                            Drawing Graph For Run cell Focused Cell 
+        #                            """)
+        # graph.clicked.connect(self.graph)
+        # self.top_toolbar.addWidget(graph)
+        # self.top_toolbar.addSeparator()
         
         
         # IPYTON TO PY  
@@ -890,8 +810,9 @@ class WorkWindow(QFrame):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "iptopy.png")
         ippy.setIcon(QIcon(icon_path))
         ippy.setToolTip("""
-                                   <b>Ipthon To Python</b><br>                            
-                                    """)
+                                   <b>IPYTON TO PYTHON</b><br>                                   
+                                   CONVERT IPYNB TO PY 
+                                   """)
         ippy.clicked.connect(self.iptopy)
         self.top_toolbar.addWidget(ippy)
       
@@ -965,16 +886,16 @@ class WorkWindow(QFrame):
         self.run_btn.clicked.connect(self.run_focused_cell)
         self.toolbar.addWidget(self.run_btn)
         # define shortcut for run code F5
-        # shortcut = QShortcut(QKeySequence("F5"), self)
-        # shortcut.setContext(Qt.ApplicationShortcut)
-        # shortcut.activated.connect(self.run_focused_cell)
-        # self.run_btn.setToolTip("""
-        #                         <b>Run Cell</b><br>
-        #                         <span style='color:gray;'>Shortcut: <kbd>F5</kbd></span><br>
-        #                         Executes the current cell and displays the output.
-        #                         """)
+        shortcut = QShortcut(QKeySequence("F5"), self)
+        shortcut.setContext(Qt.ApplicationShortcut)
+        shortcut.activated.connect(self.run_focused_cell)
+        self.run_btn.setToolTip("""
+                                <b>Run Cell</b><br>
+                                <span style='color:gray;'>Shortcut: <kbd>F5</kbd></span><br>
+                                Executes the current cell and displays the output.
+                                """)
 
-    def add_cell(self, editor_type=None, nb_cell=None,
+    def add_cell(self, editor_type=None, nb_cell={},
              src_content=None, border_color=None,
              origin="uranus", outputs=None, height=0):
         
@@ -998,6 +919,8 @@ class WorkWindow(QFrame):
         cell.clicked.connect(lambda c=cell: self.set_focus(c))
         cell.doc_editor_clicked.connect(lambda c=cell: self.set_focus(c))
         cell.doc_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+        cell.markdown_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+        cell.markdown_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
 
         self.cell_widgets.append(cell)  # cell append to list of cells
         self.cell_layout.addWidget(cell)  # for showing cell add cell to layout
@@ -1089,7 +1012,8 @@ class WorkWindow(QFrame):
                 notify_done=self.execution_done,
                 origin="uranus"  ,
                 status_c = self.status_c ,
-                status_r = self.status_r
+                status_r = self.status_r,
+                nb_cell={}
                 
                 
             )
@@ -1097,6 +1021,8 @@ class WorkWindow(QFrame):
             cell.clicked.connect(lambda c=cell: self.set_focus(c))
             cell.doc_editor_clicked.connect(lambda c=cell: self.set_focus(c))
             cell.doc_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+            cell.markdown_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+            cell.markdown_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
 
             self.cell_widgets.insert(index, cell)
             self.cell_layout.insertWidget(index, cell)
@@ -1120,12 +1046,15 @@ class WorkWindow(QFrame):
                 notify_done=self.execution_done,
                 origin="uranus" ,
                 status_c = self.status_c ,
-                status_r = self.status_r
+                status_r = self.status_r,
+                nb_cell={}
             )
 
             cell.clicked.connect(lambda c=cell: self.set_focus(c))
             cell.doc_editor_clicked.connect(lambda c=cell: self.set_focus(c))
             cell.doc_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+            cell.markdown_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+            cell.markdown_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
 
             self.cell_widgets.insert(index + 1, cell)
             self.cell_layout.insertWidget(index + 1, cell)
@@ -1140,30 +1069,41 @@ class WorkWindow(QFrame):
         if self.debug:
             print('[WorkWindow->delete_active_cell]')
 
-        if  len(self.cell_widgets) <=1 :
-            self.status_l('You can`t delete the last cell — at least one cell is required. Create a new one first, then you can delete this one.')
+        if len(self.cell_widgets) <= 1:
+            self.status_l(
+                'You can`t delete the last cell — at least one cell is required. '
+                'Create a new one first, then you can delete this one.'
+            )
             return
-        
-        if self.focused_cell and self.cell_widgets :
+
+        if self.focused_cell and self.cell_widgets:
             index = self.cell_widgets.index(self.focused_cell)
 
             # استخراج محتوا بسته به نوع سلول
             if self.focused_cell.editor_type == 'code':
                 content = self.focused_cell.editor.toPlainText()
-            elif self.focused_cell.editor_type == 'markdown':
+            elif self.focused_cell.editor_type == 'doc_editor':
                 content = self.focused_cell.d_editor.editor.toHtml()
+            elif self.focused_cell.editor_type == 'markdown':
+                # 🔑 برای سلول مارک‌دان: متن خام را ذخیره کن
+                content = self.focused_cell.m_editor.editor.raw_text
 
             # ذخیره اطلاعات در پشته
-            if self.focused_cell.editor_type in ('code', 'markdown'):
-                self.deleted_cells_stack.append({
+            if self.focused_cell.editor_type in ('code', 'doc_editor', 'markdown'):
+                
+                context = {
                     "index": index,
                     "cell_type": self.focused_cell.editor_type,
                     "source": content,
                     "color": self.focused_cell.border_color,
-                    "origin": self.focused_cell.origin , # ← فقط این خط اضافه شده
-                    "nb_cell" : self.focused_cell.nb_cell
+                    "origin": self.focused_cell.origin,
+                    "nb_cell": self.focused_cell.nb_cell,                    
                     
-                })
+                }
+                context['nb_cell']['attachments'] = self.focused_cell.m_editor.editor.images or {} # markdown images
+                
+                self.deleted_cells_stack.append(context)
+                
 
             # حذف سلول از رابط کاربری و لیست
             self.cell_layout.removeWidget(self.focused_cell)
@@ -1174,7 +1114,9 @@ class WorkWindow(QFrame):
             if self.cell_widgets:
                 new_index = max(0, index - 1)
                 self.set_focus(self.cell_widgets[new_index])
-
+                
+                
+                
     # Connected to a Button 4
     def choose_border_color(self):
         """
@@ -1209,17 +1151,22 @@ class WorkWindow(QFrame):
         """
         Converts all cells into nbformat-compatible structure and saves to disk.
         """
-       
-            
+          
         open(self.temp_path, "w").close()     # to clear temp.chk file 
         cells = []
         for cell in self.cell_widgets:
             if cell.editor_type == "code":
                 cells.append(cell.get_nb_code_cell())
                 self.original_sources.append(cell.editor.toPlainText().strip())
+            elif cell.editor_type == "doc_editor":
+                cells.append(cell.get_nb_doc_editor_cell())
+                self.original_sources.append(cell.d_editor.editor.toHtml().strip())
+                
             elif cell.editor_type == "markdown":
                 cells.append(cell.get_nb_markdown_cell())
-                self.original_sources.append(cell.d_editor.editor.toHtml().strip())
+                self.original_sources.append(cell.m_editor.editor.toPlainText())
+                
+                
         
         if cells :
             nb = nbformat.v4.new_notebook()        
@@ -1248,21 +1195,27 @@ class WorkWindow(QFrame):
         self.cell_widgets.clear()
 
         # WorkWindow.load_file
+        
         for cell_data in content.cells:
-            editor_type = "code" if cell_data.cell_type == "code" else "markdown"
-            source = cell_data.source
-            metadata = cell_data.get("metadata", {})
+            metadata = cell_data["metadata"]
+            origin = metadata.get('uranus',{}).get('origin' , 'jupyter') # after Save all Jupyter Notebook Get Jupyter Origin
+            
+            
+            if cell_data.cell_type == "code" : 
+                editor_type = "code" 
+            elif cell_data.cell_type == "markdown" and origin == 'uranus':
+                editor_type = "doc_editor" 
+                
+            elif cell_data.cell_type == "markdown" and origin != 'uranus':
+                editor_type = 'markdown'                
+                
+            
+            
+            source = cell_data.source            
             border_color = metadata.get("bg")
-
-            if "uranus" not in metadata:
-                metadata["uranus"] = {}
-            if "origin" not in metadata["uranus"]:
-                metadata["uranus"]["origin"] = "jupyter"
-
-            origin = metadata["uranus"]["origin"]
             height = metadata.get('height', 0)
-
             outputs = None
+            
             if editor_type == "code" and hasattr(cell_data, "outputs"):
                 outputs = [
                     out for out in cell_data.outputs
@@ -1319,6 +1272,7 @@ class WorkWindow(QFrame):
         color = cell_info["color"]
         origin = cell_info['origin']
         nb_cell = cell_info['nb_cell']
+        
 
         cell = Cell(
             editor_type=cell_type,
@@ -1331,11 +1285,14 @@ class WorkWindow(QFrame):
             status_r = self.status_r,
             nb_cell = nb_cell
             
+            
         )
 
         cell.clicked.connect(lambda c=cell: self.set_focus(c))
         cell.doc_editor_clicked.connect(lambda c=cell: self.set_focus(c))
         cell.doc_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+        cell.markdown_editor_clicked.connect(lambda c=cell: self.set_focus(c))
+        cell.markdown_editor_editor_clicked.connect(lambda c=cell: self.set_focus(c))
 
         self.cell_widgets.insert(index, cell)
         self.cell_layout.insertWidget(index, cell)
@@ -1358,7 +1315,7 @@ class WorkWindow(QFrame):
                 self.set_focus(self.focused_cell)
 
     def run_all_cells(self):
-        print('[WorkWindow->run_all_cells]')
+        
 
         # 🔒 غیرفعال کردن دکمه‌ها
         self.run_btn.setEnabled(False)
@@ -1409,8 +1366,8 @@ class WorkWindow(QFrame):
         for cell in self.cell_widgets:
             if cell.editor_type == "code":
                 cells.append(cell.get_nb_code_cell())
-            elif cell.editor_type == "markdown":
-                cells.append(cell.get_nb_markdown_cell())
+            elif cell.editor_type == "doc_editor":
+                cells.append(cell.get_nb_doc_editor_cell())
 
         nb = nbformat.v4.new_notebook()
         nb["cells"] = cells
@@ -1428,7 +1385,7 @@ class WorkWindow(QFrame):
         loop = QEventLoop()
 
         def on_done():
-            print("[run_cell_blocking] cell finished")
+            
             loop.quit()
 
         cell.notify_done = on_done
@@ -1590,7 +1547,7 @@ class WorkWindow(QFrame):
         i = 0
         base_dir = os.path.dirname(self.file_path)
         new_path = os.path.join(base_dir, f'{self.name_only}.py')
-        print(new_path)
+        
         
 
         with open (new_path , 'w' , encoding='utf-8') as f:
@@ -1604,7 +1561,7 @@ class WorkWindow(QFrame):
                     f.write('\n#--------------------------------------')                 
                     f.write('\n'+cell.editor.toPlainText() + '\n')
                     
-                elif cell.editor_type == 'markdown' and hasattr(cell , 'd_editor') and cell.d_editor.editor : 
+                elif cell.editor_type == 'doc_editor' and hasattr(cell , 'd_editor') and cell.d_editor.editor : 
                     
                     f.write('\n#--------------------------------------')
                     f.write(f'\n# DOCUMENT CELL {i}')                                          
@@ -1614,5 +1571,31 @@ class WorkWindow(QFrame):
                     f.write('\n""" \n')
                     f.write(cell.d_editor.editor.toPlainText()+ '\n')
                     f.write('"""\n')
+                    
+                elif cell.editor_type == 'markdown' and hasattr(cell , 'm_editor') and cell.m_editor.editor : 
+                    
+                    f.write('\n#--------------------------------------')
+                    f.write(f'\n# MARKDOWN CELL {i}')                                          
+                    f.write('\n#--------------------------------------')     
+                    
+                    
+                    f.write('\n""" \n')
+                    f.write(cell.m_editor.editor.toPlainText()+ '\n')
+                    f.write('"""\n')
                 
-            
+    def clear_memory(self):
+       
+        """
+        Clear all user-defined variables from the IPython kernel memory.
+        Keeps builtins and special variables intact.
+        """
+        try:
+            if self.ipython_kernel and self.ipython_kernel.shell:
+                # پاک کردن فضای نام کاربر
+                self.ipython_kernel.shell.user_ns.clear()
+                # دوباره مقداردهی اولیه برای builtins و متغیرهای ضروری
+                self.ipython_kernel.shell.init_user_ns()
+                print("[WorkWindow] IPython memory cleared.")
+        except Exception as e:
+            print("[WorkWindow] Error clearing memory:", e)
+                    

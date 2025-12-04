@@ -918,9 +918,3 @@ class DocumentEditor(QWidget):
         self.setFixedHeight(height)   # دقیقاً همون ارتفاع
         self.resize(self.width(), height)  # اگر داخل layout باشه، این هم کمک می‌کنه
         self.updateGeometry()
-
-
-        
-        
-    
-
