@@ -1,0 +1,54 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "e6adefe6",
+   "metadata": {
+    "bg": "#BEBDBD",
+    "uranus": {
+     "origin": "uranus"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "x = 2\n",
+    "y = 12\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "398c4034",
+   "metadata": {
+    "bg": "#BEBDBD",
+    "uranus": {
+     "origin": "uranus"
+    }
+   },
+   "outputs": [
+    {
+     "ename": "EventLoopBlocked",
+     "evalue": "Execution of Tkinter/Qt/asyncio code is not supported inside Uranus IDE cells",
+     "output_type": "error",
+     "traceback": [
+      "⚠️ Code execution blocked.",
+      "Reason: Event-loop based libraries (Tkinter, Qt, asyncio) conflict with IPython/QThread execution.",
+      "These libraries manage their own GUI or async loops which cannot be safely re-entered in Uranus IDE cells.",
+      "Therefore, we need to run your code using the standard Python interpreter instead."
+     ]
+    }
+   ],
+   "source": [
+    "from tkinter import *\n",
+    "win = Tk()\n",
+    "\n",
+    "win.mainloop()\n",
+    "\n"
+   ]
+  }
+ ],
+ "metadata": {},
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

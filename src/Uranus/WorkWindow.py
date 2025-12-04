@@ -1552,16 +1552,28 @@ class WorkWindow(QFrame):
             self.detached_window.setStatusBar(status_bar)
             self.detached_window.show()
             self.detached = True
+             # 🔑 ساخت شورتکات F5 مخصوص detached
+            self._detach_shortcut = QShortcut(QKeySequence("F5"), self.detached_window)
+            self._detach_shortcut.activated.connect(self.run_focused_cell)
+            self.detached_window.show()
+            self.detached = True
+
+
 
         else:
             # مسیر برگشت: از QMainWindow به MDI
             if self.detached_window:
+                if hasattr(self, "_detach_shortcut"):
+                    self._detach_shortcut.disconnect()
+                    self._detach_shortcut.setParent(None)
+                    self._detach_shortcut = None
+
+
                 self.detached_window.takeCentralWidget()  # جلوگیری از حذف self
                 self.detached_window.close()
                 self.detached_window = None
                 self.detached = False
-                if self.mdi_area and hasattr(self.mdi_area, "addSubWindow"):
-                  
+                if self.mdi_area and hasattr(self.mdi_area, "addSubWindow"):                  
                     sub_window = self.mdi_area.addSubWindow(self)
                     sub_window.show()
             

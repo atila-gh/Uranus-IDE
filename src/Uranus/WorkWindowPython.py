@@ -342,10 +342,6 @@ class WorkWindowPython(QFrame):
         # shortcut.setContext(Qt.WidgetShortcut)
         # shortcut.activated.connect(self.run)
 
-
-
-
-
         # ساخت ستون شماره خط با LineNumberArea
         self.line_number_area = LineNumberArea(self.editor)
         self.editor.blockCountChanged.connect(self.update_line_number_area_width)
@@ -416,21 +412,6 @@ class WorkWindowPython(QFrame):
         self.toolbar.addWidget(self.run_btn)
         # define shortcut for run code F5
       
- 
- 
-        # # Memory Variable List
-        # memory = QToolButton()
-        # icon_path = os.path.join(os.path.dirname(__file__), "image", "memory.png")
-        # memory.setIcon(QIcon(icon_path))
-        # memory.setToolTip("""
-        #                            <b>Objects List</b><br>
-        #                            <span style='color:gray;'>Shortcut: <kbd>F9</kbd></span><br>
-        #                            Object And Variable List
-        #                            """)
-        # #memory.clicked.connect(self.variable_table)
-        # self.toolbar.addWidget(memory)
-        # self.toolbar.addSeparator()
-        
         # print 
         print_cell = QToolButton()
         icon_path = os.path.join(os.path.dirname(__file__), "image", "print.png")
@@ -443,31 +424,6 @@ class WorkWindowPython(QFrame):
         self.toolbar.addWidget(print_cell)
         self.toolbar.addSeparator()
         
-        # # Drawing  Graph
-        # graph = QToolButton()
-        # icon_path = os.path.join(os.path.dirname(__file__), "image", "graph.png")
-        # graph.setIcon(QIcon(icon_path))
-        # graph.setToolTip("""
-        #                            <b>Graph</b><br>                                   
-        #                            Drawing Graph For Run cell Focused Cell 
-        #                            """)
-        # graph.clicked.connect(self.graph)
-        # self.toolbar.addWidget(graph)
-        # self.toolbar.addSeparator()
-        
-        
-        # # Toggle Console Button
-        # btn_toggle_console = QToolButton()
-        # icon_path = os.path.join(os.path.dirname(__file__), "image", "terminal.png")
-        # btn_toggle_console.setIcon(QIcon(icon_path))
-        # btn_toggle_console.setToolTip("""
-        #     <b>Toggle Console</b><br>
-        #     Show/Hide the IPython terminal
-        # """)
-        # # btn_toggle_console.clicked.connect(self.toggle_console)
-        # self.toolbar.addWidget(btn_toggle_console)
-        # self.toolbar.addSeparator()
-                
        
         # Detach Check Button 
         icon_path = os.path.join(os.path.dirname(__file__), "image", "detach.png")
@@ -567,14 +523,14 @@ class WorkWindowPython(QFrame):
         return True
         
     
+
     def toggle_detach_mode(self):
         self.fake_close = True
         if self.chk_detach.isChecked():
-            
             # مسیر رفت: از MDI به QMainWindow
             mdi_subwindow = self.parent()
             if mdi_subwindow and isinstance(mdi_subwindow, QMdiSubWindow):
-                self.setParent(None)  # قطع ارتباط با QMdiSubWindow                
+                self.setParent(None)
                 mdi_subwindow.close()
 
             self.detached_window = QMainWindow()
@@ -582,23 +538,36 @@ class WorkWindowPython(QFrame):
             self.detached_window.setCentralWidget(self)
             self.detached_window.closeEvent = self._handle_detached_close_event
             self.detached_window.resize(1000, 800)
-            icon_path = os.path.join(os.path.dirname(__file__), "image", "ipynb_icon.png")  
-            icon = QIcon(icon_path)  # مسیر آیکن یا QRC
-            self.detached_window.setWindowIcon(icon)
 
+            # آیکن
+            icon_path = os.path.join(os.path.dirname(__file__), "image", "ipynb_icon.png")
+            self.detached_window.setWindowIcon(QIcon(icon_path))
 
-            # افزودن status bar
+            # status bar
             status_bar = QStatusBar()
             status_bar.setStyleSheet("background-color: #f0f0f0; color: #444; font-size: 11px;")
             status_bar.showMessage("Detached mode active")
             self.detached_window.setStatusBar(status_bar)
+
+            # 🔑 ساخت شورتکات F5 مخصوص detached
+            self._detach_shortcut = QShortcut(QKeySequence("F5"), self.detached_window)
+            self._detach_shortcut.activated.connect(self.run)
+            
+           
+
             self.detached_window.show()
             self.detached = True
 
         else:
             # مسیر برگشت: از QMainWindow به MDI
             if self.detached_window:
-                self.detached_window.takeCentralWidget()  # جلوگیری از حذف self
+                # 🔑 حذف شورتکات detached
+                if hasattr(self, "_detach_shortcut"):
+                    self._detach_shortcut.disconnect()
+                    self._detach_shortcut.setParent(None)
+                    self._detach_shortcut = None
+
+                self.detached_window.takeCentralWidget()
                 self.detached_window.close()
                 self.detached_window = None
                 self.detached = False
@@ -694,21 +663,3 @@ class WorkWindowPython(QFrame):
 
 
 
-
-
-from PyQt5.QtWidgets import QApplication, QMainWindow
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-
-    # ساخت پنجرهٔ اصلی
-    main_window = QMainWindow()
-    main_window.setWindowTitle("Uranus IDE - WorkWindow Test")
-    main_window.resize(900, 700)
-
-    # اضافه کردن WorkWindow به عنوان ویجت مرکزی
-    work_window = WorkWindowPython()
-    main_window.setCentralWidget(work_window)
-
-    main_window.show()
-    sys.exit(app.exec_())
