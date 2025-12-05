@@ -41,7 +41,7 @@ class AboutWindow(QWidget):
         name_label.setFont(QFont("Arial", 20, QFont.Bold))
         name_label.setAlignment(Qt.AlignCenter)
 
-        version_label = QLabel("Version 2.0.0")
+        version_label = QLabel("Version 3.0.0")
         version_label.setFont(QFont("Arial", 12))
         version_label.setAlignment(Qt.AlignCenter)
 

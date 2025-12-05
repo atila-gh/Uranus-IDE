@@ -136,6 +136,37 @@ This allows you to create **visual headings inside your code** for better readab
   <img src="https://raw.githubusercontent.com/atila-gh/Uranus-IDE/main/docs/images/comment.png"  width="400">
 </p>
 
+
+### 📝 Independent Markdown Editor
+
+Uranus IDE now includes a **dedicated Markdown editor** that operates independently from the code environment.  
+This editor provides a professional space for writing and managing documentation, tutorials, and project notes.  
+Key benefits include:
+
+- Full support for standard Markdown syntax (headings, lists, tables, images, links)
+- A distraction-free environment tailored for documentation
+- Ideal for creating technical reports, teaching materials, or project guides
+
+With this addition, Uranus IDE becomes not only a coding platform but also a complete solution for **professional documentation workflows**.
+
+---
+
+### ⏱ Code Cell Execution Timer
+
+Each code cell in Uranus IDE is now equipped with an **execution time display**.  
+This feature automatically measures:
+
+- The total runtime of the current cell execution
+- The **delta** (difference) compared to the previous execution of the same cell
+
+This allows developers and educators to:
+
+- Benchmark performance changes between runs
+- Identify bottlenecks in code execution
+- Gain immediate feedback on optimization efforts
+
+By integrating execution timing directly into the cell interface, Uranus IDE makes performance analysis seamless and intuitive.
+
 ---
 
 ## Installation and Run Project After GitHub Cloning 
