@@ -260,54 +260,6 @@
    "source": [
     "print(b)"
    ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 1,
-   "id": "8a856b50",
-   "metadata": {
-    "bg": "#BEBDBD",
-    "uranus": {
-     "origin": "uranus"
-    }
-   },
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "1.0"
-     ]
-    }
-   ],
-   "source": [
-    "\n",
-    "while True :\n",
-    "    try:\n",
-    "       \ta = float(input ('addad1 : '))\n",
-    "        a = float(input ('addad1 : '))\n",
-    "    except :\n",
-    "        print('Wrong Value')\n",
-    "    else:   \n",
-    "    \tbreak\n",
-    "    \n",
-    "\n",
-    "while True :\n",
-    "    try:\n",
-    "       \tb = float(input ('addad2 : '))\n",
-    "    except :\n",
-    "        print('Wrong Value')\n",
-    "    \n",
-    "    else:   \n",
-    "    \tbreak\n",
-    "\n",
-    "try:\n",
-    "    c = a / b\n",
-    "except ZeroDivisionError:\n",
-    "    c = math.inf\n",
-    "\n",
-    "print(c)"
-   ]
   }
  ],
  "metadata": {},

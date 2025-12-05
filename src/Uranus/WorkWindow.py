@@ -1142,8 +1142,7 @@ class WorkWindow(QFrame):
             elif self.focused_cell.editor_type == 'markdown':
                
                 content = self.focused_cell.m_editor.editor.raw_text
-                context['nb_cell']['attachments'] = self.focused_cell.m_editor.editor.images or {} # markdown images
-
+             
             # ذخیره اطلاعات در پشته
             if self.focused_cell.editor_type in ('code', 'doc_editor', 'markdown'):
                 
@@ -1156,6 +1155,9 @@ class WorkWindow(QFrame):
                     "nb_cell": self.focused_cell.nb_cell,                    
                     
                 }
+                if self.focused_cell.editor_type == 'markdown':
+                   context['nb_cell']['attachments'] = self.focused_cell.m_editor.editor.images or {} # markdown images
+                
                 
                 
                 
