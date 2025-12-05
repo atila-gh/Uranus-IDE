@@ -549,7 +549,7 @@ class WorkWindowPython(QFrame):
             status_bar.showMessage("Detached mode active")
             self.detached_window.setStatusBar(status_bar)
 
-            # 🔑 ساخت شورتکات F5 مخصوص detached
+            #    F5  detached
             self._detach_shortcut = QShortcut(QKeySequence("F5"), self.detached_window)
             self._detach_shortcut.activated.connect(self.run)
             
@@ -561,7 +561,7 @@ class WorkWindowPython(QFrame):
         else:
             # مسیر برگشت: از QMainWindow به MDI
             if self.detached_window:
-                # 🔑 حذف شورتکات detached
+                #    detached
                 if hasattr(self, "_detach_shortcut"):
                     self._detach_shortcut.disconnect()
                     self._detach_shortcut.setParent(None)

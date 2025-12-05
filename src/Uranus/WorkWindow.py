@@ -335,10 +335,7 @@ class IPythonKernel:
        """
 
     def __init__(self):
-        # self.shell = InteractiveShell.instance()
-        # self.input_waiter = InputWaiter()
-        # self.object_store = {}
-        
+
         
         cfg = Config()
         cfg.InteractiveShellEmbed = Config()
@@ -1123,6 +1120,7 @@ class WorkWindow(QFrame):
         Deletes the currently active cell from the notebook and stores it for multistep undo.
         """
         content = None
+        context = {}
         if self.debug:
             print('[WorkWindow->delete_active_cell]')
 
@@ -1142,8 +1140,9 @@ class WorkWindow(QFrame):
             elif self.focused_cell.editor_type == 'doc_editor':
                 content = self.focused_cell.d_editor.editor.toHtml()
             elif self.focused_cell.editor_type == 'markdown':
-                # 🔑 برای سلول مارک‌دان: متن خام را ذخیره کن
+               
                 content = self.focused_cell.m_editor.editor.raw_text
+                context['nb_cell']['attachments'] = self.focused_cell.m_editor.editor.images or {} # markdown images
 
             # ذخیره اطلاعات در پشته
             if self.focused_cell.editor_type in ('code', 'doc_editor', 'markdown'):
@@ -1157,7 +1156,8 @@ class WorkWindow(QFrame):
                     "nb_cell": self.focused_cell.nb_cell,                    
                     
                 }
-                context['nb_cell']['attachments'] = self.focused_cell.m_editor.editor.images or {} # markdown images
+                
+                
                 
                 self.deleted_cells_stack.append(context)
                 
@@ -1171,9 +1171,7 @@ class WorkWindow(QFrame):
             if self.cell_widgets:
                 new_index = max(0, index - 1)
                 self.set_focus(self.cell_widgets[new_index])
-                
-                
-                
+               
     # Connected to a Button 4
     def choose_border_color(self):
         """

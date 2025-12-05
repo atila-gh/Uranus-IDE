@@ -1,4 +1,4 @@
-import re ,  hashlib ,os ,markdown2
+import re ,  hashlib ,os ,markdown2 ,time
 from nbformat.v4 import  new_code_cell, new_markdown_cell
 
 # PyQT Methods Import
@@ -116,10 +116,13 @@ class Cell(QFrame):
         self.status_c = status_c
         self.status_r = status_r
         self.editor_height = height
-        self.nb_cell = nb_cell             
-        
-
-
+        self.nb_cell = nb_cell   
+        self._start_time = None
+        self._stop_time = None
+        self._duration = None
+        self._delta_time = None
+          
+      
         # Load settings
         setting = load_setting()
         self.bg_main_window = setting["colors"]["Back Ground Color WorkWindow"]
@@ -203,14 +206,53 @@ class Cell(QFrame):
         self.toggle_output_button.mousePressEvent = lambda event: self.toggle_output_editor()
 
 
-        # Line number
+        # Frame internal
+        self.task_frame = QFrame()
 
+        
+        self.task_frame.setStyleSheet(f"""
+                    QFrame {{
+                        border: 0px solid {self.bg_border_color_default};
+                        border-radius: 0px;
+                        background-color: {self.bg_main_window};
+                        padding: 0px;   /* بدون فاصله داخلی */
+                        margin: 0px;    /* بدون فاصله خارجی */
+                    }}
+                """)
+
+
+        
+        # Horizental Layout
+        self.task_layout = QHBoxLayout(self.task_frame)
+        self.task_layout.setContentsMargins(0, 0, 0, 0)  # حذف margin
+        self.task_layout.setSpacing(5)                   # حذف فاصله بین ویجت‌ها
+        
+        
+        self.run_status = QLabel()
+        self.run_status.setAlignment(Qt.AlignLeft)
+        self.run_status.setFixedWidth(16)
+        self.run_status.setFixedHeight(16)
+        self.run_status.setObjectName("Status")
+        self.run_status.setStyleSheet("""
+               #Status {
+                   background-color: #6E6E6E;
+                   font-weight: bold;
+                   border: 1px solid black;
+                   border-radius: 8px;
+                   color: black;
+               }
+           """)
+        
+        # Line number
+        font = QFont("Technology", 16)
         self.line_number = QLabel()
+        self.line_number.setFont(font)
         self.line_number.setAlignment(Qt.AlignLeft)
         self.line_number.setFixedHeight(30)
-        self.line_number.setObjectName("line")
+        self.line_number.setFixedWidth(250)
+        self.line_number.setObjectName("Line_Number")
         self.line_number.setStyleSheet("""
-               #line {
+               #Line_Number {
                    background-color: #E3E3E3;
                    font-weight: bold;
                    border: 1px solid #222;
@@ -219,13 +261,36 @@ class Cell(QFrame):
                }
            """)
 
-        self.main_layout.addWidget(self.line_number)
+       
+        
+        font_time = QFont("Technology", 16)
+        self.timing = QLabel()
+        self.timing.setAlignment(Qt.AlignLeft)
+        self.timing.setFont(font_time)
+        self.timing.setFixedHeight(30)
+        self.timing.setObjectName("Timing")
+        self.timing.setStyleSheet("""
+               #Timing {
+                   background-color: #E3E3E3;
+                   font-weight: bold;
+                   border: 1px solid #222;
+                   border-radius: 3px;
+                   color: black;
+               }
+           """)
+        
+        
+        
+        # add to H layout 
+        self.task_layout.addWidget(self.run_status)
+        self.task_layout.addWidget(self.line_number)        
+        self.task_layout.addWidget(self.timing)
+       
+
         self.main_layout.addSpacing(5)
-        self.line_number.setVisible(False)
-
-
+      
         # Type selector
-        font = QFont("Technology", 16)
+        
         self.radio_code = QRadioButton("Code")
         self.radio_doc = QRadioButton("Document")
         self.radio_mark = QRadioButton("MarkDown")
@@ -261,10 +326,14 @@ class Cell(QFrame):
 
         code = self.editor.toPlainText()
         if hasattr(self,'output_editor'):
-                self.output_editor.clear()        
+                self.output_editor.clear()   
+                self.set_led_color('orange')     
         self.outputs = []
 
         self.runner = CodeRunner(self.kernel, code)
+        self._start_time = time.perf_counter()
+
+        
         self.runner.stream.connect(self.append_output)
         self.runner.finished.connect(self.finalize)
 
@@ -309,12 +378,12 @@ class Cell(QFrame):
     def set_color(self, color):
         if self.debug :print('[Cell->set_color]')
         self.border_color = color or self.bg_border_color_default
-        self.setStyleSheet(f"background-color: {self.border_color}; font-weight: bold;  color: white;")
         self.setStyleSheet(f"""
                    QFrame {{
                        border: 5px solid {self.border_color};
                        border-radius: 5px;
                        padding: 6px;
+                       background-color: {self.bg_main_window}
                    }}
                """)
         if hasattr(self, 'output_data'):
@@ -350,7 +419,11 @@ class Cell(QFrame):
             # Create code editor
             self.editor = CodeEditor()
             # Line number method Caller
-            self.line_number.setVisible(True)
+            # self.line_number.setVisible(True)
+            # self.run_status.setVisible(True)
+            # self.timing.setVisible(True)
+            self.main_layout.addWidget(self.task_frame)
+            
             self.editor.cursorPositionInfo.connect(self.update_line_char_update)
             self.editor.clicked.connect(lambda: self.code_editor_clicked.emit(self))
             # Add editor to layout
@@ -475,7 +548,6 @@ class Cell(QFrame):
             self.m_editor.editor.textChanged.connect(self.m_editor.adjust_height_document_editor)
             self.m_editor.editor.setFocus(True)
             
- 
     def append_output(self, out):
         if out.output_type == "display_data":
             editor_target = out.metadata.get("editor", "")
@@ -506,23 +578,7 @@ class Cell(QFrame):
                         self.scroll.setVisible(True)
                         return  
 
-        elif out.output_type == "error":
-            if not hasattr(self, 'output_editor'):
-                self.create_output_editor()
-            editor = self.output_editor.text_output
-            cursor = editor.textCursor()
-            cursor.movePosition(QTextCursor.End)
-            
-            for line in out.traceback:
-                clean_line = self.strip_ansi(line.rstrip())
-                if "site-packages" in clean_line or "interactiveshell.py" in clean_line or "exec(code_obj" in clean_line:
-                    continue
-                cursor.insertText(clean_line)
-                cursor.insertBlock()
-            self.toggle_output_button.setVisible(True)
-            self.output_editor.setVisible(True)
-            self.output_editor.adjust_height()
-            self.outputs.append(out)  
+        
 
         elif out.output_type == "stream":
             if not hasattr(self, 'output_editor'):
@@ -535,22 +591,50 @@ class Cell(QFrame):
             for line in clean.splitlines():
                 cursor.insertText(line)
                 cursor.insertBlock()
+                
+                 # 🔑 تشخیص خطا بر اساس قالب متن
+                if ("Traceback" in line) and ("Error" in line) and ("Exception" in line):
+                    self.set_led_color("red")
+                else:
+                    self.set_led_color("green")
+
+
             self.toggle_output_button.setVisible(True)
             self.output_editor.setVisible(True)
             self.output_editor.adjust_height()
             self.outputs.append(out)  
     
     def finalize(self):
+        self._stop_time = time.perf_counter()
         if self.thread:
             self.thread.quit()
             self.thread.wait()
+            self.compute_execution_time()
+        
+        
+        
+
+        # 🔑 بررسی کل متن خروجی در ادیتور
+        if hasattr(self, 'output_editor'):
+            full_text = self.output_editor.text_output.toPlainText()
+            has_traceback = "Traceback (most recent call last)" in full_text
+            has_error_term = ("Error" in full_text) or ("Exception" in full_text)
+
+            if has_traceback and has_error_term:
+                self.set_led_color("red")
+            else:
+                self.set_led_color("green")
+        else:
+            # اگر ادیتور خروجی ساخته نشده بود، فرض بر موفقیت
+            self.set_led_color("green")
+
         if callable(self.notify_done):
             self.notify_done()
 
     def update_line_char_update(self, line, column):
 
-            self.line_number.setText(f"Line: {line} | Chr: {column}")
-            self.status_r(f"Line: {line} | Chr: {column}     ")
+            self.line_number.setText(f"Line: {line:^5} | Chr: {column:^5}")
+            self.status_r(f"Line: {line:^5} | Chr: {column:^5}     ")
 
     def get_nb_code_cell(self):
         code = self.editor.toPlainText()
@@ -767,3 +851,28 @@ class Cell(QFrame):
         cell["metadata"]["uranus"] = {"origin": "jupyter"}
 
         return cell
+    
+    def set_led_color(self, color):
+        if self.debug: print('[Cell->set_led_color]')
+        self.run_status.setStyleSheet(f"""
+            QLabel#Status {{
+                background-color: {color};
+                border: 1px solid black;
+                border-radius: 8px;
+            }}
+        """)
+        
+    def compute_execution_time(self):
+        self._duration = self._stop_time - self._start_time
+        if self._delta_time :
+            self._delta_time = self._duration - self._delta_time
+            self.timing.setText(f'Elapsed : {self._duration:.3f} | Delta : {self._delta_time:.3f}')
+            
+        else : 
+            self._delta_time = self._duration 
+            self.timing.setText(f'Elapsed : {self._duration:.3f} | Delta : None ' )
+            
+            
+        
+
+
