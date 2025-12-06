@@ -1025,12 +1025,10 @@ class WorkWindow(QFrame):
     def run_focused_cell(self):
         if not self.focused_cell:
             return
-
-       
+ 
         # 🔒 غیرفعال کردن دکمه‌ها
         self.status_c("")
-        self.status_l(self.file_path)
-        
+        self.status_l(self.file_path)        
         self.run_btn.setEnabled(False)
         self.btn_run_all.setEnabled(False)
 
@@ -1450,10 +1448,11 @@ class WorkWindow(QFrame):
         loop.exec_()
     
     def variable_table(self, refresh=False):
+        
         new_data = self.ipython_kernel.inspect_all_user_attributes(self.ipython_kernel.shell)
        
-        if not new_data :
-            self.status_c("    No Data For Showing In Table -> Run a Cell To Process " )
+        if not new_data  :
+            self.status_c(" No Data For Showing In Table " )
             return
 
         if hasattr(self, 'obj_table_window') and self.obj_table_window.isVisible() and refresh:
