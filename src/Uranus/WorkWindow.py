@@ -984,7 +984,7 @@ class WorkWindow(QFrame):
           
     def set_focus(self, cell):
         if self.debug:print('[WorkWindow->set_focus]')
-
+        
         # UnFocus Last Cell
         if self.focused_cell and cell is not self.focused_cell and len(self.cell_widgets) > 1 :
             self.focused_cell.border_color = self.focused_cell.border_color or self.focused_cell.bg_border_color_default
@@ -994,8 +994,7 @@ class WorkWindow(QFrame):
                                border-radius: 5px;
                                background-color: {self.focused_cell.bg_main_window};
                                padding: 6px;
-                           }}""")     
-            
+                           }}""")           
             
             if hasattr(self.focused_cell, 'output_data'):
                 self.focused_cell.output_data.setStyleSheet("border: 1px solid black; padding: 0px;")
@@ -1005,8 +1004,11 @@ class WorkWindow(QFrame):
                 
         
         # Focus Current Cell  
-        self.focused_cell = cell       
-        
+        self.focused_cell = cell  
+        # cell / totall cell in status bar
+        cell_indedx = self.cell_widgets.index(self.focused_cell)+1
+        self.status_c(f'[Cell: {cell_indedx} / {len(self.cell_widgets) }]')
+              
         cell.border_color = cell.border_color or cell.bg_border_color_default
         cell.setStyleSheet(f"""
                QFrame {{

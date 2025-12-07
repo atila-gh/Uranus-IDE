@@ -2,7 +2,7 @@
 import subprocess, sys, os ,tempfile ,hashlib
 # Import Pyqt Feturse
 from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
-from PyQt5.QtGui import  QIcon , QKeySequence , QTextCursor ,QTextDocument 
+from PyQt5.QtGui import  QIcon , QKeySequence , QTextCursor ,QTextDocument , QTextOption
 from PyQt5.QtCore import  QSize , Qt,QTimer , pyqtSignal  
 from PyQt5.QtWidgets import (QToolBar, QToolButton,  QShortcut, QWidget , QFrame , QMainWindow
     , QVBoxLayout ,  QSizePolicy ,QDialog, QVBoxLayout, QLineEdit , QMdiSubWindow , QStatusBar , QSplitter , QInputDialog
@@ -335,12 +335,10 @@ class WorkWindowPython(QFrame):
         # اجبار جهت پیش‌فرض سند به LTR
         opt = self.editor.document().defaultTextOption()
         opt.setTextDirection(Qt.LeftToRight)
+        opt.setWrapMode(QTextOption.NoWrap)   # جلوگیری از wrap شدن خطوط
         self.editor.document().setDefaultTextOption(opt)
+        self.editor.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)  # اسکرول افقی فعال
         
-        # # define F5 Shortcut on Editor to run 
-        # shortcut = QShortcut(QKeySequence("F5"), self.editor)
-        # shortcut.setContext(Qt.WidgetShortcut)
-        # shortcut.activated.connect(self.run)
 
         # ساخت ستون شماره خط با LineNumberArea
         self.line_number_area = LineNumberArea(self.editor)
@@ -361,14 +359,8 @@ class WorkWindowPython(QFrame):
         self.status_bar = QStatusBar(self)
         self.status_bar.showMessage("Ready")
         
-        # --- Splitter برای ادیتور و کنسول ---
-        self.splitter = QSplitter(Qt.Vertical)
-        self.splitter.addWidget(editor_container)
 
-        self.splitter.setStretchFactor(0, 3)
-        self.splitter.setStretchFactor(1, 1)
-
-        layout.addWidget(self.splitter)
+        layout.addWidget(editor_container)
         layout.addWidget(self.status_bar)
 
         # --- Focus Editor ---
@@ -523,7 +515,6 @@ class WorkWindowPython(QFrame):
         return True
         
     
-
     def toggle_detach_mode(self):
         self.fake_close = True
         if self.chk_detach.isChecked():
@@ -588,7 +579,6 @@ class WorkWindowPython(QFrame):
             self.detached = False
             
 
-
     def save_file(self):
        
         content = self.editor.toPlainText()
@@ -648,8 +638,7 @@ class WorkWindowPython(QFrame):
         else:
             self.line_number_area.update(0, rect.y(),
                                         self.line_number_area.width(), rect.height())
-        
-   
+  
 
     def run(self):
         """خواندن متن ادیتور و ارسال به ترمینال"""

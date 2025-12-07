@@ -2,7 +2,7 @@ import re ,  hashlib ,os ,markdown2 ,time
 from nbformat.v4 import  new_code_cell, new_markdown_cell
 
 # PyQT Methods Import
-from PyQt5.QtGui import QFont, QTextCursor , QTextDocument, QTextImageFormat
+from PyQt5.QtGui import QFont, QTextCursor , QTextDocument, QTextImageFormat , QTextOption 
 from PyQt5.QtCore import Qt, pyqtSignal, QThread, QObject , QTimer
 from PyQt5.QtWidgets import QFrame, QHBoxLayout,QSizePolicy, QRadioButton, QButtonGroup, QVBoxLayout , QLabel, QScrollArea , QApplication
 from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
@@ -418,10 +418,20 @@ class Cell(QFrame):
         if self.editor_type == "code":
             # Create code editor
             self.editor = CodeEditor()
-            # Line number method Caller
-            # self.line_number.setVisible(True)
-            # self.run_status.setVisible(True)
-            # self.timing.setVisible(True)
+            # LTR
+            self.editor.setLayoutDirection(Qt.LeftToRight)
+
+            # اجبار جهت پیش‌فرض سند به LTR
+            opt = self.editor.document().defaultTextOption()
+            opt.setTextDirection(Qt.LeftToRight)
+            opt.setWrapMode(QTextOption.NoWrap)   # جلوگیری از wrap شدن خطوط
+            # --- اسکرول‌ها ---
+            self.editor.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)  # اسکرول افقی فعال
+            self.editor.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)   # اسکرول عمودی غیرفعال
+
+            self.editor.document().setDefaultTextOption(opt) 
+            
+                      
             self.main_layout.addWidget(self.task_frame)
             
             self.editor.cursorPositionInfo.connect(self.update_line_char_update)
@@ -578,6 +588,26 @@ class Cell(QFrame):
                         self.scroll.setVisible(True)
                         return  
 
+
+
+        elif out.output_type == "error":
+            if not hasattr(self, 'output_editor'):
+                self.create_output_editor()
+            editor = self.output_editor.text_output
+            cursor = editor.textCursor()
+            cursor.movePosition(QTextCursor.End)
+            
+            for line in out.traceback:
+                clean_line = self.strip_ansi(line.rstrip())
+                if "site-packages" in clean_line or "interactiveshell.py" in clean_line or "exec(code_obj" in clean_line:
+                    continue
+                cursor.insertText(clean_line)
+                cursor.insertBlock()
+            self.toggle_output_button.setVisible(True)
+            self.output_editor.setVisible(True)
+            self.output_editor.adjust_height()
+            self.outputs.append(out)  
+
         
 
         elif out.output_type == "stream":
@@ -632,7 +662,6 @@ class Cell(QFrame):
             self.notify_done()
 
     def update_line_char_update(self, line, column):
-
             self.line_number.setText(f"Line: {line:^5} | Chr: {column:^5}")
             self.status_r(f"Line: {line:^5} | Chr: {column:^5}     ")
 

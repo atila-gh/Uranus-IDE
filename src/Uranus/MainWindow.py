@@ -589,9 +589,9 @@ class MainWindow(QMainWindow):
     def set_status_center(self, text: str):
         """Update the center section of the status bar."""
         self.status_center.setText(text)
-        QTimer.singleShot(3000, lambda: self.status_center.clear())
+        #QTimer.singleShot(3000, lambda: self.status_center.clear())
 
-    def set_status_right(self, text: str):
+    def set_status_right(self, text ):
         """Update the right section of the status bar."""
         self.status_right.setText(text)
     

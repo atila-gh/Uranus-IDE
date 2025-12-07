@@ -56,10 +56,9 @@ class CodeEditor(QPlainTextEdit):
         
         self.setFixedHeight(80)        
         self.setFont(QFont(code_font, code_font_size,QFont.Bold))  # تست با فونت معتبر        
-        #self.setPlaceholderText("Write your code here...")
         self.installEventFilter(self)
         self.setTabStopDistance(self.tab_size * self.fontMetrics().horizontalAdvance(' ')) # adjust Tab From 8 Char to 4
-
+        
         self.setStyleSheet(f"""
                 QPlainTextEdit {{
                     background-color: {bg_code};
@@ -367,8 +366,7 @@ class CodeEditor(QPlainTextEdit):
                         break
                     check_block = check_block.next()
 
-                # اعمال تغییرات
-                # اعمال تغییرات
+                                # اعمال تغییرات
                 while block.isValid() and block.position() <= end_block.position():
                     line_cursor = QTextCursor(block)
                     line_text = block.text()
