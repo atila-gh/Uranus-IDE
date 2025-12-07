@@ -283,7 +283,7 @@ class CodeHighlighter(QSyntaxHighlighter):
         self.rules.append((QRegExp(r"\b\d+(\.\d+)?\b"), number_format))
         
         # دکوراتور 
-        self.rules.append((QRegExp(r"^@\w+(\(.*\))?"), decorator_format))
+        self.rules.append((QRegExp(r"^\s*@\w+(\(.*\))?"), decorator_format))
         
   
 
