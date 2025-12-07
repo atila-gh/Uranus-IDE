@@ -43,6 +43,7 @@ class CodeEditor(QPlainTextEdit):
 
         super().__init__(parent)
         setting = load_setting()
+        self.copy = self.my_copy()
         
         # ------ Setting 
         self.tab_size = 4  # تعداد فاصله برای هر تب
@@ -476,6 +477,18 @@ class CodeEditor(QPlainTextEdit):
         if self.parent():
             self.parent().mousePressEvent(event)
 
+
+    def my_copy(self):
+        
+        cursor = self.textCursor()
+        if cursor.hasSelection():
+            selected_text = cursor.selectedText()
+            # حذف فضای خالی قبل و بعد
+            trimmed_text = selected_text.strip()
+            # ذخیره در حافظه (clipboard)
+            QApplication.clipboard().setText(trimmed_text)
+        else:
+            super().copy()
 
 if __name__ == "__main__":
     import sys

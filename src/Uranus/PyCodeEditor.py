@@ -40,6 +40,7 @@ class PyCodeEditor(QPlainTextEdit):
 
     def __init__(self, parent=None):
         # print('[CodeEditor->__init__]')
+        self.copy = self.my_copy()
 
         super().__init__(parent)
         setting = load_setting()
@@ -454,6 +455,18 @@ class PyCodeEditor(QPlainTextEdit):
         if self.parent():
             self.parent().mousePressEvent(event)
 
+
+    def my_copy(self):
+        cursor = self.textCursor()
+        if cursor.hasSelection():
+            selected_text = cursor.selectedText()
+            # حذف فضای خالی قبل و بعد
+            trimmed_text = selected_text.strip()
+            # ذخیره در حافظه (clipboard)
+            QApplication.clipboard().setText(trimmed_text)
+        else:
+            super().copy()
+    
 
 if __name__ == "__main__":
     import sys
