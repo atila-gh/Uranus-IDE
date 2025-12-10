@@ -10,22 +10,40 @@ from PyQt5.QtCore import Qt
 DEFAULT_SETTINGS = {
     "colors": {
         "Back Ground Color Code": "#ffffff",
-        "Back Ground Color MetaData": '#ffffff',
+        "Back Ground Color MetaData": "#ffffff",
         "Back Ground Color OutPut": "#ffffff",
         "Back Ground Color WorkWindow": "#d9d9d9",
+        
         "Default Title Color": "#BEBDBD",
         "ForGround Color Code": "#181515",
         "ForGround Color MetaData": "#0d0e0f",
-        "ForGround Color Output" : "#0d0e0f"
-
+        "ForGround Color Output": "#0d0e0f"
+        
     },
+
+    "colors_syntax": {
+    "keyword_color": "#0000CC",
+    "builtin_color": "#6A0DAD",
+    "datatype_color": "#FF8C00",
+    "exception_color": "#CC0000",
+    "module_color": "#008080",
+    "number_color": "#1E90FF",
+    "comment_color": "#696969",
+    "structure_color": "#006400",
+    "decorator_color": "#B22222",
+    "string_color": "#FF1493"
+},
+
     "Code Font": "Space Mono",
     "Code Font Size": 13,
     "Meta Font": "Segoe UI",
-    "Meta Font Size": 12 ,
+    "Meta Font Size": 12,
     "OutPut Font": "Space Mono",
-    "OutPut Font Size": 10 ,
-    'last_path' : ''
+    "OutPut Font Size": 10,
+    "Line Number Font": "Technology",
+    "Line Number Font Size": 16,
+    
+    "last_path": ""
 }
 
 def get_setting_path():
@@ -101,6 +119,10 @@ class SettingsWindow(QWidget):
         for key, value in DEFAULT_SETTINGS["colors"].items():
             if key not in self.settings["colors"]:
                 self.settings["colors"][key] = value
+                
+        for key, value in DEFAULT_SETTINGS["colors_syntax"].items():
+            if key not in self.settings["colors_syntax"]:
+                self.settings["colors_syntax"][key] = value
 
         self.init_ui()
 
@@ -113,16 +135,19 @@ class SettingsWindow(QWidget):
         self.tab_extra = QWidget()
 
         self.init_main_tab()
-        self.tab_extra.setLayout(QVBoxLayout())
+        self.init_syntax_tab()
+        #self.tab_extra.setLayout(QVBoxLayout())
 
         self.tabs.addTab(self.tab_main, "Appearance")
-        self.tabs.addTab(self.tab_extra, "Advanced")
+        self.tabs.addTab(self.tab_extra, "Syntax Color")
 
         main_layout.addWidget(self.tabs)
 
         button_row = QHBoxLayout()
         reset_btn = QPushButton("Reset to Defaults")
         reset_btn.clicked.connect(self.reset_to_defaults)
+        
+        
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.close)
         button_row.addWidget(reset_btn, alignment=Qt.AlignLeft)
@@ -150,6 +175,8 @@ class SettingsWindow(QWidget):
             row.addWidget(preview)
             layout.addLayout(row)
             self.color_previews[key] = preview
+            
+            
 
         code_row = QHBoxLayout()
         code_row.setSpacing(6)
@@ -200,7 +227,7 @@ class SettingsWindow(QWidget):
         output_row.setSpacing(6)
         output_label = QLabel("OutPut Font:")
         self.output_font_preview = QLabel(self.settings["OutPut Font"])
-        self.output_font_preview.setFont(QFont(self.settings["Meta Font"], self.settings["OutPut Font Size"]))
+        self.output_font_preview.setFont(QFont(self.settings["OutPut Font"], self.settings["OutPut Font Size"]))
         self.output_font_preview.setCursor(Qt.PointingHandCursor)
         self.output_font_preview.mousePressEvent = lambda event: self.select_font("OutPut")
         output_row.addWidget(output_label)
@@ -217,16 +244,68 @@ class SettingsWindow(QWidget):
         output_size_row.addWidget(output_size_label)
         output_size_row.addWidget(self.output_font_size_spin)
         layout.addLayout(output_size_row)
+        
+        
+        line_number_row = QHBoxLayout()
+        line_number_row.setSpacing(6)
+        line_number_row_label = QLabel("Line Number Font:")
+        self.line_number_font_preview = QLabel(self.settings["Line Number Font"])
+        self.line_number_font_preview.setFont(QFont(self.settings["Line Number Font"], self.settings["Line Number Font Size"]))
+        self.line_number_font_preview.setCursor(Qt.PointingHandCursor)
+        self.line_number_font_preview.mousePressEvent = lambda event: self.select_font("LineNumber")
+        line_number_row.addWidget(line_number_row_label)
+        line_number_row.addWidget(self.line_number_font_preview)
+        layout.addLayout(line_number_row)
+
+        line_number_size_row = QHBoxLayout()
+        line_number_size_row.setSpacing(6)
+        line_number_size_label = QLabel("Line Number Font Size:")
+        self.line_number_size_spin = QSpinBox()
+        self.line_number_size_spin.setRange(8, 48)
+        self.line_number_size_spin.setValue(self.settings["Line Number Font Size"])
+        self.line_number_size_spin.valueChanged.connect(lambda: self.update_font_preview("LineNumber"))
+        line_number_size_row.addWidget(line_number_size_label)
+        line_number_size_row.addWidget(self.line_number_size_spin)
+        layout.addLayout(line_number_size_row)
 
         self.tab_main.setLayout(layout)
+   
+    def init_syntax_tab(self):
+        layout = QVBoxLayout()
+        layout.setSpacing(6)
 
+        self.syntax_color_previews = {}
+        for key in self.settings["colors_syntax"]:
+            row = QHBoxLayout()
+            row.setSpacing(6)
+            label = QLabel(f"{key}:")
+            preview = QFrame()
+            preview.setFixedSize(60, 22)
+            preview.setStyleSheet(
+                f"background-color: {self.settings['colors_syntax'][key]}; border: 1px solid gray;"
+            )
+            preview.setCursor(Qt.PointingHandCursor)
+            preview.mousePressEvent = lambda event, k=key: self.select_color(k)
+            row.addWidget(label)
+            row.addWidget(preview)
+            layout.addLayout(row)
+            self.syntax_color_previews[key] = preview
+
+        self.tab_extra.setLayout(layout)
+  
     def select_color(self, key):
         color = QColorDialog.getColor()
         if color.isValid():
-            self.settings["colors"][key] = color.name()
-            self.color_previews[key].setStyleSheet(f"background-color: {color.name()}; border: 1px solid gray;")
+            if  self.settings["colors"].get(key,False):
+                self.settings["colors"][key] = color.name()
+                self.color_previews[key].setStyleSheet(f"background-color: {color.name()}; border: 1px solid gray;")
+                
+            elif  self.settings["colors_syntax"].get(key,False):
+                 self.settings["colors_syntax"][key] = color.name()
+                 self.syntax_color_previews[key].setStyleSheet(f"background-color: {color.name()}; border: 1px solid gray;")
+            
             self.save_settings()
-
+  
     def select_font(self, target):
         font, ok = QFontDialog.getFont()
         if ok:
@@ -242,6 +321,12 @@ class SettingsWindow(QWidget):
                 self.settings["OutPut Font"] = font.family()
                 self.output_font_preview.setText(font.family())
                 self.update_font_preview("OutPut")
+            elif target == "LineNumber":
+                self.settings["Line Number Font"] = font.family()
+                self.output_font_preview.setText(font.family())
+                self.update_font_preview("LineNumber")
+                
+                
             self.save_settings()
 
     def update_font_preview(self, target):
@@ -250,16 +335,24 @@ class SettingsWindow(QWidget):
             self.settings["Code Font Size"] = size
             font = QFont(self.settings["Code Font"], size)
             self.code_font_preview.setFont(font)
+
         elif target == "meta":
             size = self.meta_font_size_spin.value()
             self.settings["Meta Font Size"] = size
             font = QFont(self.settings["Meta Font"], size)
             self.meta_font_preview.setFont(font)
+
         elif target == "OutPut":
             size = self.output_font_size_spin.value()
             self.settings["OutPut Font Size"] = size
             font = QFont(self.settings["OutPut Font"], size)
             self.output_font_preview.setFont(font)
+
+        elif target == "LineNumber":
+            size = self.line_number_size_spin.value()
+            self.settings["Line Number Font Size"] = size
+            font = QFont(self.settings["Line Number Font"], size)
+            self.line_number_font_preview.setFont(font)
 
         self.save_settings()
 
@@ -267,15 +360,23 @@ class SettingsWindow(QWidget):
         self.settings = json.loads(json.dumps(DEFAULT_SETTINGS))
         for key in self.settings["colors"]:
             self.color_previews[key].setStyleSheet(f"background-color: {self.settings['colors'][key]}; border: 1px solid gray;")
+        
+        for key in self.settings["colors_syntax"]:
+            self.syntax_color_previews[key].setStyleSheet(f"background-color: {self.settings['colors_syntax'][key]}; border: 1px solid gray;")
+        
+        
         self.code_font_preview.setText(self.settings["Code Font"])
         self.code_font_size_spin.setValue(self.settings["Code Font Size"])
         self.meta_font_preview.setText(self.settings["Meta Font"])
         self.meta_font_size_spin.setValue(self.settings["Meta Font Size"])
         self.output_font_preview.setText(self.settings["OutPut Font"])
         self.output_font_size_spin.setValue(self.settings["OutPut Font Size"])
+        self.line_number_font_preview.setText(self.settings["Line Number Font"])
+        self.line_number_size_spin.setValue(self.settings["Line Number Font Size"])
         self.update_font_preview("code")
         self.update_font_preview("meta")
         self.update_font_preview("OutPut")
+        self.update_font_preview("LineNumber")
         self.save_settings()
 
     def save_settings(self):
@@ -297,3 +398,13 @@ class SettingsWindow(QWidget):
 
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
+        
+# import sys
+# from PyQt5.QtWidgets import QApplication
+# from SettingWindow import SettingsWindow
+
+# if __name__ == "__main__":
+#     app = QApplication(sys.argv)
+#     window = SettingsWindow()
+#     window.show()
+#     sys.exit(app.exec_())

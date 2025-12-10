@@ -45,7 +45,20 @@ class CodeHighlighter(QSyntaxHighlighter):
         
         # ------ Setting 
         code_font_size  = setting['Code Font Size']
-
+        keyword_c = setting['colors_syntax']['keyword_color']
+        builtin_c = setting['colors_syntax']['builtin_color']
+        datatype_c = setting['colors_syntax']['datatype_color']
+        exception_c = setting['colors_syntax']['exception_color']
+        module_c = setting['colors_syntax']['module_color']
+        number_c = setting['colors_syntax']['number_color']
+        comment_c = setting['colors_syntax']['comment_color']
+        structure_c = setting['colors_syntax']['structure_color']
+        decorator_c = setting['colors_syntax']['decorator_color']
+        string_c = setting['colors_syntax']['string_color']
+ 
+        
+        
+        
 
 
         # ==========================
@@ -64,61 +77,61 @@ class CodeHighlighter(QSyntaxHighlighter):
             "try", "while", "with", "yield", "match", "case"
                     ]
 
+        # Data types (int, str, list, dict, etc.)
         datatypes = [
-                    # Built-in types
-                    "int", "float", "complex", "bool", "str", "list", "tuple", "set", "frozenset", "dict",
-                    "bytes", "bytearray", "memoryview", "NoneType", "type", "Ellipsis", "NotImplemented",
+            # Built-in types
+            "int", "float", "complex", "bool", "str", "list", "tuple", "set", "frozenset", "dict",
+            "bytes", "bytearray", "memoryview", "NoneType", "type", "Ellipsis", "NotImplemented",
 
-                    # Python collections
-                    "collections.Counter", "collections.OrderedDict", "collections.defaultdict", "collections.deque",
-                    "collections.ChainMap", "collections.UserDict", "collections.UserList", "collections.UserString",
-                    "collections.abc.Iterable", "collections.abc.Iterator", "collections.abc.Mapping", "collections.abc.Sequence",
-                    "collections.abc.Callable", "collections.abc.Hashable", "collections.abc.Sized", "collections.abc.Container",
-                    "collections.abc.Reversible", "collections.abc.Generator",
+            # Python collections
+            "collections.Counter", "collections.OrderedDict", "collections.defaultdict", "collections.deque",
+            "collections.ChainMap", "collections.UserDict", "collections.UserList", "collections.UserString",
+            "collections.abc.Iterable", "collections.abc.Iterator", "collections.abc.Mapping", "collections.abc.Sequence",
+            "collections.abc.Callable", "collections.abc.Hashable", "collections.abc.Sized", "collections.abc.Container",
+            "collections.abc.Reversible", "collections.abc.Generator",
 
-                    # NumPy types
-                    "np.int8", "np.int16", "np.int32", "np.int64", "np.uint8", "np.uint16", "np.uint32", "np.uint64",
-                    "np.float16", "np.float32", "np.float64", "np.float128", "np.complex64", "np.complex128", "np.complex256",
-                    "np.bool_", "np.bool8", "np.object_", "np.object0", "np.str_", "np.unicode_", "np.generic", "np.number",
-                    "np.void", "np.ndarray", "np.matrix",
+            # NumPy types
+            "np.int8", "np.int16", "np.int32", "np.int64", "np.uint8", "np.uint16", "np.uint32", "np.uint64",
+            "np.float16", "np.float32", "np.float64", "np.float128", "np.complex64", "np.complex128", "np.complex256",
+            "np.bool_", "np.bool8", "np.object_", "np.object0", "np.str_", "np.unicode_", "np.generic", "np.number",
+            "np.void", "np.ndarray", "np.matrix",
 
-                    # Pandas types
-                    "pd.Series", "pd.DataFrame", "pd.Categorical", "pd.Timestamp", "pd.Timedelta", "pd.Period", "pd.Interval",
-                    "pd.SparseArray", "pd.IntervalIndex", "pd.CategoricalIndex", "pd.MultiIndex", "pd.RangeIndex",
-                    "pd.DatetimeIndex", "pd.TimedeltaIndex", "pd.PeriodIndex", "pd.Index", "pd.Int64Index", "pd.UInt64Index",
-                    "pd.NaT", "pd.NamedAgg",
+            # Pandas types
+            "pd.Series", "pd.DataFrame", "pd.Categorical", "pd.Timestamp", "pd.Timedelta", "pd.Period", "pd.Interval",
+            "pd.SparseArray", "pd.IntervalIndex", "pd.CategoricalIndex", "pd.MultiIndex", "pd.RangeIndex",
+            "pd.DatetimeIndex", "pd.TimedeltaIndex", "pd.PeriodIndex", "pd.Index", "pd.Int64Index", "pd.UInt64Index",
+            "pd.NaT", "pd.NamedAgg",
 
-                    # SciPy sparse matrices
-                    "scipy.sparse.csr_matrix", "scipy.sparse.csc_matrix", "scipy.sparse.lil_matrix", "scipy.sparse.dok_matrix",
-                    "scipy.sparse.bsr_matrix", "scipy.sparse.coo_matrix",
+            # SciPy sparse matrices
+            "scipy.sparse.csr_matrix", "scipy.sparse.csc_matrix", "scipy.sparse.lil_matrix", "scipy.sparse.dok_matrix",
+            "scipy.sparse.bsr_matrix", "scipy.sparse.coo_matrix",
 
-                    # Numeric & date types
-                    "decimal.Decimal", "fractions.Fraction", "datetime.date", "datetime.time", "datetime.datetime",
-                    "datetime.timedelta", "uuid.UUID", "range", "slice",
+            # Numeric & date types
+            "decimal.Decimal", "fractions.Fraction", "datetime.date", "datetime.time", "datetime.datetime",
+            "datetime.timedelta", "uuid.UUID", "range", "slice",
 
-                    # IO and regex types
-                    "io.StringIO", "io.BytesIO", "io.TextIOWrapper", "re.Pattern", "re.Match", "pathlib.Path",
-                    "pathlib.PosixPath", "pathlib.WindowsPath", "file",
+            # IO and regex types
+            "io.StringIO", "io.BytesIO", "io.TextIOWrapper", "re.Pattern", "re.Match", "pathlib.Path",
+            "pathlib.PosixPath", "pathlib.WindowsPath", "file",
 
-                    # Async / generator / coroutine types
-                    "types.GeneratorType", "types.CoroutineType", "types.AsyncGeneratorType", "types.MethodType",
-                    "types.FunctionType", "types.BuiltinFunctionType", "types.SimpleNamespace", "types.MappingProxyType",
-                    "types.TracebackType", "types.CodeType",
+            # Async / generator / coroutine types
+            "types.GeneratorType", "types.CoroutineType", "types.AsyncGeneratorType", "types.MethodType",
+            "types.FunctionType", "types.BuiltinFunctionType", "types.SimpleNamespace", "types.MappingProxyType",
+            "types.TracebackType", "types.CodeType",
 
-                    # Advanced types
-                    "weakref.ReferenceType", "weakref.ProxyType", "weakref.CallableProxyType", "array.array",
-                    "queue.Queue", "queue.PriorityQueue", "queue.LifoQueue", "multiprocessing.Queue", "threading.Thread",
-                    "asyncio.Future", "asyncio.Task",
+            # Advanced types
+            "weakref.ReferenceType", "weakref.ProxyType", "weakref.CallableProxyType", "array.array",
+            "queue.Queue", "queue.PriorityQueue", "queue.LifoQueue", "multiprocessing.Queue", "threading.Thread",
+            "asyncio.Future", "asyncio.Task",
 
-                    # Scientific / third-party types
-                    "xarray.DataArray", "xarray.Dataset", "dask.array.Array", "dask.dataframe.DataFrame",
-                    "networkx.Graph", "networkx.DiGraph", "networkx.MultiGraph", "networkx.MultiDiGraph",
-                    "sympy.Symbol", "sympy.Matrix", "sympy.ImmutableMatrix", "sympy.Expression",
+            # Scientific / third-party types
+            "xarray.DataArray", "xarray.Dataset", "dask.array.Array", "dask.dataframe.DataFrame",
+            "networkx.Graph", "networkx.DiGraph", "networkx.MultiGraph", "networkx.MultiDiGraph",
+            "sympy.Symbol", "sympy.Matrix", "sympy.ImmutableMatrix", "sympy.Expression",
 
-                    # General object types
-                    "function", "method", "module", "object"
-                ]
-
+            # General object types
+            "function", "method", "module", "object"
+        ]
 
         exceptions = [
                 "ArithmeticError", "AssertionError", "AttributeError", "BaseException", "BufferError",
@@ -144,14 +157,17 @@ class CodeHighlighter(QSyntaxHighlighter):
 
        
         builtins = [
-                    "abs", "all", "any", "ascii", "aiter", "anext", "bin", "bool", "breakpoint", "bytearray", "bytes",
-                    "callable", "chr", "classmethod", "compile", "complex", "delattr", "dict", "dir", "divmod", "enumerate",
-                    "eval", "exec", "filter", "float", "format", "frozenset", "getattr", "globals", "hasattr", "hash", "help",
-                    "hex", "id", "input", "int", "isinstance", "issubclass", "iter", "len", "list", "locals", "map", "max",
-                    "memoryview", "min", "next", "object", "oct", "open", "ord", "close", "pow", "print", "property", "range",
-                    "repr", "reversed", "round", "set", "setattr", "slice", "sorted", "staticmethod", "str", "sum", "super",
-                    "tuple", "type", "vars", "zip", "__import__", "read", "readline", "readlines", "write", "writelines",
+                    
+                    "abs", "all", "any", "ascii", "aiter", "anext", "bin", "breakpoint",
+                    "callable", "chr", "classmethod", "compile", "delattr", "dir", "divmod", "enumerate",
+                    "eval", "exec", "filter", "format", "getattr", "globals", "hasattr", "hash", "help",
+                    "hex", "id", "input", "isinstance", "issubclass", "iter", "len", "locals", "map", "max",
+                    "min", "next", "oct", "open", "ord", "pow", "print", "property", "repr", "reversed",
+                    "round", "setattr", "sorted", "staticmethod", "sum", "super", "type", "vars", "zip",
+                    "__import__",
 
+                    # File-like builtins
+                    "read", "readline", "readlines", "write", "writelines"
                     # Dunder Methods
                     "__abs__", "__add__", "__and__", "__annotations__", "__await__", "__bool__", "__call__", "__class__",
                     "__contains__", "__del__", "__delattr__", "__delete__", "__delitem__", "__dir__", "__divmod__", "__doc__",
@@ -164,10 +180,8 @@ class CodeHighlighter(QSyntaxHighlighter):
                     "__reversed__", "__rfloordiv__", "__rlshift__", "__rmatmul__", "__rmod__", "__rmul__", "__ror__",
                     "__round__", "__rpow__", "__rrshift__", "__rshift__", "__rsub__", "__rtruediv__", "__rxor__", "__set__",
                     "__setattr__", "__setitem__", "__str__", "__sub__", "__truediv__", "__xor__", "__aiter__", "__anext__",
-                    "__aenter__", "__aexit__"
+                    "__aenter__", "__aexit__",'__dict__'
                 ]
-
-
 
         library_functions = []
 
@@ -178,40 +192,40 @@ class CodeHighlighter(QSyntaxHighlighter):
 
         # Keywords (def, if, for, etc.)
         keyword_format = QTextCharFormat()
-        keyword_format.setForeground(QColor("#0077AA"))
+        keyword_format.setForeground(QColor(keyword_c))
         keyword_format.setFontWeight(QFont.Bold)
 
         # Built-in functions (print, len, open, etc.)
         builtin_format = QTextCharFormat()
-        builtin_format.setForeground(QColor("#AA00AA"))
+        builtin_format.setForeground(QColor(builtin_c))
 
         # Data types (int, str, list, dict, etc.)
         datatype_format = QTextCharFormat()
-        datatype_format.setForeground(QColor("#005500"))
+        datatype_format.setForeground(QColor(datatype_c))
         datatype_format.setFontWeight(QFont.DemiBold)
 
         # Exceptions (ValueError, TypeError, etc.)
         exception_format = QTextCharFormat()
-        exception_format.setForeground(QColor("#CC0000"))
+        exception_format.setForeground(QColor(exception_c))
         exception_format.setFontWeight(QFont.Bold)
 
         # Modules (os, sys, numpy, etc.)
         module_format = QTextCharFormat()
-        module_format.setForeground(QColor("#FF8800"))
+        module_format.setForeground(QColor(module_c))
 
         # Strings ("hello", 'world')
         self.string_format = QTextCharFormat()
-        self.string_format.setForeground(QColor("#D14"))
+        self.string_format.setForeground(QColor(string_c))
 
         # Numbers (123, 3.14)
         number_format = QTextCharFormat()
-        number_format.setForeground(QColor("#424244"))
+        number_format.setForeground(QColor(number_c))
         number_format.setFontWeight(QFont.Bold)
         # number_format.setFontItalic(True)
         
         # Normal comments
         self.comment_format = QTextCharFormat()
-        self.comment_format.setForeground(QColor("#787878"))
+        self.comment_format.setForeground(QColor(comment_c))
         self.comment_format.setFontPointSize(14)   # سایز پایه فیکس
 
         # ## heading comments
@@ -225,12 +239,12 @@ class CodeHighlighter(QSyntaxHighlighter):
 
         # Structure (class, self, __init__)
         structure_format = QTextCharFormat()
-        structure_format.setForeground(QColor("#267f99"))
+        structure_format.setForeground(QColor(structure_c))
         structure_format.setFontWeight(QFont.Bold)
 
         # Decorators (@staticmethod, @dataclass)
         decorator_format = QTextCharFormat()
-        decorator_format.setForeground(QColor("#AA22FF"))
+        decorator_format.setForeground(QColor(decorator_c))
 
         # Library functions (NumPy, Pandas, etc.)
         # library_function_format = QTextCharFormat()
@@ -286,13 +300,11 @@ class CodeHighlighter(QSyntaxHighlighter):
         self.rules.append((QRegExp(r"^\s*@\w+(\(.*\))?"), decorator_format))
         
   
-
     def line_index_to_offset(self, lines, line_num, char_index):
         res = sum(len(lines[i]) + 1 for i in range(line_num)) + char_index  # +1 for \n
         return res
     
-    
-
+ 
     def find_triple_quote_blocks(self):
        
         full_text = self.document().toPlainText()
@@ -333,14 +345,9 @@ class CodeHighlighter(QSyntaxHighlighter):
         return results  # فقط بلاک‌های کامل
 
 
-
     # this method is Override QtGui Standard Method dont Touch This 
    
-
-    
-                
-                
-                
+             
     def highlightBlock1(self, text):
         self.setCurrentBlockState(0)
         block_start = self.currentBlock().position()

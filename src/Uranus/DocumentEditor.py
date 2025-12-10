@@ -438,6 +438,15 @@ class DocumentEditor(QWidget):
         
 
         self.toolbar.addSeparator()
+       
+        # Clear Format 
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "clear_format.png")
+        c_format = QAction(QIcon(icon_path), "Clear Format", self)
+        c_format.triggered.connect(self.clear_selection_format)
+        self.toolbar.addAction(c_format)
+        
+        self.toolbar.addSeparator()
+       
         
         
         def toggle_alignment():
@@ -585,7 +594,6 @@ class DocumentEditor(QWidget):
         buttons.rejected.connect(dialog.reject)
         dialog.exec()
    
-
     def resize_selected_image(self):
             """
             Resize the selected image (Base64 or file-based) with proper Base64 decoding,
@@ -702,10 +710,8 @@ class DocumentEditor(QWidget):
             buttons.rejected.connect(dialog.reject)
 
             dialog.exec()
-        
-   
-   
-    
+       
+     
     def mousePressEvent(self, event):
        
         super().mousePressEvent(event)
@@ -720,9 +726,8 @@ class DocumentEditor(QWidget):
         self.editor.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         if not init :
             self.adjust_height_document_editor()
-        
+       
     
-
     def activate_edit_mode(self):
         self.readonly_mode = False
         self.toolbar.show()
@@ -918,3 +923,28 @@ class DocumentEditor(QWidget):
         self.setFixedHeight(height)   # دقیقاً همون ارتفاع
         self.resize(self.width(), height)  # اگر داخل layout باشه، این هم کمک می‌کنه
         self.updateGeometry()
+
+
+    def clear_selection_format(self):
+        """
+        Remove all formatting from the selected text and reset to default font size.
+        """
+        cursor = self.editor.textCursor()
+        if cursor.hasSelection():
+            # ساخت فرمت جدید با تنظیمات پیش‌فرض
+            fmt = QTextCharFormat()
+            fmt.setFontWeight(QFont.Normal)
+            fmt.setFontItalic(False)
+            fmt.setFontUnderline(False)
+            fmt.setForeground(QColor(Qt.black))
+            fmt.setFontPointSize(self.code_font_size)  # سایز پیش‌فرض از تنظیمات
+
+            # اعمال فرمت روی کل محدوده انتخاب‌شده
+            start = cursor.selectionStart()
+            end = cursor.selectionEnd()
+
+            cursor.setPosition(start)
+            cursor.setPosition(end, QTextCursor.KeepAnchor)
+            cursor.setCharFormat(fmt)   # اینجا کل انتخاب را با فرمت جدید جایگزین می‌کند
+
+            self.editor.setTextCursor(cursor)

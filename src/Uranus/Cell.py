@@ -127,6 +127,9 @@ class Cell(QFrame):
         setting = load_setting()
         self.bg_main_window = setting["colors"]["Back Ground Color WorkWindow"]
         self.bg_border_color_default = setting["colors"]['Default Title Color']
+        line_number_font = setting['Line Number Font']
+        line_number_font_size = setting['Line Number Font Size']
+        
 
         self.setStyleSheet(f"""
             QFrame {{
@@ -244,7 +247,7 @@ class Cell(QFrame):
            """)
         
         # Line number
-        font = QFont("Technology", 16)
+        font = QFont(line_number_font, line_number_font_size)
         self.line_number = QLabel()
         self.line_number.setFont(font)
         self.line_number.setAlignment(Qt.AlignLeft)
@@ -263,7 +266,7 @@ class Cell(QFrame):
 
        
         
-        font_time = QFont("Technology", 16)
+        font_time = QFont(line_number_font, line_number_font_size)
         self.timing = QLabel()
         self.timing.setAlignment(Qt.AlignLeft)
         self.timing.setFont(font_time)

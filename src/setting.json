@@ -9,11 +9,25 @@
         "ForGround Color MetaData": "#0d0e0f",
         "ForGround Color Output": "#0d0e0f"
     },
+    "colors_syntax": {
+        "keyword_color": "#0000CC",
+        "builtin_color": "#6A0DAD",
+        "datatype_color": "#FF8C00",
+        "exception_color": "#CC0000",
+        "module_color": "#008080",
+        "number_color": "#1E90FF",
+        "comment_color": "#696969",
+        "structure_color": "#006400",
+        "decorator_color": "#B22222",
+        "string_color": "#FF1493"
+    },
     "Code Font": "Space Mono",
     "Code Font Size": 13,
     "Meta Font": "Segoe UI",
     "Meta Font Size": 12,
     "OutPut Font": "Space Mono",
     "OutPut Font Size": 10,
-    "last_path": "D:/GitHub Project/PTC"
+    "Line Number Font": "Technology",
+    "Line Number Font Size": 16,
+    "last_path": "C:/Users/Naval/Desktop/prj1"
 }

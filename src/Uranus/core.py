@@ -64,6 +64,10 @@ def main():
     print("🎨 Available styles:", QStyleFactory.keys())
 
     from Uranus.MainWindow import MainWindow
+    # For Dark Mode
+    #import qdarktheme
+    #qdarktheme.setup_theme("dark")
+
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())
