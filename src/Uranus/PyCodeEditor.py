@@ -40,9 +40,10 @@ class PyCodeEditor(QPlainTextEdit):
 
     def __init__(self, parent=None):
         # print('[CodeEditor->__init__]')
-        self.copy = self.my_copy()
+       
 
         super().__init__(parent)
+        self.copy = self.my_copy()
         setting = load_setting()
         
         # ------ Setting 
