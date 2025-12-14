@@ -3,7 +3,7 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "6d9bd1c2",
+   "id": "a146c4af",
    "metadata": {
     "bg": "#BEBDBD",
     "uranus": {
@@ -12,130 +12,11 @@
    },
    "outputs": [],
    "source": [
-    "a = 15"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 1,
-   "id": "fa4d4b68",
-   "metadata": {
-    "bg": "#BEBDBD",
-    "uranus": {
-     "origin": "uranus"
-    }
-   },
-   "outputs": [
-    {
-     "ename": "EventLoopBlocked",
-     "evalue": "Execution of Tkinter/Qt/asyncio code is not supported inside Uranus IDE cells",
-     "output_type": "error",
-     "traceback": [
-      "⚠️ Code execution blocked.",
-      "Reason: Event-loop based libraries (Tkinter, Qt, asyncio) conflict with IPython/QThread execution.",
-      "These libraries manage their own GUI or async loops which cannot be safely re-entered in Uranus IDE cells.",
-      "Therefore, we need to run your code using the standard Python interpreter instead."
-     ]
-    }
-   ],
-   "source": [
-    "from tkinter import *\n",
-    "win =Tk()\n",
-    "win.geometry('500x500+150+150')\n",
-    "win.mainloop()\n",
-    "\n",
-    "print(dir())\n",
-    "\n",
-    "    "
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 1,
-   "id": "463ba770",
-   "metadata": {
-    "bg": "#BEBDBD",
-    "uranus": {
-     "origin": "uranus"
-    }
-   },
-   "outputs": [],
-   "source": [
-    "x = 20\n",
-    "lst = [1,2,3,4]"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 1,
-   "id": "db7c7b10",
-   "metadata": {
-    "bg": "#BEBDBD",
-    "uranus": {
-     "origin": "uranus"
-    }
-   },
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "15 20"
-     ]
-    }
-   ],
-   "source": [
-    "print(a,x)"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 1,
-   "id": "424a1e4a",
-   "metadata": {
-    "bg": "#BEBDBD",
-    "uranus": {
-     "origin": "uranus"
-    }
-   },
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "['__builtins__', 'a', 'lst', 'x']"
-     ]
-    }
-   ],
-   "source": [
-    "print(dir())"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 1,
-   "id": "83c20fa3",
-   "metadata": {
-    "bg": "#BEBDBD",
-    "uranus": {
-     "origin": "uranus"
-    }
-   },
-   "outputs": [],
-   "source": [
-    "# main.py\n",
-    "x = 42\n",
-    "y = \"hello\"\n",
-    "def foo():\n",
-    "    return \"bar\"\n",
-    "\n",
-    "class MyClass:\n",
-    "    pass\n",
-    "\n",
-    "\n",
-    "for name in dir():\n",
-    "    value = globals()[name]   # یا locals()[name]\n",
-    "    print(name, \":\", type(value))"
+    "'ksdjhf9830945 04-395- 25-65656'\n",
+    "\"454545+524564\"\n",
+    "'''\n",
+    "244354 54g65634df 5454+45545\n",
+    "'''\n"
    ]
   }
  ],
