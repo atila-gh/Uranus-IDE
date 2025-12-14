@@ -85,6 +85,21 @@ Uranus is a lightweight, extensible Python IDE inspired by Jupyter. It supports 
 
 Uranus IDE goes beyond traditional editors by introducing two powerful features that elevate both usability and introspection:
 
+## 🐍 Python Error & Lint Testing
+
+Uranus IDE integrates a **built‑in error and lint analyzer** powered by [Ruff](https://github.com/astral-sh/ruff).  
+This feature allows developers to run static analysis directly inside the IDE and instantly detect:
+
+- ❌ **Syntax and style errors** (indentation, spacing, line length, etc.)  
+- ⚠️ **Warnings** for risky or non‑optimal code patterns  
+- 🧩 **Unused imports, undefined names, and logical issues**  
+- 📏 **Customizable rule categories** with checkboxes for enabling/disabling specific families (e.g. `E`, `W`, `F`, `B`, `UP`)  
+- 🎨 **Color‑coded output highlighting** for errors, warnings, and success messages  
+
+The analyzer window provides a **dark‑themed interface** with live feedback and a status bar that displays rule descriptions when hovering over checkboxes. Developers can tailor the analysis to their workflow by ignoring selected categories and re‑running checks with a single click.
+
+> With this addition, Uranus IDE becomes not only an interactive coding environment but also a **powerful linting and error‑testing tool** for Python projects.
+
 ### 🔀 Detachable WorkWindows — Seamless Floating Mode
 
 Switch any notebook window between embedded (MDI) and floating mode with a single click — without losing content, focus, or execution state. This feature enables:

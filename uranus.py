@@ -11,7 +11,8 @@ REQUIRED_PACKAGES = {
     "nbformat": "nbformat",
     "markdown2": "markdown2",
     "html2text": "html2text",
-    "Pillow": "PIL"    
+    "Pillow": "PIL",
+    "ruff": "ruff"
 }
 
 

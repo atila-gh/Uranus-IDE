@@ -1,0 +1,47 @@
+from tkinter import *
+
+def func():
+    sex = x.get()
+    if sex==1:
+        print('man')
+    else :
+        print('woman')
+    
+    
+win = Tk()
+win.geometry('500x500+150+150')
+
+frm = LabelFrame(win,padx=10 , pady=10)
+frm.place(x=100 , y=100)
+
+
+x = IntVar() # StringVar , BooleanVar ,DoubleVar
+
+rad1 = Radiobutton(frm
+    				,font = ('tahoma',15,'bold')
+         			,bg = 'white'
+              		,fg = 'black'
+                	,variable=x
+                   	,value = 1
+                    ,command=func
+                    ,relief='flat'
+                    ,text='Man'                    
+    
+)
+
+rad2 = Radiobutton(frm
+    				,font = ('tahoma',15,'bold')
+         			,bg = 'white'
+              		,fg = 'black'
+                	,variable=x
+                   	,value = 2
+                    ,command=func
+                    ,relief='flat'
+                    ,text = 'Woman'                 
+    
+)
+
+rad1.grid(row=1 , column=1 , sticky = 'w')
+rad2.grid(row=2 , column=1)
+
+win.mainloop()

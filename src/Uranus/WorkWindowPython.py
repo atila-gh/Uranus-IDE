@@ -12,6 +12,7 @@ from Uranus.PyCodeEditor import PyCodeEditor
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtCore import Qt, QRect, QSize
 from PyQt5.QtGui import QPainter, QColor
+from Uranus.Analyzer import Analyzer
 
 
 class TerminalRunner:
@@ -416,6 +417,18 @@ class WorkWindowPython(QFrame):
         self.toolbar.addWidget(print_cell)
         self.toolbar.addSeparator()
         
+        # analyzer  
+        analyze = QToolButton()
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "code_analyzer.png")
+        analyze.setIcon(QIcon(icon_path))
+        analyze.setToolTip("""
+                                   <b>Code Analyser</b><br>                                   
+                                   Ruff Analyzer 
+                                   """)
+        analyze.clicked.connect(self.code_analyzer)
+        self.toolbar.addWidget(analyze)
+        self.toolbar.addSeparator()
+        
        
         # Detach Check Button 
         icon_path = os.path.join(os.path.dirname(__file__), "image", "detach.png")
@@ -649,6 +662,13 @@ class WorkWindowPython(QFrame):
         terminal = TerminalRunner()        
         terminal.run_code(editor_text)  # اجرای متن در همان ترمینال
 
-
-
-
+    
+    def code_analyzer(self):
+        self.save_file()      
+        
+       
+        self.analyzer_window = Analyzer(self.file_path)
+        self.analyzer_window.resize(600, 400)
+    
+        self.analyzer_window.setWindowTitle("Ruff Analyzer - " + self.name_only + '.py')
+        self.analyzer_window.show()

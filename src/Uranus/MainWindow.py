@@ -469,9 +469,9 @@ class MainWindow(QMainWindow):
            return
 
     def about(self):
-        about_window = AboutWindow()
-        about_window.show()
-        self.about_window = about_window
+        self.about_window = AboutWindow()
+        self.about_window.show()
+       
 
     @staticmethod
     def on_path_changed(path):
@@ -599,6 +599,13 @@ class MainWindow(QMainWindow):
         
         # بستن پنجره‌های شناور
         for widget in self.work_widget_list:
+            if isinstance(widget, WorkWindowPython):
+                if hasattr(widget, "analyzer_window") and widget.analyzer_window is not None:
+                    if widget.analyzer_window.isVisible():
+                        widget.analyzer_window.close()
+                
+            
+            
             if isinstance(widget, WorkWindow) and widget.detached and widget.detached_window:
                 widget.detached_window.close()
                 if not sip.isdeleted(widget) and not widget.isHidden():
@@ -622,6 +629,19 @@ class MainWindow(QMainWindow):
                     return
         
        
+       # بستن پنجره About اگر باز باشد
+        if hasattr(self, "about_window") and self.about_window is not None:
+            if not sip.isdeleted(self.about_window) and self.about_window.isVisible():
+                self.about_window.close()
+       
+
+        # بستن پنجره Settings اگر باز باشد
+        if hasattr(self, "settings_window") and self.settings_window is not None:
+            if not sip.isdeleted(self.settings_window) and self.settings_window.isVisible():
+                self.settings_window.close()
+
+
+
         
         event.accept()
 

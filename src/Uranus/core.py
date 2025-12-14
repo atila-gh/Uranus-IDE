@@ -3,7 +3,7 @@ import os
 import sys
 from PyQt5.QtGui import QFontDatabase
 from PyQt5.QtWidgets import QApplication, QStyleFactory
-from Uranus.MainWindow import MainWindow# Add src/ to sys.path for manual execution
+
 current_file = os.path.abspath(__file__)
 project_root = os.path.abspath(os.path.join(current_file, "..", ".."))
 src_path = os.path.join(project_root, "src")
