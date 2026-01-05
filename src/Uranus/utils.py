@@ -311,9 +311,20 @@ class FileTreeView(QTreeView):
         if index.isValid():
             self.setCurrentIndex(index)
             self.edit(index)
+            editor = self.findChild(QLineEdit)
+            if editor:
+                # گرفتن متن کامل از editor
+                full_text = editor.text()                
+                # پیدا کردن موقعیت آخرین نقطه (برای فایل‌هایی که چند نقطه دارند)
+                last_dot_index = full_text.rfind('.')                
+                if last_dot_index != -1:
+                    # انتخاب از ابتدا تا قبل از نقطه
+                    editor.setSelection(0, last_dot_index)
+                else:
+                    # اگر نقطه‌ای نبود، کل متن را انتخاب کن
+                    editor.selectAll()
             
-            
-
+ 
     def open_item(self, path):
         index = self.currentIndex()
         if index.isValid():
@@ -334,9 +345,6 @@ class FileTreeView(QTreeView):
 
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Could not open:\n{e}")
-
-
-    
 
     def delete_item(self):
         index = self.currentIndex()
@@ -369,7 +377,6 @@ class FileTreeView(QTreeView):
             path = self.fs_model.filePath(index)
         else:
             path = self.path  # مسیر جاری که در select_project_folder تنظیم شده
-
 
         base_dir = os.path.dirname(path)
         old_name = os.path.basename(path)
@@ -437,10 +444,7 @@ class FileTreeView(QTreeView):
                 shutil.copytree(source, dest_path)
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Could not paste:\n{e}")
-
-    
-    
-    
+ 
     def mousePressEvent(self, event):
         index = self.indexAt(event.pos())
 
