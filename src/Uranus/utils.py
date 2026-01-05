@@ -323,6 +323,54 @@ class FileTreeView(QTreeView):
                 else:
                     # اگر نقطه‌ای نبود، کل متن را انتخاب کن
                     editor.selectAll()
+                    
+    
+    
+    def create_py_file(self):
+        """Create a new untitled .ipynb file in the selected folder."""
+
+        index = self.currentIndex()
+        if index.isValid():
+            path = self.fs_model.filePath(index)
+        else:
+            path = self.path  # مسیر جاری که در select_project_folder تنظیم شده
+
+
+        target_dir = path if os.path.isdir(path) else os.path.dirname(path)
+        if not os.path.exists(target_dir):
+            QMessageBox.warning(self, "Warning", "Please select a valid folder first.")
+            return
+
+        base_name = "untitled.py"
+        new_file_path = os.path.join(target_dir, base_name)
+        counter = 1
+        while os.path.exists(new_file_path):
+            new_file_path = os.path.join(target_dir, f"untitled_{counter}.py")
+            counter += 1
+
+        try:
+            with open(new_file_path, "w", encoding="utf-8") as f:
+                f.write("")  # create empty file
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Could not create file:\n{e}")
+            return
+
+        index = self.fs_model.index(new_file_path)
+        if index.isValid():
+            self.setCurrentIndex(index)
+            self.edit(index)
+            editor = self.findChild(QLineEdit)
+            if editor:
+                # گرفتن متن کامل از editor
+                full_text = editor.text()                
+                # پیدا کردن موقعیت آخرین نقطه (برای فایل‌هایی که چند نقطه دارند)
+                last_dot_index = full_text.rfind('.')                
+                if last_dot_index != -1:
+                    # انتخاب از ابتدا تا قبل از نقطه
+                    editor.setSelection(0, last_dot_index)
+                else:
+                    # اگر نقطه‌ای نبود، کل متن را انتخاب کن
+                    editor.selectAll()
             
  
     def open_item(self, path):

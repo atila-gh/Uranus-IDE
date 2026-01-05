@@ -262,19 +262,29 @@ class MainWindow(QMainWindow):
         self.add_folder_btn.clicked.connect(self.tree.tree.create_folder)
         self.add_folder_btn.setIconSize(QSize(32, 32))
 
-        # Add File Button
-        icon_path = os.path.join(os.path.dirname(__file__), "image", "add_file.png")
+        # Add Ipython File Button
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "ipython_file_add.png")
         self.add_file_btn = QToolButton()
         self.add_file_btn.setIcon(QIcon(icon_path))
         self.add_file_btn.setToolTip("Add File")
         self.add_file_btn.clicked.connect(self.tree.tree.create_file)
         self.add_file_btn.setIconSize(QSize(32, 32))
+        
+        
+        # Add Py_File Button
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "add_py_file.png")
+        self.add_py_file_btn = QToolButton()
+        self.add_py_file_btn.setIcon(QIcon(icon_path))
+        self.add_py_file_btn.setToolTip("Add File")
+        self.add_py_file_btn.clicked.connect(self.tree.tree.create_py_file)
+        self.add_py_file_btn.setIconSize(QSize(32, 32))
 
 
         # Top horizontal toolbar
         self.dock_top_toolbar = QToolBar()
         self.dock_top_toolbar.addWidget(self.select_folder_btn)
         self.dock_top_toolbar.addWidget(self.add_file_btn)
+        self.dock_top_toolbar.addWidget(self.add_py_file_btn)
         self.dock_top_toolbar.addWidget(self.add_folder_btn)
 
 
