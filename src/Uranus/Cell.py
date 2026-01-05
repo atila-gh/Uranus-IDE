@@ -896,15 +896,8 @@ class Cell(QFrame):
         
     def compute_execution_time(self):
         self._duration = self._stop_time - self._start_time
-        if self._delta_time :
-            self._delta_time = self._duration - self._delta_time
-            self.timing.setText(f'Elapsed : {self._duration:.3f} | Delta : {self._delta_time:.3f}')
-            
-        else : 
-            self._delta_time = self._duration 
-            self.timing.setText(f'Elapsed : {self._duration:.3f} | Delta : None ' )
+        self._delta_time = self._duration 
+        self.timing.setText(f'Elapsed : {self._duration:.3f} ')
             
             
         
-
-
