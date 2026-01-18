@@ -175,7 +175,7 @@ class MainWindow(QMainWindow):
         # --- RUN Menu ---
         run_menu = menubar.addMenu("Run")
 
-        run_action = QAction("Rub", self)
+        run_action = QAction("Run", self)
         run_action.setShortcut("F5")
         run_action.triggered.connect(self.trigger_run_active_workwindow)
         run_menu.addAction(run_action)
