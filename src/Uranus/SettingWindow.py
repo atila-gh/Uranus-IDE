@@ -7,6 +7,46 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import  QFont
 from PyQt5.QtCore import Qt
 
+'''
+BLACK MODE
+
+{
+    "colors": {
+        "Back Ground Color Code": "#000000",
+        "Back Ground Color MetaData": "#000000",
+        "Back Ground Color OutPut": "#000000",
+        "Back Ground Color WorkWindow": "#444444",
+        "Default Title Color": "#444444",
+        "ForGround Color Code": "#ffffff",
+        "ForGround Color MetaData": "#ffffff",
+        "ForGround Color Output": "#ffffff"
+    },
+    "colors_syntax": {
+        "keyword_color": "#aaaaff",
+        "builtin_color": "#aa00ff",
+        "datatype_color": "#FF8C00",
+        "exception_color": "#CC0000",
+        "module_color": "#008dce",
+        "number_color": "#1E90FF",
+        "comment_color": "#d3d3d3",
+        "structure_color": "#008f00",
+        "decorator_color": "#B22222",
+        "string_color": "#ab0056"
+    },
+    "Code Font": "Space Mono",
+    "Code Font Size": 13,
+    "Meta Font": "Segoe UI",
+    "Meta Font Size": 12,
+    "OutPut Font": "Space Mono",
+    "OutPut Font Size": 10,
+    "Line Number Font": "Technology",
+    "Line Number Font Size": 16,
+    "last_path": "C:/Users/Tonal/Desktop"
+}
+
+'''
+
+
 DEFAULT_SETTINGS = {
     "colors": {
         "Back Ground Color Code": "#ffffff",

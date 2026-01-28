@@ -1,0 +1,74 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "e717b9a3",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "uranus"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<bound method A.show of <__main__.A object at 0x000002A1A554E7B0>>"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[Class A Method Show]"
+     ]
+    }
+   ],
+   "source": [
+    "class A:\n",
+    "    def __init__(self):\n",
+    "        self.c1 = B(method_show = self.show)\n",
+    "        \n",
+    "    def show(self):\n",
+    "        print('[Class A Method Show]')\n",
+    "    \n",
+    "\n",
+    "class B:\n",
+    "    def __init__(self,method_show):\n",
+    "        self.c2 = C(method_show = method_show)\n",
+    "\n",
+    "\n",
+    "class C:\n",
+    "    def __init__(self,method_show):\n",
+    "        method_show()\n",
+    "        print(self.show)\n",
+    "# test         \n",
+    "        \n",
+    "o = A()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "168690be",
+   "metadata": {
+    "bg": "#BEBDBD",
+    "uranus": {
+     "origin": "uranus"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "a = 0\n",
+    "while a<20 : \n",
+    "    a = int(input('adad : '))\n",
+    "    print(a)"
+   ]
+  }
+ ],
+ "metadata": {},
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
