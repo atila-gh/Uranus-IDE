@@ -156,6 +156,7 @@ class Cell(QFrame):
         self._stop_time = None
         self._duration = None
         self._delta_time = None
+        self.led_permission = True # Permission to chane led color 
           
       
         # Load settings
@@ -164,6 +165,9 @@ class Cell(QFrame):
         self.bg_border_color_default = setting["colors"]['Default Title Color']
         line_number_font = setting['Line Number Font']
         line_number_font_size = setting['Line Number Font Size']
+        header_height = setting["Line Number Box Height"] # پیش‌فرض ۴۰ اگر کلید وجود نداشت
+
+        
         
 
         self.setStyleSheet(f"""
@@ -285,14 +289,15 @@ class Cell(QFrame):
         font = QFont(line_number_font, line_number_font_size)
         self.line_number = QLabel()
         self.line_number.setFont(font)
-        self.line_number.setAlignment(Qt.AlignLeft)
-        self.line_number.setFixedHeight(30)
-        self.line_number.setFixedWidth(250)
+        self.line_number.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)        
+        self.line_number.setFixedHeight(header_height)
+        self.line_number.setFixedWidth(350)
         self.line_number.setObjectName("Line_Number")
         self.line_number.setStyleSheet("""
                #Line_Number {
                    background-color: #E3E3E3;
                    font-weight: bold;
+                   
                    border: 1px solid #222;
                    border-radius: 3px;
                    color: black;
@@ -301,16 +306,16 @@ class Cell(QFrame):
 
        
         
-        font_time = QFont(line_number_font, line_number_font_size)
         self.timing = QLabel()
-        self.timing.setAlignment(Qt.AlignLeft)
-        self.timing.setFont(font_time)
-        self.timing.setFixedHeight(30)
+        self.timing.setFont(font)
+        self.timing.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # Vertical Center
+        self.timing.setFixedHeight(header_height)
         self.timing.setObjectName("Timing")
         self.timing.setStyleSheet("""
                #Timing {
                    background-color: #E3E3E3;
                    font-weight: bold;
+                   
                    border: 1px solid #222;
                    border-radius: 3px;
                    color: black;
@@ -362,6 +367,7 @@ class Cell(QFrame):
         if self.editor_type != 'code':
             return
 
+        self.led_permission = True # Permision to change led Color
         code = self.editor.toPlainText()
         if hasattr(self,'output_editor'):
                 self.output_editor.clear()   
@@ -920,14 +926,16 @@ class Cell(QFrame):
         return cell
     
     def set_led_color(self, color):
-        if self.debug: print('[Cell->set_led_color]')
-        self.run_status.setStyleSheet(f"""
-            QLabel#Status {{
-                background-color: {color};
-                border: 1px solid black;
-                border-radius: 8px;
-            }}
-        """)
+        if self.led_permission :
+            if self.debug: print('[Cell->set_led_color]')
+            self.run_status.setStyleSheet(f"""
+                QLabel#Status {{
+                    background-color: {color};
+                    border: 1px solid black;
+                    border-radius: 8px;
+                }}
+            """)
+        
         
     def compute_execution_time(self):
         self._duration = self._stop_time - self._start_time

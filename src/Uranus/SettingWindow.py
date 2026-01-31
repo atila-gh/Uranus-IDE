@@ -2,7 +2,7 @@ import json
 import os
 from PyQt5.QtWidgets import (
     QWidget, QLabel, QVBoxLayout, QHBoxLayout,
-    QColorDialog, QFontDialog, QSpinBox, QTabWidget, QFrame, QPushButton
+    QColorDialog, QFontDialog, QSpinBox, QTabWidget, QFrame, QPushButton , QComboBox
 )
 from PyQt5.QtGui import  QFont
 from PyQt5.QtCore import Qt
@@ -82,7 +82,7 @@ DEFAULT_SETTINGS = {
     "OutPut Font Size": 10,
     "Line Number Font": "Technology",
     "Line Number Font Size": 16,
-    
+    "Line Number Box Height" : 30 ,    
     "last_path": ""
 }
 
@@ -307,6 +307,22 @@ class SettingsWindow(QWidget):
         line_number_size_row.addWidget(line_number_size_label)
         line_number_size_row.addWidget(self.line_number_size_spin)
         layout.addLayout(line_number_size_row)
+        
+        # Line Number Box Height
+        header_height_row = QHBoxLayout()
+        header_height_label = QLabel("Line Number Box Height :")
+        self.header_height_combo = QComboBox()
+        heights = [str(i) for i in range(30, 56, 5)]
+        self.header_height_combo.addItems(heights)
+        current_height = str(self.settings.get("Line Number Box Height", "30"))
+        self.header_height_combo.setCurrentText(current_height)
+        self.header_height_combo.currentTextChanged.connect(self.update_Line_Number_Box_Height)
+        header_height_row.addWidget(header_height_label)
+        header_height_row.addWidget(self.header_height_combo)
+        layout.addLayout(header_height_row)
+        
+
+
 
         self.tab_main.setLayout(layout)
    
@@ -413,11 +429,27 @@ class SettingsWindow(QWidget):
         self.output_font_size_spin.setValue(self.settings["OutPut Font Size"])
         self.line_number_font_preview.setText(self.settings["Line Number Font"])
         self.line_number_size_spin.setValue(self.settings["Line Number Font Size"])
+        # ارتفاع باکس شماره خط 
+        default_height = self.settings.get("Line Number Box Height", 30)        
+        self.header_height_combo.setCurrentText(str(default_height))
+        
         self.update_font_preview("code")
         self.update_font_preview("meta")
         self.update_font_preview("OutPut")
         self.update_font_preview("LineNumber")
         self.save_settings()
+
+    def update_Line_Number_Box_Height(self):
+        """
+        این متد مقادیر جدید از ویجت‌های تنظیمات را می‌خواند و در دیکشنری settings ذخیره می‌کند.
+        """
+       
+        header_height = self.header_height_combo.currentText()       
+        self.settings["Line Number Box Height"] = int(header_height) 
+        self.save_settings()
+               
+        
+
 
     def save_settings(self):
         path = get_setting_path()

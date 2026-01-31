@@ -1688,7 +1688,13 @@ class WorkWindow(QFrame):
     
     
     def stop_execution(self):
+        if hasattr(self.focused_cell , 'set_led_color') :
+            print('ok')
+            self.focused_cell.set_led_color('violet')
+            self.focused_cell.led_permission = False
+            
         if self.focused_cell and hasattr(self.focused_cell, 'runner'):
             runner = self.focused_cell.runner
-            # فعال کردن پرچم توقف در رانر
+            # فعال کردن پرچم توقف در رانر            
             runner.stop()
+           
