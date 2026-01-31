@@ -1,4 +1,4 @@
-import re ,  hashlib ,os ,markdown2 ,time
+import re ,  hashlib ,os ,markdown2 ,time ,sys
 from nbformat.v4 import  new_code_cell, new_markdown_cell
 
 # PyQT Methods Import
@@ -17,35 +17,70 @@ from Uranus.ImageOutput import ImageOutput
 from Uranus.MarkdownEditor import MarkdownEditor
 
 
-
+import sys
 
 class CodeRunner(QObject):
     finished = pyqtSignal(list)
     stream = pyqtSignal(object)
-    """
-        Executes a code string using the provided IPython kernel in a separate thread.
-
-        Parameters:
-        - kernel: IPythonKernel instance used to run the code.
-        - code: Python code string to execute.
-
-        Signals:
-        - stream(object): Emitted for each intermediate output (stdout, stderr, etc.).
-        - finished(list): Emitted when execution completes, passing the list of outputs.
-
-        Usage:
-        This class is designed to be run inside a QThread, allowing non-blocking execution
-        of code cells in the Uranus IDE. It supports real-time output streaming and final result collection.
-        """
 
     def __init__(self, kernel, code):
         super().__init__()
         self.kernel = kernel
         self.code = code
+        # تعریف متغیر پرچم در اینجا بسیار مهم است
+        self._stop_request = False 
+
+    def stop(self):
+        """این متد توسط دکمه استاپ فراخوانی می‌شود"""
+        self._stop_request = True
 
     def run(self):
-        outputs = self.kernel.run_cell(self.code, self.stream.emit)
+        # تعریف تابع trace برای بررسی پرچم در هر خط کد
+        def trace_func(frame, event, arg):
+            # اکنون چون متغیر در __init__ تعریف شده، این خط خطا نمی‌دهد
+            if self._stop_request:
+                self._stop_request = False
+                raise KeyboardInterrupt("Execution stopped by user")
+            return trace_func
+
+        # دسترسی به shell برای غیرفعال کردن نمایش خطا
+        shell = self.kernel.shell
+        
+        # ذخیره تنظیمات قبلی
+        old_showtb = shell.showtraceback
+        
+        # تابع خالی برای جایگزینی (جلوگیری از چاپ خطا)
+        def dummy_showtb(*args, **kwargs):
+            pass
+
+        # فعال کردن trace
+        old_trace = sys.settrace(trace_func)
+        
+        try:
+            # غیرفعال کردن نمایش خطا در IPython
+            shell.showtraceback = dummy_showtb
+            
+            # اجرای کد
+            outputs = self.kernel.run_cell(self.code, self.stream.emit)
+            
+        except KeyboardInterrupt:
+            # چاپ پیام ساده به جای Traceback
+            try:
+                simple_output = {
+                    "output_type": "stream",
+                    "name": "stderr",
+                    "text": "KeyboardInterrupt\n"
+                }
+                self.stream.emit(simple_output)
+            except:
+                pass
+        finally:
+            # بسیار مهم: برگرداندن تنظیمات به حالت قبل
+            sys.settrace(old_trace)
+            shell.showtraceback = old_showtb
+            
         self.finished.emit(outputs)
+
 
 class Cell(QFrame):
 

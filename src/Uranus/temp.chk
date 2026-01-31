@@ -3,9 +3,9 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "e717b9a3",
+   "id": "7d259d41",
    "metadata": {
-    "bg": "#000000",
+    "bg": "#BEBDBD",
     "uranus": {
      "origin": "uranus"
     }
@@ -15,44 +15,105 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "<bound method A.show of <__main__.A object at 0x000002A1A554E7B0>>"
+      "test"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "[Class A Method Show]"
+      "\u001b[31m---------------------------------------------------------------------------\u001b[39m"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[31mKeyboardInterrupt\u001b[39m                         Traceback (most recent call last)"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[36mFile \u001b[39m\u001b[32m<ipython-input-1-25f406415c6c>:4\u001b[39m"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[32m      2\u001b[39m \u001b[38;5;28;01mfor\u001b[39;00m i \u001b[38;5;129;01min\u001b[39;00m \u001b[38;5;28mrange\u001b[39m(\u001b[32m10\u001b[39m):"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[32m      3\u001b[39m     time.sleep(\u001b[32m1\u001b[39m)"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[32m----> \u001b[39m\u001b[32m4\u001b[39m     \u001b[38;5;28mprint\u001b[39m(\u001b[33m'\u001b[39m\u001b[33mtest\u001b[39m\u001b[33m'\u001b[39m)"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[36mFile \u001b[39m\u001b[32md:\\Project\\Uranus-IDE\\src\\Uranus\\Cell.py:43\u001b[39m, in \u001b[36mCodeRunner.run.<locals>.trace_func\u001b[39m\u001b[34m(frame, event, arg)\u001b[39m"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[32m     41\u001b[39m \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;28mself\u001b[39m._stop_request:"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[32m     42\u001b[39m     \u001b[38;5;28mself\u001b[39m._stop_request = \u001b[38;5;28;01mFalse\u001b[39;00m"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[32m---> \u001b[39m\u001b[32m43\u001b[39m     \u001b[38;5;28;01mraise\u001b[39;00m \u001b[38;5;167;01mKeyboardInterrupt\u001b[39;00m(\u001b[33m\"\u001b[39m\u001b[33mExecution stopped by user\u001b[39m\u001b[33m\"\u001b[39m)"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[32m     44\u001b[39m \u001b[38;5;28;01mreturn\u001b[39;00m trace_func"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[31mKeyboardInterrupt\u001b[39m: Execution stopped by user"
      ]
     }
    ],
    "source": [
-    "class A:\n",
-    "    def __init__(self):\n",
-    "        self.c1 = B(method_show = self.show)\n",
-    "        \n",
-    "    def show(self):\n",
-    "        print('[Class A Method Show]')\n",
-    "    \n",
-    "\n",
-    "class B:\n",
-    "    def __init__(self,method_show):\n",
-    "        self.c2 = C(method_show = method_show)\n",
-    "\n",
-    "\n",
-    "class C:\n",
-    "    def __init__(self,method_show):\n",
-    "        method_show()\n",
-    "        print(self.show)\n",
-    "# test         \n",
-    "        \n",
-    "o = A()"
+    "import time\n",
+    "for i in range(10):\n",
+    "    time.sleep(1)\n",
+    "    print('test')"
    ]
   },
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "168690be",
+   "id": "4cf46a5b",
    "metadata": {
     "bg": "#BEBDBD",
     "uranus": {
@@ -61,10 +122,10 @@
    },
    "outputs": [],
    "source": [
-    "a = 0\n",
-    "while a<20 : \n",
-    "    a = int(input('adad : '))\n",
-    "    print(a)"
+    "i = 0 \n",
+    "while i <3:\n",
+    "    a = input('meghdar : ')\n",
+    "    i = i + 1"
    ]
   }
  ],

@@ -6,8 +6,8 @@ from traitlets.config import Config
 from IPython.core.interactiveshell import InteractiveShell
 import subprocess,  tempfile
 # Import Pyqt Feturse
-from PyQt5.QtGui import  QIcon , QKeySequence , QTextCursor
-from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject ,QEventLoop 
+from PyQt5.QtGui import  QIcon , QKeySequence , QTextCursor 
+from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject ,QEventLoop ,QTimer
 from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWidget , QFrame , QMainWindow
     , QVBoxLayout , QSpacerItem, QSizePolicy , QScrollArea,QDialog, QVBoxLayout, QLineEdit , QMdiSubWindow , QStatusBar
     , QPushButton , QLabel, QHBoxLayout , QFileDialog, QMessageBox , QCheckBox)
@@ -272,14 +272,25 @@ class InputWaiter(QObject): # for Covering Input
         dlg = QInputDialog(self._dialog_parent)
         dlg.setWindowTitle("Input")
         dlg.setLabelText(self._prompt)
-
-        # حذف علامت ؟ از بالای پنجره
-        dlg.setWindowFlags(dlg.windowFlags() & ~Qt.WindowContextHelpButtonHint)
-
+        
+        # نمایش دیالوگ و دریافت نتیجه
+        # اگر کاربر Cancel را بزند، مقدار برگشتی None یا یک رشته خالی خواهد بود (بسته به تنظیمات)
+        # اما روش استاندارد در PyQt برای چک کردن Cancel به شرح زیر است:
+        
         if dlg.exec_() == QInputDialog.Accepted:
+            # کاربر دکمه OK را زده است
             self._value = dlg.textValue()
         else:
-            self._value = ""
+            # کاربر دکمه Cancel را زده است یا دیالوگ را بسته است
+            # فراخوانی متد توقف اجرا
+            # توجه: شما باید به متد stop_execution دسترسی داشته باشید.
+            # اگر این کد در داخل WorkWindow است، می‌توانید از self.stop_execution() استفاده کنید.
+            # اگر در کلاس جداگانه است، باید ارجاعی به WorkWindow داشته باشید.
+            
+            # فرض بر این است که این کد در WorkWindow است یا self.parent() WorkWindow است:
+            parent = self.parent()
+            if hasattr(parent, 'stop_execution'):
+                parent.stop_execution()
 
 
 class StreamCatcher(io.StringIO): # 2025-10-11 - edited
@@ -874,6 +885,17 @@ class WorkWindow(QFrame):
                                    """)
         ippy.clicked.connect(self.iptopy)
         self.top_toolbar.addWidget(ippy)
+        
+         # Stop Execution  
+        self.stop = QToolButton()
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "stop.png")
+        self.stop.setIcon(QIcon(icon_path))
+        self.stop.setToolTip("""
+                                   <b>Stop Execution</b><br>                                   
+                                   Stop Runing  
+                                   """)
+        self.stop.clicked.connect(self.stop_execution)
+        self.top_toolbar.addWidget(self.stop)
       
         
         # Detach Check Button 
@@ -1663,3 +1685,10 @@ class WorkWindow(QFrame):
         except Exception as e:
             print("[WorkWindow] Error clearing memory:", e)
                     
+    
+    
+    def stop_execution(self):
+        if self.focused_cell and hasattr(self.focused_cell, 'runner'):
+            runner = self.focused_cell.runner
+            # فعال کردن پرچم توقف در رانر
+            runner.stop()
