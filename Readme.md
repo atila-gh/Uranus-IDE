@@ -8,17 +8,14 @@ Attila Ghashghaei (آتیلا قشقایی)
 designed specifically for RTL languages
 including Persian, Arabic, Hebrew, Urdu, and others.**
 
-**🔗 Project Repository:**  
-**https://github.com/atila-gh/Uranus-IDE**   
+**🔗 Project Repository: https://github.com/atila-gh/Uranus-IDE**   
 **🔗 Personal Site : https://puyeshmashin.ir**   
 **🔗LinkedIn       :  linkedin.com/in/atila-gh**  
 **🔗PyPi           : pypi.org/user/atila.gh**  
 
  ## 🇮🇷 National IDE Position
 
-Uranus IDE is designed and developed in Iran
-as a **National Python IDE** with full support for Persian and RTL languages.
-
+Uranus IDE is designed and developed in Iran as a **National Python IDE** with full support for Persian and RTL languages.  
 This project aims to provide a local, independent,
 and open-source development environment for Iranian developers,
 educators, and industrial users.
@@ -88,7 +85,7 @@ Uranus is a lightweight, extensible Python IDE inspired by Jupyter. It supports 
 </p>
 
 
-## Features
+## Overview
 
 - 🧠 Code and Markdown cells with live execution
 - 📊 Output viewers for text, tables, and images
@@ -97,7 +94,7 @@ Uranus is a lightweight, extensible Python IDE inspired by Jupyter. It supports 
 - 🧱 File explorer with context menu and keyboard shortcuts
 
 
-### ✨ Key Features
+### ✨ Detailed
 
 - ✅ Cell-based editing with IPython kernel
 - ✅ Modular architecture with PyQt5
