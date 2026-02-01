@@ -1,5 +1,9 @@
 # Uranus IDE
 **Author:** آتیلا قشقایی | (Attila Ghashghaei)  
+
+## About the Author : آتیلا قشقایی
+برنامه نویس حوزه پایتون - MQL5 - LabView - نویسنده و فعال در حوزه برنامه نویسی و هوش مصنوعی 
+
 Uranus is a lightweight, extensible Python IDE inspired by Jupyter. It supports interactive coding, markdown documentation, and modular plugin architecture — all built with PyQt5.
 
 > 🔥 **Uranus IDE is the first modular Python IDE with full RTL support across all editing modes.**
