@@ -4,7 +4,7 @@
 ### About the Author : آتیلا قشقایی
 برنامه نویس حوزه پایتون - MQL5 - LabView - نویسنده و فعال در حوزه برنامه نویسی و هوش مصنوعی - نویسنده اولین IDE ایرانی به عنوان IDE ملی  
 
-## About Uranus-IDE | پروژه ملی ایرانی
+### About Uranus-IDE | پروژه ملی 
 
 Uranus is a lightweight, extensible Python IDE inspired by Jupyter. It supports interactive coding, markdown documentation, and modular plugin architecture — all built with PyQt5.
 
