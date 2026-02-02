@@ -35,45 +35,40 @@ class CodeRunner(QObject):
         self._stop_request = True
 
     def run(self):
-        # تعریف تابع trace برای بررسی پرچم در هر خط کد
-        def trace_func(frame, event, arg):
-            # اکنون چون متغیر در __init__ تعریف شده، این خط خطا نمی‌دهد
-            if self._stop_request:
-                self._stop_request = False
-                raise KeyboardInterrupt("Execution stopped by user")
-            return trace_func
-
-        # دسترسی به shell برای غیرفعال کردن نمایش خطا
+        # دسترسی به shell برای مدیریت نمایش خطا
         shell = self.kernel.shell
         
         # ذخیره تنظیمات قبلی
         old_showtb = shell.showtraceback
         
-        # تابع خالی برای جایگزینی (جلوگیری از چاپ خطا)
+        # تابع هوشمند برای فیلتر کردن فقط KeyboardInterrupt
         def dummy_showtb(*args, **kwargs):
-            pass
+            # args[1] معمولاً نوع خطا (etype) است
+            if len(args) > 1 and args[1] is KeyboardInterrupt:
+                return # فقط این خطا را نمایش نده
+            # سایر خطاها را با تابع اصلی نمایش بده
+            old_showtb(*args, **kwargs)
 
+        # تابع trace برای بررسی پرچم توقف
+        def trace_func(frame, event, arg):
+            if self._stop_request:
+                self._stop_request = False
+                raise KeyboardInterrupt("Execution stopped by user")
+            return trace_func
+        
         # فعال کردن trace
         old_trace = sys.settrace(trace_func)
         
         try:
-            # غیرفعال کردن نمایش خطا در IPython
+            # جایگزینی تابع نمایش خطا
             shell.showtraceback = dummy_showtb
             
             # اجرای کد
-            outputs = self.kernel.run_cell(self.code, self.stream.emit)
-            
-        except KeyboardInterrupt:
-            # چاپ پیام ساده به جای Traceback
-            try:
-                simple_output = {
-                    "output_type": "stream",
-                    "name": "stderr",
-                    "text": "KeyboardInterrupt\n"
-                }
-                self.stream.emit(simple_output)
-            except:
+            outputs = self.kernel.run_cell(self.code, self.stream.emit)            
+       
+        except:
                 pass
+            
         finally:
             # بسیار مهم: برگرداندن تنظیمات به حالت قبل
             sys.settrace(old_trace)
@@ -643,7 +638,7 @@ class Cell(QFrame):
             
             for line in out.traceback:
                 clean_line = self.strip_ansi(line.rstrip())
-                if "site-packages" in clean_line or "interactiveshell.py" in clean_line or "exec(code_obj" in clean_line:
+                if "site-packages" in clean_line or "interactiveshell.py" in clean_line or "exec(code_obj" in clean_line :
                     continue
                 cursor.insertText(clean_line)
                 cursor.insertBlock()
