@@ -152,6 +152,7 @@ class Cell(QFrame):
         self._duration = None
         self._delta_time = None
         self.led_permission = True # Permission to chane led color 
+        self.output_editor_enable = True
           
       
         # Load settings
@@ -359,6 +360,7 @@ class Cell(QFrame):
 
     def run(self):
 
+        self.output_editor_enable = True
         if self.editor_type != 'code':
             return
 
@@ -657,11 +659,17 @@ class Cell(QFrame):
             cursor.movePosition(QTextCursor.End)
             
             clean = self.strip_ansi(out.text)
+            if "KeyboardInterrupt" in clean:
+                self.output_editor_enable = False
+            
+            if not self.output_editor_enable :
+               clean = ''                
+              
             for line in clean.splitlines():
                 cursor.insertText(line)
                 cursor.insertBlock()
                 
-                 # 🔑 تشخیص خطا بر اساس قالب متن
+                # 🔑 تشخیص خطا بر اساس قالب متن
                 if ("Traceback" in line) and ("Error" in line) and ("Exception" in line):
                     self.set_led_color("red")
                 else:

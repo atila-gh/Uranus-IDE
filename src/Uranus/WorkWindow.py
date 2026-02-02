@@ -1689,7 +1689,7 @@ class WorkWindow(QFrame):
     
     def stop_execution(self):
         if hasattr(self.focused_cell , 'set_led_color') :
-            print('ok')
+           
             self.focused_cell.set_led_color('violet')
             self.focused_cell.led_permission = False
             
