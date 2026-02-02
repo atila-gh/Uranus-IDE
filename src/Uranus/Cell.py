@@ -663,7 +663,7 @@ class Cell(QFrame):
                 self.output_editor_enable = False
             
             if not self.output_editor_enable :
-               clean = ''                
+               clean = ''                 
               
             for line in clean.splitlines():
                 cursor.insertText(line)
