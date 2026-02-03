@@ -709,8 +709,8 @@ class Cell(QFrame):
             self.notify_done()
 
     def update_line_char_update(self, line, column):
-            self.line_number.setText(f"Line: {line:^5} | Chr: {column:^5}")
-            self.status_r(f"Line: {line:^5} | Chr: {column:^5}     ")
+            self.line_number.setText(f"Line: {line:^5} | Char: {column:^5}")
+            self.status_r(f"Line: {line:^5} | Char: {column:^5}     ")
 
     def get_nb_code_cell(self):
         code = self.editor.toPlainText()
