@@ -803,8 +803,7 @@ class WorkWindow(QFrame):
         icon_path = os.path.join(os.path.dirname(__file__), "image", "run_all.png")
         self.btn_run_all.setIcon(QIcon(icon_path))        
         self.btn_run_all.setToolTip("""
-                            <b>Choose Run All Code</b><br>
-                            Executes the All Code cell and displays the outputs
+                            <b>Run All Code Cells</b><br>                            
                             """)
         self.btn_run_all.clicked.connect(self.run_all_cells)
         self.top_toolbar.addWidget(self.btn_run_all)
