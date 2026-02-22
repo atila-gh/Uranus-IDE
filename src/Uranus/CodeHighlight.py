@@ -74,7 +74,7 @@ class CodeHighlighter(QSyntaxHighlighter):
             "break", "continue", "def", "del", "elif", "else", "except",
             "finally", "for", "from", "global", "if", "import", "in", "is",
             "lambda", "nonlocal", "not", "or", "pass", "raise", "return",
-            "try", "while", "with", "yield", "match", "case"
+            "try", "while", "with", "yield", "match", "case","nonlocal",
                     ]
 
         # Data types (int, str, list, dict, etc.)
@@ -108,7 +108,7 @@ class CodeHighlighter(QSyntaxHighlighter):
 
             # Numeric & date types
             "decimal.Decimal", "fractions.Fraction", "datetime.date", "datetime.time", "datetime.datetime",
-            "datetime.timedelta", "uuid.UUID", "range", "slice",
+            "datetime.timedelta", "uuid.UUID",  "slice",
 
             # IO and regex types
             "io.StringIO", "io.BytesIO", "io.TextIOWrapper", "re.Pattern", "re.Match", "pathlib.Path",
@@ -140,7 +140,10 @@ class CodeHighlighter(QSyntaxHighlighter):
                 "ModuleNotFoundError", "NameError", "NotImplementedError", "OSError", "OverflowError",
                 "RecursionError", "ReferenceError", "RuntimeError", "StopIteration", "SyntaxError",
                 "IndentationError", "TabError", "SystemError", "TypeError", "UnboundLocalError",
-                "UnicodeError", "ValueError", "ZeroDivisionError"
+                "UnicodeError", "ValueError", "ZeroDivisionError","FileNotFoundError","PermissionError","TimeoutError",
+                "ConnectionError","BrokenPipeError","IsADirectoryError","NotADirectoryError","InterruptedError",
+                "BlockingIOError","ChildProcessError","ProcessLookupError","ConnectionAbortedError","ConnectionRefusedError",
+                "ConnectionResetError","UnicodeDecodeError","UnicodeEncodeError","UnicodeTranslateError"
             ]
 
         modules = [
@@ -164,10 +167,10 @@ class CodeHighlighter(QSyntaxHighlighter):
                     "hex", "id", "input", "isinstance", "issubclass", "iter", "len", "locals", "map", "max",
                     "min", "next", "oct", "open", "ord", "pow", "print", "property", "repr", "reversed",
                     "round", "setattr", "sorted", "staticmethod", "sum", "super", "type", "vars", "zip",
-                    "__import__",
+                    "__import__","range",
 
                     # File-like builtins
-                    "read", "readline", "readlines", "write", "writelines"
+                    "read", "readline", "readlines", "write", "writelines","get",
                     # Dunder Methods
                     "__abs__", "__add__", "__and__", "__annotations__", "__await__", "__bool__", "__call__", "__class__",
                     "__contains__", "__del__", "__delattr__", "__delete__", "__delitem__", "__dir__", "__divmod__", "__doc__",
