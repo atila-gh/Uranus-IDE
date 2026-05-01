@@ -269,8 +269,11 @@ class CodeEditor(QPlainTextEdit):
                     cursor.movePosition(QTextCursor.EndOfBlock)
                     self.setTextCursor(cursor)
                 
-
-        
+                
+                #  After any Enter Key Pressed Indation Must get Fixed       
+                self.fix_indentation(self.tab_size)
+                #print('[FIX INDENTATION]')
+                
                 super().keyPressEvent(event)  # اینتر واقعی برای خطوط غیرکامنت
                 delayed_emit()
                 return
@@ -332,7 +335,7 @@ class CodeEditor(QPlainTextEdit):
             indent = len(block_text) - len(block_text.lstrip())
 
             if pos_in_block <= indent and indent > 0:
-                remove_count = min(4, pos_in_block)
+                remove_count = min(self.tab_size, pos_in_block)
                 cursor.movePosition(cursor.Left, cursor.KeepAnchor, remove_count)
                 cursor.removeSelectedText()
             else :
@@ -441,18 +444,22 @@ class CodeEditor(QPlainTextEdit):
             if total_indent > 0:
                 if total_indent % self.tab_size > 0:
                     total_indent = ceil(total_indent / self.tab_size) * self.tab_size
-                    
-
+        
                 self.insertPlainText(" " * total_indent)
 
+            
+            #  After any Enter Key Pressed Indation Must get Fixed       
+            self.fix_indentation(self.tab_size)
+            #print('[FIX INDENTATION]')
+            
             delayed_emit()
             return
 
 
-
-        # ---------- Default ----------
+        # ---------- Default ----------       
+           
         super().keyPressEvent(event)        
-        delayed_emit()
+        delayed_emit()        
         self.highlighter.triple_quote_ranges = self.highlighter.find_triple_quote_blocks()
         self.highlighter.rehighlight()
         return
@@ -489,6 +496,40 @@ class CodeEditor(QPlainTextEdit):
             QApplication.clipboard().setText(trimmed_text)
         else:
             super().copy()
+
+
+    def fix_indentation(self, tab_size=4):
+
+        cursor = self.textCursor()
+        pos = cursor.position()
+
+        text = self.toPlainText()
+        lines = text.split('\n')
+        fixed_lines = []
+
+        for line in lines:
+
+            indent_width = 0
+            i = 0
+
+            while i < len(line) and line[i] in (' ', '\t'):
+                if line[i] == ' ':
+                    indent_width += 1
+                elif line[i] == '\t':
+                    indent_width += tab_size - (indent_width % tab_size)
+                i += 1
+
+            new_indent = " " * indent_width
+            content = line[i:]
+
+            fixed_lines.append(new_indent + content)
+
+        self.setPlainText("\n".join(fixed_lines))
+
+        cursor.setPosition(min(pos, len(self.toPlainText())))
+        self.setTextCursor(cursor)
+
+
 
 if __name__ == "__main__":
     import sys
