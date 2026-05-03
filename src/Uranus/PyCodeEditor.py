@@ -75,9 +75,7 @@ class PyCodeEditor(QPlainTextEdit):
 
        
         # حذف اسکرول و اتصال تغییر ارتفاع
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # noinspection PyTypeChecker
-
-       
+        #self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # noinspection PyTypeChecker
         # ✅ فعال‌سازی های‌لایت سینتکس
         self.highlighter = CodeHighlighter(self.document())
 
