@@ -450,7 +450,9 @@ class CodeEditor(QPlainTextEdit):
             
             #  After any Enter Key Pressed Indation Must get Fixed       
             self.fix_indentation(self.tab_size)
-            #print('[FIX INDENTATION]')
+            self.debug_indentation()
+
+           
             
             delayed_emit()
             return
@@ -458,7 +460,8 @@ class CodeEditor(QPlainTextEdit):
 
         # ---------- Default ----------       
            
-        super().keyPressEvent(event)        
+        super().keyPressEvent(event)    
+            
         delayed_emit()        
         self.highlighter.triple_quote_ranges = self.highlighter.find_triple_quote_blocks()
         self.highlighter.rehighlight()
@@ -499,36 +502,61 @@ class CodeEditor(QPlainTextEdit):
 
 
     def fix_indentation(self, tab_size=4):
-
-        cursor = self.textCursor()
-        pos = cursor.position()
-
         text = self.toPlainText()
-        lines = text.split('\n')
-        fixed_lines = []
+        lines = text.split("\n")
+
+        fixed = []
 
         for line in lines:
+            # جدا کردن بخش اول خط (indentation)
+            prefix = ""
+            rest = line.lstrip(" \t")
 
-            indent_width = 0
-            i = 0
+            for ch in line:
+                if ch in (" ", "\t"):
+                    prefix += ch
+                else:
+                    break
 
-            while i < len(line) and line[i] in (' ', '\t'):
-                if line[i] == ' ':
-                    indent_width += 1
-                elif line[i] == '\t':
-                    indent_width += tab_size - (indent_width % tab_size)
-                i += 1
+            # اول همه tab ها را تبدیل کن
+            prefix = prefix.replace("\t", " " * tab_size)
 
-            new_indent = " " * indent_width
-            content = line[i:]
+            # حالا تعداد اسپیس‌ها را استاندارد کن (اختیاری ولی بهتر)
+            # مثلا همیشه مضرب 4 شود
+            spc = len(prefix)
+            level = spc // tab_size
+            prefix = " " * (level * tab_size)
 
-            fixed_lines.append(new_indent + content)
+            fixed.append(prefix + rest)
 
-        self.setPlainText("\n".join(fixed_lines))
+        new_text = "\n".join(fixed)
+        self.setPlainText(new_text)
 
-        cursor.setPosition(min(pos, len(self.toPlainText())))
-        self.setTextCursor(cursor)
+    def debug_indentation(self):
+        text = self.toPlainText()
 
+        print("\n===== INDENT DEBUG START =====")
+
+        for i, line in enumerate(text.split("\n"), 1):
+
+            prefix = ""
+            for ch in line:
+                if ch in (" ", "\t"):
+                    prefix += ch
+                else:
+                    break
+
+            visible = prefix.replace(" ", "·").replace("\t", "[TAB]")
+            codes = [ord(c) for c in prefix]
+
+            print(f"Line {i}")
+            print("indent chars :", repr(prefix))
+            print("visible      :", visible)
+            print("ascii codes  :", codes)
+            print("line content :", line)
+            print("---------------------------")
+
+        print("===== INDENT DEBUG END =====\n")
 
 
 if __name__ == "__main__":
