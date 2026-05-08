@@ -1048,8 +1048,9 @@ class WorkWindow(QFrame):
     def run_focused_cell(self):
         if not self.focused_cell:
             return
- 
-        # 🔒 غیرفعال کردن دکمه‌ها
+        # save File at First
+        self.ipynb_format_save_file()
+        # deactivate run button
         self.status_c("")
         self.status_l(self.file_path)        
         self.run_btn.setEnabled(False)
@@ -1229,7 +1230,8 @@ class WorkWindow(QFrame):
         """
         Converts all cells into nbformat-compatible structure and saves to disk.
         """
-          
+        
+        # print('[Save File]')
         open(self.temp_path, "w").close()     # to clear temp.chk file 
         cells = []
         for cell in self.cell_widgets:
@@ -1393,7 +1395,8 @@ class WorkWindow(QFrame):
                 self.set_focus(self.focused_cell)
 
     def run_all_cells(self):
-        
+        # save File at First
+        self.ipynb_format_save_file()
 
         # 🔒 غیرفعال کردن دکمه‌ها
         self.run_btn.setEnabled(False)

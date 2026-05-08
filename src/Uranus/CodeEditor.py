@@ -447,13 +447,6 @@ class CodeEditor(QPlainTextEdit):
         
                 self.insertPlainText(" " * total_indent)
 
-            
-            #  After any Enter Key Pressed Indation Must get Fixed       
-            self.fix_indentation(self.tab_size)
-            self.debug_indentation()
-
-           
-            
             delayed_emit()
             return
 
@@ -502,6 +495,11 @@ class CodeEditor(QPlainTextEdit):
 
 
     def fix_indentation(self, tab_size=4):
+        '''
+        This method is for solve 
+        '''
+        #print('[Indentation Fixed]')
+        
         text = self.toPlainText()
         lines = text.split("\n")
 
@@ -532,31 +530,34 @@ class CodeEditor(QPlainTextEdit):
         new_text = "\n".join(fixed)
         self.setPlainText(new_text)
 
-    def debug_indentation(self):
-        text = self.toPlainText()
 
-        print("\n===== INDENT DEBUG START =====")
+    # Only for Debuging Indentation Method
+    
+    # def debug_indentation(self):
+    #     text = self.toPlainText()
 
-        for i, line in enumerate(text.split("\n"), 1):
+    #     print("\n===== INDENT DEBUG START =====")
 
-            prefix = ""
-            for ch in line:
-                if ch in (" ", "\t"):
-                    prefix += ch
-                else:
-                    break
+    #     for i, line in enumerate(text.split("\n"), 1):
 
-            visible = prefix.replace(" ", "·").replace("\t", "[TAB]")
-            codes = [ord(c) for c in prefix]
+    #         prefix = ""
+    #         for ch in line:
+    #             if ch in (" ", "\t"):
+    #                 prefix += ch
+    #             else:
+    #                 break
 
-            print(f"Line {i}")
-            print("indent chars :", repr(prefix))
-            print("visible      :", visible)
-            print("ascii codes  :", codes)
-            print("line content :", line)
-            print("---------------------------")
+    #         visible = prefix.replace(" ", "·").replace("\t", "[TAB]")
+    #         codes = [ord(c) for c in prefix]
 
-        print("===== INDENT DEBUG END =====\n")
+    #         print(f"Line {i}")
+    #         print("indent chars :", repr(prefix))
+    #         print("visible      :", visible)
+    #         print("ascii codes  :", codes)
+    #         print("line content :", line)
+    #         print("---------------------------")
+
+    #     print("===== INDENT DEBUG END =====\n")
 
 
 if __name__ == "__main__":

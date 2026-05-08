@@ -365,6 +365,8 @@ class Cell(QFrame):
             return
 
         self.led_permission = True # Permision to change led Color
+        # the indentaion error mast fixed
+        self.editor.fix_indentation()
         code = self.editor.toPlainText()
         if hasattr(self,'output_editor'):
                 self.output_editor.clear()   
