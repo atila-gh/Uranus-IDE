@@ -654,7 +654,14 @@ class WorkWindowPython(QFrame):
   
 
     def run(self):
-        """خواندن متن ادیتور و ارسال به ترمینال"""
+        
+            
+       
+        # fix indentation 
+        if hasattr(self,'editor') :
+            self.editor.fix_indentation()
+            self.save_file()
+            
         editor_text = self.editor.toPlainText() if hasattr(self, "editor") else ""
         if not editor_text.strip():
             return  # اگر ادیتور خالی است، کاری نکن

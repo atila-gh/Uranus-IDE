@@ -610,10 +610,13 @@ class MainWindow(QMainWindow):
         # بستن پنجره‌های شناور
         for widget in self.work_widget_list:
             if isinstance(widget, WorkWindowPython):
-                if hasattr(widget, "analyzer_window") and widget.analyzer_window is not None:
-                    if widget.analyzer_window.isVisible():
-                        widget.analyzer_window.close()
-                
+                try : 
+                    if hasattr(widget, "analyzer_window") and widget.analyzer_window is not None:
+                        if widget.analyzer_window.isVisible():
+                            widget.analyzer_window.close()
+                except:
+                    print('[Exception Close Event in MainWindow Class]')
+                    
             
             
             if isinstance(widget, WorkWindow) and widget.detached and widget.detached_window:

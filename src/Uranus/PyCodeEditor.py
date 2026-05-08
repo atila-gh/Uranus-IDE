@@ -92,7 +92,7 @@ class PyCodeEditor(QPlainTextEdit):
                 column += 1
         return column + 1
 
-    
+  
 
     def keyPressEvent(self, event):
 
@@ -454,6 +454,42 @@ class PyCodeEditor(QPlainTextEdit):
         if self.parent():
             self.parent().mousePressEvent(event)
 
+
+    def fix_indentation(self, tab_size=4):
+            '''
+            This method is for solve 
+            '''
+            #print('[Indentation Fixed]')
+            
+            text = self.toPlainText()
+            lines = text.split("\n")
+
+            fixed = []
+
+            for line in lines:
+                # جدا کردن بخش اول خط (indentation)
+                prefix = ""
+                rest = line.lstrip(" \t")
+
+                for ch in line:
+                    if ch in (" ", "\t"):
+                        prefix += ch
+                    else:
+                        break
+
+                # اول همه tab ها را تبدیل کن
+                prefix = prefix.replace("\t", " " * tab_size)
+
+                # حالا تعداد اسپیس‌ها را استاندارد کن (اختیاری ولی بهتر)
+                # مثلا همیشه مضرب 4 شود
+                spc = len(prefix)
+                level = spc // tab_size
+                prefix = " " * (level * tab_size)
+
+                fixed.append(prefix + rest)
+
+            new_text = "\n".join(fixed)
+            self.setPlainText(new_text)
 
     def my_copy(self):
         cursor = self.textCursor()
