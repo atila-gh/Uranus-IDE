@@ -20,21 +20,17 @@ from PyQt5.QtWidgets import (
 from Uranus.CodeHighlight import CodeHighlighter
 from Uranus.SettingWindow import load_setting  
 
-
-
 class AutoCompleteSystem(QFrame):
     def __init__(self, editor):
         super().__init__(editor)
 
-        # استفاده از Popup به جای ToolTip
         self.setWindowFlags(Qt.ToolTip)
-        
-
         self.editor = editor
         
-        # ابتدا دیتابیس را لود کن
+        # وضعیت فعال بودن (بعد از Ctrl+Space فعال می‌شود)
+        self.active = False
+
         self.load_database()
-        self.enabled = True
 
         self.setStyleSheet("""
             QFrame {
@@ -65,11 +61,8 @@ class AutoCompleteSystem(QFrame):
         """)
 
         self.list_widget = QListWidget()
-        self.list_widget.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.list_widget.setFocusPolicy(Qt.NoFocus)
         self.list_widget.itemClicked.connect(self.complete_selected)
         self.list_widget.currentItemChanged.connect(self.update_doc_popup)
-
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 4)
@@ -78,8 +71,6 @@ class AutoCompleteSystem(QFrame):
         # Documentation popup
         self.doc_popup = QFrame(editor)
         self.doc_popup.setWindowFlags(Qt.ToolTip)
-        self.doc_popup.setFocusPolicy(Qt.NoFocus)
-
         self.doc_popup.setStyleSheet("""
             QFrame {
                 background: #252526;
@@ -102,24 +93,33 @@ class AutoCompleteSystem(QFrame):
         doc_layout.setContentsMargins(6, 6, 6, 6)
         doc_layout.addWidget(self.doc_label)
 
-        # نصب event filter روی editor برای گرفتن رویدادهای کیبورد
-        self.editor.installEventFilter(self)
+        # اتصال به textChanged برای به‌روزرسانی زنده (فقط وقتی active است)
+        self.editor.textChanged.connect(self.on_text_changed)
 
-        # # realtime autocomplete
-        # self.editor.textChanged.connect(self.on_text_changed)
-
-
-        # manual trigger
-        QShortcut(QKeySequence("Ctrl+Space"), editor, self.show_completions)
+        # manual trigger با Ctrl+Space
+        QShortcut(QKeySequence("Ctrl+Space"), editor, self.activate_and_show)
 
         self.hide()
         self.doc_popup.hide()
-        self.current_prefix = ""
-        self.last_block_number = -1
-        self.last_pos_in_block = -1
+
+    def activate_and_show(self):
+        """فعال کردن سیستم و نمایش لیست"""
+        self.active = True
+        self.show_completions()
+
+    def deactivate(self):
+        """غیرفعال کردن سیستم و بستن لیست"""
+        self.active = False
+        self.hide()
+        self.doc_popup.hide()
+
+    def on_text_changed(self):
+        """هنگام تغییر متن - فقط اگر active باشد"""
+        if self.active:
+            self.show_completions()
 
     # =========================================================
-    # DATABASE - (کد اصلی شما که باید حفظ شود)
+    # DATABASE
     # =========================================================
 
     def load_database(self):
@@ -153,6 +153,20 @@ class AutoCompleteSystem(QFrame):
             data["source_module"] = "python_keywords"
             self.all_commands_data[name] = data
 
+        # magic_methods
+        magic_data = self.db.get("magic_methods", {})
+        self.module_colors["magic_methods"] = magic_data.get("color", "#C586C0")
+        for name, data in magic_data.get("items", {}).items():
+            data["source_module"] = "magic_methods"
+            self.all_commands_data[name] = data
+
+        # context_vars
+        context_data = self.db.get("context_vars", {})
+        self.module_colors["context_vars"] = context_data.get("color", "#9CDCFE")
+        for name, data in context_data.get("items", {}).items():
+            data["source_module"] = "context_vars"
+            self.all_commands_data[name] = data
+
         self.command_names = list(self.all_commands_data.keys())
 
     # =========================================================
@@ -166,12 +180,10 @@ class AutoCompleteSystem(QFrame):
         pos_in_block = self.editor.textCursor().positionInBlock()
         line_text = line_text[:pos_in_block]
 
-        # module.member
         module_match = re.search(r"([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z0-9_]*)$", line_text)
         if module_match:
             return module_match.group(1), module_match.group(2)
 
-        # normal word
         word_match = re.search(r"([A-Za-z_][A-Za-z0-9_]*)$", line_text)
         if word_match:
             return None, word_match.group(1)
@@ -179,98 +191,14 @@ class AutoCompleteSystem(QFrame):
         return None, ""
 
     # =========================================================
-    # EVENT FILTER - کلید‌ها اینجا پردازش می‌شوند
-    # =========================================================
-
-    def eventFilter(self, obj, event):
-        """گرفتن رویدادهای کیبورد قبل از رسیدن به editor"""
-        if obj == self.editor and event.type() == QEvent.KeyPress:
-            if self.isVisible():
-                key = event.key()
-                
-                # پردازش کلیدها وقتی لیست باز است
-                if key in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_Tab):
-                    self.complete_selected()
-                    return True
-                    
-                elif key == Qt.Key_Escape:
-                    self.hide()
-                    self.doc_popup.hide()
-                    return True
-                    
-                elif key == Qt.Key_Up:
-                    row = self.list_widget.currentRow()
-                    if row > 0:
-                        self.list_widget.setCurrentRow(row - 1)
-                    return True
-                    
-                elif key == Qt.Key_Down:
-                    row = self.list_widget.currentRow()
-                    if row < self.list_widget.count() - 1:
-                        self.list_widget.setCurrentRow(row + 1)
-                    return True
-                    
-                elif key == Qt.Key_PageUp:
-                    row = self.list_widget.currentRow()
-                    new_row = max(0, row - 10)
-                    self.list_widget.setCurrentRow(new_row)
-                    return True
-                    
-                elif key == Qt.Key_PageDown:
-                    row = self.list_widget.currentRow()
-                    new_row = min(self.list_widget.count() - 1, row + 10)
-                    self.list_widget.setCurrentRow(new_row)
-                    return True
-                    
-                elif key == Qt.Key_Home:
-                    if self.list_widget.count() > 0:
-                        self.list_widget.setCurrentRow(0)
-                    return True
-                    
-                elif key == Qt.Key_End:
-                    if self.list_widget.count() > 0:
-                        self.list_widget.setCurrentRow(self.list_widget.count() - 1)
-                    return True
-                    
-                elif key == Qt.Key_Left or key == Qt.Key_Right:
-                    # برای حرکت با چپ و راست، لیست را ببند
-                    self.hide()
-                    self.doc_popup.hide()
-                    # اجازه بده editor رویداد را پردازش کند
-                    return False
-            
-            # اگر لیست باز نبود یا کلید دیگری بود، اجازه بده editor پردازش کند
-            return False
-        
-        return super().eventFilter(obj, event)
-
-    # =========================================================
-    # REALTIME
-    # =========================================================
-
-    # def on_text_changed(self):
-        
-    #     # بررسی کنیم که آیا واقعاً متن تغییر کرده یا فقط لیست به‌روز شده
-    #     cursor = self.editor.textCursor()
-    #     current_block = cursor.blockNumber()
-    #     current_pos = cursor.positionInBlock()
-        
-    #     if (current_block == self.last_block_number and 
-    #         current_pos == self.last_pos_in_block and 
-    #         self.isVisible()):
-    #         return
-            
-    #     self.last_block_number = current_block
-    #     self.last_pos_in_block = current_pos
-    #     self.show_completions()
-
-    # =========================================================
     # SHOW
     # =========================================================
 
     def show_completions(self):
+        if not self.active:
+            return
+            
         module_name, prefix = self.get_current_context()
-        self.current_prefix = prefix
 
         if not prefix or len(prefix) < 1:
             self.hide()
@@ -285,9 +213,31 @@ class AutoCompleteSystem(QFrame):
                 if name.startswith(prefix):
                     suggestions.append((name, data))
         else:
-            for name, data in self.all_commands_data.items():
+            # builtins
+            for name, data in self.db.get("builtins", {}).get("items", {}).items():
                 if name.startswith(prefix):
                     suggestions.append((name, data))
+            
+            # python keywords
+            for name, data in self.db.get("python_keywords", {}).get("items", {}).items():
+                if name.startswith(prefix):
+                    suggestions.append((name, data))
+            
+            # magic methods
+            for name, data in self.db.get("magic_methods", {}).get("items", {}).items():
+                if name.startswith(prefix):
+                    suggestions.append((name, data))
+            
+            # context vars
+            for name, data in self.db.get("context_vars", {}).get("items", {}).items():
+                if name.startswith(prefix):
+                    suggestions.append((name, data))
+            
+            # all modules
+            for module_name, module_data in self.db.get("modules", {}).items():
+                for name, data in module_data.get("items", {}).items():
+                    if name.startswith(prefix) and (name, data) not in suggestions:
+                        suggestions.append((name, data))
 
         if not suggestions:
             self.hide()
@@ -300,8 +250,12 @@ class AutoCompleteSystem(QFrame):
                 return 0
             elif src == "python_keywords":
                 return 1
-            else:
+            elif src == "magic_methods":
                 return 2
+            elif src == "context_vars":
+                return 3
+            else:
+                return 4
         
         suggestions.sort(key=lambda x: (source_priority(x[1]), len(x[0]), x[0]))
         
@@ -310,7 +264,14 @@ class AutoCompleteSystem(QFrame):
         for name, data in suggestions[:30]:
             item = QListWidgetItem(name)
             source = data.get("source_module", "")
-            color = self.module_colors.get(source, "#FFFFFF")
+            
+            if source == "magic_methods":
+                color = "#C586C0"
+            elif source == "context_vars":
+                color = "#9CDCFE"
+            else:
+                color = self.module_colors.get(source, "#FFFFFF")
+            
             item.setForeground(QColor(color))
             self.list_widget.addItem(item)
 
@@ -321,9 +282,8 @@ class AutoCompleteSystem(QFrame):
         global_pos = self.editor.mapToGlobal(cursor_rect.bottomRight())
 
         self.move(global_pos.x(), global_pos.y() + 4)
-        self.resize(300, 200)
+        self.resize(280, 180)
         self.show()
-        self.raise_()
         self.update_doc_popup()
 
     # =========================================================
@@ -367,23 +327,6 @@ class AutoCompleteSystem(QFrame):
         self.doc_popup.move(popup_pos.x() + 10, popup_pos.y())
         self.doc_popup.show()
 
-
-
-    def select_previous(self):
-        row = self.list_widget.currentRow()
-        if row > 0:
-            self.list_widget.setCurrentRow(row - 1)
-        else:
-            self.list_widget.setCurrentRow(self.list_widget.count() - 1)  # برو به آخر
-
-    def select_next(self):
-        row = self.list_widget.currentRow()
-        if row < self.list_widget.count() - 1:
-            self.list_widget.setCurrentRow(row + 1)
-        else:
-            self.list_widget.setCurrentRow(0)  # برو به اول
-
-
     # =========================================================
     # COMPLETE
     # =========================================================
@@ -405,19 +348,54 @@ class AutoCompleteSystem(QFrame):
         # درج کلمه کامل
         cursor.insertText(completion)
 
-        self.hide()
-        self.doc_popup.hide()
+        # غیرفعال کردن سیستم بعد از تکمیل
+        self.deactivate()
         self.editor.setFocus()
 
     # =========================================================
-    # HIDE
+    # KEY EVENTS
     # =========================================================
+
+    def select_previous(self):
+        row = self.list_widget.currentRow()
+        if row > 0:
+            self.list_widget.setCurrentRow(row - 1)
+        else:
+            self.list_widget.setCurrentRow(self.list_widget.count() - 1)
+
+    def select_next(self):
+        row = self.list_widget.currentRow()
+        if row < self.list_widget.count() - 1:
+            self.list_widget.setCurrentRow(row + 1)
+        else:
+            self.list_widget.setCurrentRow(0)
+
+    def keyPressEvent(self, event):
+        if not self.active:
+            event.ignore()
+            return
+            
+        key = event.key()
+
+        if key in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_Tab):
+            self.complete_selected()
+            return
+        elif key == Qt.Key_Escape:
+            self.deactivate()
+            self.editor.setFocus()
+            return
+        elif key == Qt.Key_Up:
+            self.select_previous()
+            return
+        elif key == Qt.Key_Down:
+            self.select_next()
+            return
+
+        super().keyPressEvent(event)
 
     def hideEvent(self, event):
         self.doc_popup.hide()
         super().hideEvent(event)
-
-
 
 class PyCodeEditor(QPlainTextEdit):
     cursorPositionInfo = pyqtSignal(int, int)   # سیگنال ارسال شماره خط و کاراکتر 
@@ -514,6 +492,23 @@ class PyCodeEditor(QPlainTextEdit):
             line = _cursor.blockNumber() + 1
             column = self.get_visual_column(_cursor, self.tab_size)
             self.cursorPositionInfo.emit(line, column)
+            
+             # اگر اتوکامپلیت فعال است، کلیدها را به آن بده
+        if hasattr(self, 'autocomplete') and self.autocomplete.active:
+            # اگر کلید Escape بود، اتوکامپلیت خودش مدیریت می‌کند
+            if event.key() == Qt.Key_Escape:
+                self.autocomplete.keyPressEvent(event)
+                delayed_emit()
+                return
+            # اگر Enter یا Tab بود
+            elif event.key() in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_Tab):
+                self.autocomplete.keyPressEvent(event)
+                delayed_emit()
+                return
+            # اگر بالا یا پایین بود
+            elif event.key() in (Qt.Key_Up, Qt.Key_Down):
+                self.autocomplete.keyPressEvent(event)
+                return
         
         cursor = self.textCursor()
         selected_text = cursor.selectedText()  
