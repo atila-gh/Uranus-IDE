@@ -20,6 +20,7 @@ from PyQt5.QtWidgets import (
 from Uranus.CodeHighlight import CodeHighlighter
 from Uranus.SettingWindow import load_setting  
 
+
 class AutoCompleteSystem(QFrame):
     def __init__(self, editor):
         super().__init__(editor)
@@ -61,6 +62,7 @@ class AutoCompleteSystem(QFrame):
         """)
 
         self.list_widget = QListWidget()
+        self.list_widget.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.list_widget.itemClicked.connect(self.complete_selected)
         self.list_widget.currentItemChanged.connect(self.update_doc_popup)
 
@@ -282,7 +284,7 @@ class AutoCompleteSystem(QFrame):
         global_pos = self.editor.mapToGlobal(cursor_rect.bottomRight())
 
         self.move(global_pos.x(), global_pos.y() + 4)
-        self.resize(280, 180)
+        self.resize(210, 150)
         self.show()
         self.update_doc_popup()
 
@@ -396,6 +398,7 @@ class AutoCompleteSystem(QFrame):
     def hideEvent(self, event):
         self.doc_popup.hide()
         super().hideEvent(event)
+
 
 class PyCodeEditor(QPlainTextEdit):
     cursorPositionInfo = pyqtSignal(int, int)   # سیگنال ارسال شماره خط و کاراکتر 
