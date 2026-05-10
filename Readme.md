@@ -103,9 +103,39 @@ Uranus is a lightweight, extensible Python IDE inspired by Jupyter. It supports 
 - ✅ Project creation and metadata management
 
 
-## 🧩 Advanced Window & Memory Features
 
-Uranus IDE goes beyond traditional editors by introducing two powerful features that elevate both usability and introspection:
+
+
+## ✨ Intelligent AutoComplete System
+
+Uranus IDE features a **smart, context-aware auto-completion system** that significantly accelerates Python coding. Built directly into the code editor, this system provides intelligent suggestions for:
+
+### 🔍 Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **🧠 Context-Aware Suggestions** | Detects module contexts (e.g., `np.` suggests NumPy functions) and global Python keywords, builtins, and user-defined symbols |
+| **⚡ On-Demand Activation** | Trigger suggestions instantly with `Ctrl+Space` — just like IDLE and professional IDEs |
+| **🎨 Color-Coded Items** | Builtins appear in white, Python keywords in orange-red, module-specific items in specialized colors for quick visual identification |
+| **📚 Documentation Popup** | Each suggestion includes a **signature**, **docstring**, and **source module** displayed in a side popup for immediate reference |
+| **🎯 Smart Ranking** | Suggestions are intelligently ranked: builtins first → keywords → module items, with shorter and more relevant names prioritized |
+| **⌨️ Full Keyboard Navigation** | Navigate the list using `↑`/`↓`, `PageUp`/`PageDown`, `Home`/`End`, and accept with `Enter`, `Tab`, or mouse click |
+| **🔘 Toggle On/Off** | A dedicated toolbar button allows you to enable or disable the auto-completion system at any time |
+| **📦 Extensible Database** | Auto-completion data is stored in `autocomplete_db.json`, making it easy to add support for additional modules, libraries, or custom APIs |
+
+### 🖼️ How It Works
+
+1. **Type your code** — as you type, nothing happens until you need assistance
+2. **Press `Ctrl+Space`** — the suggestion list appears at the cursor position
+3. **Navigate** — use arrow keys to browse through suggestions
+4. **View documentation** — each selected item shows its signature and docstring
+5. **Accept** — press `Enter`, `Tab`, or click to insert the complete word
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/atila-gh/Uranus-IDE/main/docs/images/Uranus-IDE-7.png"  width="400">
+</p>
+
+
 
 ## 🐍 Python Error & Lint Testing
 

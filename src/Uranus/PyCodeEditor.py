@@ -1,12 +1,422 @@
 # PY Code Editor
 from math import ceil
-from PyQt5.QtGui import  QFont,QTextCursor
-from PyQt5.QtCore import Qt,pyqtSignal 
-from PyQt5.QtWidgets import QPlainTextEdit,QApplication                        
+import  json , re , os
+
+from PyQt5.QtGui import  QFont,QTextCursor, QTextCursor,QKeySequence , QColor , QFont,QTextCursor
+from PyQt5.QtCore import Qt,pyqtSignal,QEvent 
+from PyQt5.QtWidgets import (
+    QFrame,
+    QListWidget,
+    QListWidgetItem,
+    QVBoxLayout,
+    QShortcut,
+    QLabel,
+    QPlainTextEdit,
+    QApplication
+    
+)
 
 
 from Uranus.CodeHighlight import CodeHighlighter
 from Uranus.SettingWindow import load_setting  
+
+
+
+class AutoCompleteSystem(QFrame):
+    def __init__(self, editor):
+        super().__init__(editor)
+
+        # استفاده از Popup به جای ToolTip
+        self.setWindowFlags(Qt.ToolTip)
+        
+
+        self.editor = editor
+        
+        # ابتدا دیتابیس را لود کن
+        self.load_database()
+        self.enabled = True
+
+        self.setStyleSheet("""
+            QFrame {
+                background: #1e1e1e;
+                border: 1px solid #444;
+                border-radius: 6px;
+            }
+
+            QListWidget {
+                background: #1e1e1e;
+                color: white;
+                border: none;
+                outline: none;
+                padding: 4px;
+                font-family: Consolas;
+                font-size: 11pt;
+            }
+
+            QListWidget::item {
+                padding: 6px;
+                border-radius: 4px;
+            }
+
+            QListWidget::item:selected {
+                background: #264f78;
+                color: white;
+            }
+        """)
+
+        self.list_widget = QListWidget()
+        self.list_widget.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.list_widget.setFocusPolicy(Qt.NoFocus)
+        self.list_widget.itemClicked.connect(self.complete_selected)
+        self.list_widget.currentItemChanged.connect(self.update_doc_popup)
+
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.addWidget(self.list_widget)
+
+        # Documentation popup
+        self.doc_popup = QFrame(editor)
+        self.doc_popup.setWindowFlags(Qt.ToolTip)
+        self.doc_popup.setFocusPolicy(Qt.NoFocus)
+
+        self.doc_popup.setStyleSheet("""
+            QFrame {
+                background: #252526;
+                border: 1px solid #444;
+                border-radius: 6px;
+            }
+
+            QLabel {
+                color: white;
+                padding: 10px;
+                font-family: Consolas;
+                font-size: 10pt;
+            }
+        """)
+
+        self.doc_label = QLabel()
+        self.doc_label.setWordWrap(True)
+
+        doc_layout = QVBoxLayout(self.doc_popup)
+        doc_layout.setContentsMargins(6, 6, 6, 6)
+        doc_layout.addWidget(self.doc_label)
+
+        # نصب event filter روی editor برای گرفتن رویدادهای کیبورد
+        self.editor.installEventFilter(self)
+
+        # # realtime autocomplete
+        # self.editor.textChanged.connect(self.on_text_changed)
+
+
+        # manual trigger
+        QShortcut(QKeySequence("Ctrl+Space"), editor, self.show_completions)
+
+        self.hide()
+        self.doc_popup.hide()
+        self.current_prefix = ""
+        self.last_block_number = -1
+        self.last_pos_in_block = -1
+
+    # =========================================================
+    # DATABASE - (کد اصلی شما که باید حفظ شود)
+    # =========================================================
+
+    def load_database(self):
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        db_path = os.path.join(base_dir, "autocomplete_db.json")
+        with open(db_path, "r", encoding="utf-8") as f:
+            self.db = json.load(f)
+
+        self.all_commands_data = {}
+        self.module_colors = {}
+
+        # modules
+        for module_name, module_data in self.db.get("modules", {}).items():
+            color = module_data.get("color", "#87CEEB")
+            self.module_colors[module_name] = color
+            for name, data in module_data.get("items", {}).items():
+                data["source_module"] = module_name
+                self.all_commands_data[name] = data
+
+        # builtins
+        builtins_data = self.db.get("builtins", {})
+        self.module_colors["builtins"] = builtins_data.get("color", "#FFFFFF")
+        for name, data in builtins_data.get("items", {}).items():
+            data["source_module"] = "builtins"
+            self.all_commands_data[name] = data
+
+        # keywords
+        keyword_data = self.db.get("python_keywords", {})
+        self.module_colors["python_keywords"] = keyword_data.get("color", "#FF6347")
+        for name, data in keyword_data.get("items", {}).items():
+            data["source_module"] = "python_keywords"
+            self.all_commands_data[name] = data
+
+        self.command_names = list(self.all_commands_data.keys())
+
+    # =========================================================
+    # CONTEXT
+    # =========================================================
+
+    def get_current_context(self):
+        cursor = self.editor.textCursor()
+        cursor.select(QTextCursor.LineUnderCursor)
+        line_text = cursor.selectedText()
+        pos_in_block = self.editor.textCursor().positionInBlock()
+        line_text = line_text[:pos_in_block]
+
+        # module.member
+        module_match = re.search(r"([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z0-9_]*)$", line_text)
+        if module_match:
+            return module_match.group(1), module_match.group(2)
+
+        # normal word
+        word_match = re.search(r"([A-Za-z_][A-Za-z0-9_]*)$", line_text)
+        if word_match:
+            return None, word_match.group(1)
+
+        return None, ""
+
+    # =========================================================
+    # EVENT FILTER - کلید‌ها اینجا پردازش می‌شوند
+    # =========================================================
+
+    def eventFilter(self, obj, event):
+        """گرفتن رویدادهای کیبورد قبل از رسیدن به editor"""
+        if obj == self.editor and event.type() == QEvent.KeyPress:
+            if self.isVisible():
+                key = event.key()
+                
+                # پردازش کلیدها وقتی لیست باز است
+                if key in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_Tab):
+                    self.complete_selected()
+                    return True
+                    
+                elif key == Qt.Key_Escape:
+                    self.hide()
+                    self.doc_popup.hide()
+                    return True
+                    
+                elif key == Qt.Key_Up:
+                    row = self.list_widget.currentRow()
+                    if row > 0:
+                        self.list_widget.setCurrentRow(row - 1)
+                    return True
+                    
+                elif key == Qt.Key_Down:
+                    row = self.list_widget.currentRow()
+                    if row < self.list_widget.count() - 1:
+                        self.list_widget.setCurrentRow(row + 1)
+                    return True
+                    
+                elif key == Qt.Key_PageUp:
+                    row = self.list_widget.currentRow()
+                    new_row = max(0, row - 10)
+                    self.list_widget.setCurrentRow(new_row)
+                    return True
+                    
+                elif key == Qt.Key_PageDown:
+                    row = self.list_widget.currentRow()
+                    new_row = min(self.list_widget.count() - 1, row + 10)
+                    self.list_widget.setCurrentRow(new_row)
+                    return True
+                    
+                elif key == Qt.Key_Home:
+                    if self.list_widget.count() > 0:
+                        self.list_widget.setCurrentRow(0)
+                    return True
+                    
+                elif key == Qt.Key_End:
+                    if self.list_widget.count() > 0:
+                        self.list_widget.setCurrentRow(self.list_widget.count() - 1)
+                    return True
+                    
+                elif key == Qt.Key_Left or key == Qt.Key_Right:
+                    # برای حرکت با چپ و راست، لیست را ببند
+                    self.hide()
+                    self.doc_popup.hide()
+                    # اجازه بده editor رویداد را پردازش کند
+                    return False
+            
+            # اگر لیست باز نبود یا کلید دیگری بود، اجازه بده editor پردازش کند
+            return False
+        
+        return super().eventFilter(obj, event)
+
+    # =========================================================
+    # REALTIME
+    # =========================================================
+
+    # def on_text_changed(self):
+        
+    #     # بررسی کنیم که آیا واقعاً متن تغییر کرده یا فقط لیست به‌روز شده
+    #     cursor = self.editor.textCursor()
+    #     current_block = cursor.blockNumber()
+    #     current_pos = cursor.positionInBlock()
+        
+    #     if (current_block == self.last_block_number and 
+    #         current_pos == self.last_pos_in_block and 
+    #         self.isVisible()):
+    #         return
+            
+    #     self.last_block_number = current_block
+    #     self.last_pos_in_block = current_pos
+    #     self.show_completions()
+
+    # =========================================================
+    # SHOW
+    # =========================================================
+
+    def show_completions(self):
+        module_name, prefix = self.get_current_context()
+        self.current_prefix = prefix
+
+        if not prefix or len(prefix) < 1:
+            self.hide()
+            self.doc_popup.hide()
+            return
+
+        suggestions = []
+
+        if module_name and module_name in self.db.get("modules", {}):
+            items = self.db["modules"][module_name]["items"]
+            for name, data in items.items():
+                if name.startswith(prefix):
+                    suggestions.append((name, data))
+        else:
+            for name, data in self.all_commands_data.items():
+                if name.startswith(prefix):
+                    suggestions.append((name, data))
+
+        if not suggestions:
+            self.hide()
+            self.doc_popup.hide()
+            return
+
+        def source_priority(data):
+            src = data.get("source_module", "")
+            if src == "builtins":
+                return 0
+            elif src == "python_keywords":
+                return 1
+            else:
+                return 2
+        
+        suggestions.sort(key=lambda x: (source_priority(x[1]), len(x[0]), x[0]))
+        
+        self.list_widget.clear()
+
+        for name, data in suggestions[:30]:
+            item = QListWidgetItem(name)
+            source = data.get("source_module", "")
+            color = self.module_colors.get(source, "#FFFFFF")
+            item.setForeground(QColor(color))
+            self.list_widget.addItem(item)
+
+        if self.list_widget.count() > 0:
+            self.list_widget.setCurrentRow(0)
+
+        cursor_rect = self.editor.cursorRect()
+        global_pos = self.editor.mapToGlobal(cursor_rect.bottomRight())
+
+        self.move(global_pos.x(), global_pos.y() + 4)
+        self.resize(300, 200)
+        self.show()
+        self.raise_()
+        self.update_doc_popup()
+
+    # =========================================================
+    # DOC POPUP
+    # =========================================================
+
+    def update_doc_popup(self):
+        current_item = self.list_widget.currentItem()
+        if not current_item:
+            self.doc_popup.hide()
+            return
+
+        name = current_item.text()
+        data = self.all_commands_data.get(name)
+
+        if not data:
+            self.doc_popup.hide()
+            return
+
+        signature = data.get("signature", "")
+        doc = data.get("doc", "")
+        source = data.get("source_module", "")
+
+        html = f"""
+        <div style="font-family: Consolas;">
+        <span style="font-size: 13pt;"><b>{name}</b></span>
+        <br><br>
+        <span style="color:#4FC1FF;">{signature}</span>
+        <br><br>
+        <span style="color:#C586C0;">Source:</span>
+        <span style="color:#CE9178;">{source}</span>
+        <br><br>
+        <span style="color:#D4D4D4;">{doc}</span>
+        </div>
+        """
+
+        self.doc_label.setText(html)
+        self.doc_popup.adjustSize()
+
+        popup_pos = self.mapToGlobal(self.rect().topRight())
+        self.doc_popup.move(popup_pos.x() + 10, popup_pos.y())
+        self.doc_popup.show()
+
+
+
+    def select_previous(self):
+        row = self.list_widget.currentRow()
+        if row > 0:
+            self.list_widget.setCurrentRow(row - 1)
+        else:
+            self.list_widget.setCurrentRow(self.list_widget.count() - 1)  # برو به آخر
+
+    def select_next(self):
+        row = self.list_widget.currentRow()
+        if row < self.list_widget.count() - 1:
+            self.list_widget.setCurrentRow(row + 1)
+        else:
+            self.list_widget.setCurrentRow(0)  # برو به اول
+
+
+    # =========================================================
+    # COMPLETE
+    # =========================================================
+
+    def complete_selected(self):
+        current_item = self.list_widget.currentItem()
+        if not current_item:
+            return
+
+        completion = current_item.text()
+        module_name, prefix = self.get_current_context()
+
+        cursor = self.editor.textCursor()
+        
+        # حذف prefix فعلی
+        for _ in range(len(prefix)):
+            cursor.deletePreviousChar()
+        
+        # درج کلمه کامل
+        cursor.insertText(completion)
+
+        self.hide()
+        self.doc_popup.hide()
+        self.editor.setFocus()
+
+    # =========================================================
+    # HIDE
+    # =========================================================
+
+    def hideEvent(self, event):
+        self.doc_popup.hide()
+        super().hideEvent(event)
+
 
 
 class PyCodeEditor(QPlainTextEdit):
@@ -78,6 +488,7 @@ class PyCodeEditor(QPlainTextEdit):
         #self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # noinspection PyTypeChecker
         # ✅ فعال‌سازی های‌لایت سینتکس
         self.highlighter = CodeHighlighter(self.document())
+        self.autocomplete = AutoCompleteSystem(self)
 
 
     @staticmethod
