@@ -413,6 +413,8 @@ class AutoCompleteSystem(QFrame):
         self.doc_popup.hide()
         super().hideEvent(event)
 
+
+
 class CodeEditor(QPlainTextEdit):
     cursorPositionInfo = pyqtSignal(int, int)   # سیگنال ارسال شماره خط و کاراکتر 
     clicked = pyqtSignal()
