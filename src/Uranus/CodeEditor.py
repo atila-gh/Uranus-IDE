@@ -492,7 +492,6 @@ class CodeEditor(QPlainTextEdit):
         return super().eventFilter(obj, event)
 
     def keyPressEvent(self, event):
-
         
         def delayed_emit():
             QApplication.processEvents() 
@@ -502,8 +501,7 @@ class CodeEditor(QPlainTextEdit):
             self.cursorPositionInfo.emit(line, column)
             
             
-             # اگر اتوکامپلیت فعال است، کلیدها را به آن بده
-            if hasattr(self, 'autocomplete') and self.autocomplete.active:
+        if hasattr(self, 'autocomplete') and self.autocomplete.active:
                 # اگر کلید Escape بود، اتوکامپلیت خودش مدیریت می‌کند
                 if event.key() == Qt.Key_Escape:
                     self.autocomplete.keyPressEvent(event)
@@ -519,6 +517,7 @@ class CodeEditor(QPlainTextEdit):
                     self.autocomplete.keyPressEvent(event)
                     return
         
+            
         cursor = self.textCursor()
         selected_text = cursor.selectedText()  
         

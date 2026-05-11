@@ -496,7 +496,7 @@ class PyCodeEditor(QPlainTextEdit):
             column = self.get_visual_column(_cursor, self.tab_size)
             self.cursorPositionInfo.emit(line, column)
             
-             # اگر اتوکامپلیت فعال است، کلیدها را به آن بده
+            
         if hasattr(self, 'autocomplete') and self.autocomplete.active:
             # اگر کلید Escape بود، اتوکامپلیت خودش مدیریت می‌کند
             if event.key() == Qt.Key_Escape:
