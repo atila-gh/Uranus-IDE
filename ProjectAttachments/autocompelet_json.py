@@ -3,6 +3,9 @@ import importlib
 import json
 import keyword
 import builtins
+import pkgutil
+import time      # برای محاسبه زمان
+
 
 OUTPUT = "autocomplete_db.json"
 
@@ -58,6 +61,78 @@ database = {
         "items": {}
     }
 }
+
+
+
+import time
+import pkgutil
+import importlib
+
+def add_library_recursive(library_name, color):
+    """
+    Recursively scan a package and all its submodules,
+    then add them to database["modules"] using scan_module().
+    Better suited for large libraries like PyQt5 / PyQt6.
+    """
+
+    print(f"\n✨ Starting recursive scan for library: {library_name}")
+    start_time = time.time()
+
+    scanned_modules = set()
+    total_items_added = 0
+    total_modules_scanned = 0
+
+    try:
+        root_package = importlib.import_module(library_name)
+    except Exception as e:
+        print(f"❌ Cannot import root library '{library_name}': {e}")
+        return
+
+    modules_to_scan = {library_name}
+
+    # پیدا کردن تمام زیرماژول‌ها
+    if hasattr(root_package, "__path__"):
+        try:
+            for module_info in pkgutil.walk_packages(root_package.__path__, prefix=root_package.__name__ + "."):
+                modules_to_scan.add(module_info.name)
+        except Exception as e:
+            print(f"⚠ Error while walking submodules of {library_name}: {e}")
+
+    print(f"📦 Total discovered modules: {len(modules_to_scan)}")
+
+    for module_name in sorted(modules_to_scan):
+        if module_name in scanned_modules:
+            continue
+
+        print(f"  🔍 Scanning: {module_name}")
+        scanned_modules.add(module_name)
+
+        try:
+            items_added = scan_module(module_name, color)
+            if items_added is None:
+                items_added = 0
+            elif not isinstance(items_added, int):
+                print(f"  ⚠ scan_module returned invalid value for {module_name}: {items_added}")
+                items_added = 0
+
+            total_items_added += items_added
+            total_modules_scanned += 1
+
+        except Exception as e:
+            print(f"  ⚠ Error scanning module {module_name}: {e}")
+
+    duration = time.time() - start_time
+
+    print(f"\n✨ Finished recursive scan for '{library_name}'")
+    print(f"  Total discovered modules: {len(modules_to_scan)}")
+    print(f"  Total scanned modules: {total_modules_scanned}")
+    print(f"  Total items added: {total_items_added}")
+    print(f"  Duration: {duration:.2f} seconds")
+
+
+
+
+
 
 def clean_signature_text(text):
     """Clean and normalize function signature text"""
@@ -563,3 +638,8 @@ total_items = (len(database['context_vars']['items']) +
                sum(len(m['items']) for m in database['modules'].values()))
 print(f"  📝 TOTAL ITEMS: {total_items}")
 print(f"\n✅ Successfully saved to {OUTPUT}")
+
+add_library_recursive("PyQt5", "#a020f0")
+
+
+
