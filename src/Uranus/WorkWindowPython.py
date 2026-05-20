@@ -17,37 +17,50 @@ from Uranus.Analyzer import Analyzer
 
 class TerminalRunner:
     _instance = None
+    _current_path = os.getcwd()  # defult path
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super(TerminalRunner, cls).__new__(cls)
         return cls._instance
 
+
+
     def run_code(self, code_text: str):
-        """اجرای کد پایتون در ترمینال متناسب با سیستم‌عامل"""
+        
+        path = self._current_path
+        # this lines add  top of running code to define project folder fo importing another module in that path 
+        print('[self._current_path]', path)
+        bootstrap1 =  'import sys \n'
+        bootstrap2 = f'sys.path.insert(0, r"{path}")'
+
+        
+        """اجرای کد پایتون در ترمینال متناسب با سیستم‌عامل با قابلیت شناسایی ماژول‌ها"""
         # ذخیرهٔ کد در فایل موقت
         temp_file = os.path.join(tempfile.gettempdir(), "uranus_temp.py")
         with open(temp_file, "w", encoding="utf-8") as f:
-            f.write(code_text)
+            f.write(bootstrap1 +'\n'+ bootstrap2 + '\n'+ code_text)
 
         python_exe = sys.executable
+        # استفاده از مسیر ذخیره شده در کلاس
+       
 
         # انتخاب دستور بر اساس سیستم‌عامل
         if sys.platform.startswith("win"):
-            # ویندوز
-            cmd = f'start cmd /k "{python_exe} -u {temp_file}"'
+            # ویندوز: استفاده از "" برای مسیرهایی که فاصله دارند
+            cmd = f'start cmd /k "{python_exe} -u "{temp_file}""'
             subprocess.Popen(cmd, shell=True)
 
         elif sys.platform.startswith("linux"):
-            # لینوکس (gnome-terminal)
-            cmd = f'gnome-terminal -- bash -c "{python_exe} -u {temp_file}; exec bash"'
+            # لینوکس: export کردن متغیر محیطی قبل از اجرا
+            cmd = f'gnome-terminal -- bash -c "{python_exe} -u \'{temp_file}\'; exec bash"'
             subprocess.Popen(cmd, shell=True)
 
         elif sys.platform == "darwin":
-            # macOS (AppleScript برای باز کردن ترمینال)
+            # macOS: استفاده از AppleScript
             apple_script = f'''
             tell application "Terminal"
-                do script "{python_exe} -u {temp_file}"
+                do script "{python_exe} -u '{temp_file}'"
                 activate
             end tell
             '''
@@ -55,7 +68,16 @@ class TerminalRunner:
 
         else:
             raise OSError(f"Unsupported platform: {sys.platform}")
-        
+
+
+
+
+    def set_path(self, path: str):
+        """هرجای پروژه این متد رو صدا بزن تا مسیر آپدیت بشه"""
+        self._current_path = path
+        print('path', self._current_path)
+
+    
         
 class LineNumberArea(QWidget):
     def __init__(self, editor):
@@ -293,6 +315,8 @@ class WorkWindowPython(QFrame):
         self.detached = False
         self.detached_window = None
         self.fake_close = False
+        
+        self.project_folder_path =  os.path.dirname(self.file_path)
 
         # path of temp.chk file 
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -654,8 +678,12 @@ class WorkWindowPython(QFrame):
   
 
     def run(self):
-        
-            
+       
+
+
+        # print('[Current-PATH]' , os.path.dirname(os.path.abspath(sys.argv[0])))
+        # print('[self.file_path]', self.project_folder_path)
+
        
         # fix indentation 
         if hasattr(self,'editor') :
@@ -665,8 +693,12 @@ class WorkWindowPython(QFrame):
         editor_text = self.editor.toPlainText() if hasattr(self, "editor") else ""
         if not editor_text.strip():
             return  # اگر ادیتور خالی است، کاری نکن
- 
-        terminal = TerminalRunner()        
+        
+        
+        # set project folder as known path in terminal 
+        
+        terminal = TerminalRunner()
+        terminal.set_path(self.project_folder_path)        
         terminal.run_code(editor_text)  # اجرای متن در همان ترمینال
 
     
