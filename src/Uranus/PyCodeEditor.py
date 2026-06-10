@@ -868,7 +868,7 @@ class PyCodeEditor(QPlainTextEdit):
             '''
             This method is for solve 
             '''
-            #print('[Indentation Fixed]')
+            print('[Indentation Fixed]')
             
             text = self.toPlainText()
             lines = text.split("\n")
@@ -901,6 +901,8 @@ class PyCodeEditor(QPlainTextEdit):
             self.setPlainText(new_text)
 
     def my_copy(self):
+        print('[my_copy]')
+        
         cursor = self.textCursor()
         if cursor.hasSelection():
             selected_text = cursor.selectedText()
