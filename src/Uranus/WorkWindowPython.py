@@ -536,12 +536,13 @@ class WorkWindowPython(QFrame):
 
 
         try:
-            if self.kc:
+            if hasattr(self, 'kc') and self.kc:
                 self.kc.stop_channels()
-            if self.km:
+            if hasattr(self, 'km') and self.km:
                 self.km.shutdown_kernel()
         except Exception as e:
             print(f"[WorkWindowPython] Kernel shutdown error: {e}")
+            
     
     def is_notebook_modified(self):
         code_string = self.editor.toPlainText()

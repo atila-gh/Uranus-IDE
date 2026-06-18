@@ -88,17 +88,11 @@ class MarkdownCell(QTextEdit):
             event.accept()
         else:
             event.ignore()
-
-
-
-        
-        
+       
 class MarkdownEditor(QWidget):
     doc_returnPressed = pyqtSignal()
     clicked = pyqtSignal()
-    
-    
-
+   
     def __init__(self, image  ,parent=None  ):
         super().__init__(parent)
 
