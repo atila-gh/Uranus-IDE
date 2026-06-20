@@ -306,8 +306,7 @@ class CodeHighlighter(QSyntaxHighlighter):
     def line_index_to_offset(self, lines, line_num, char_index):
         res = sum(len(lines[i]) + 1 for i in range(line_num)) + char_index  # +1 for \n
         return res
-    
- 
+
     def find_triple_quote_blocks(self):
        
         full_text = self.document().toPlainText()
@@ -346,162 +345,85 @@ class CodeHighlighter(QSyntaxHighlighter):
                         start_line = start_index = None
 
         return results  # فقط بلاک‌های کامل
-
-
-    # this method is Override QtGui Standard Method dont Touch This 
-   
-             
     
-                
-                
-    def highlightBlock1(self, text):
-        self.setCurrentBlockState(0)
-        block_start = self.currentBlock().position()
-        block_end = block_start + len(text)
-
-        full_text = self.document().toPlainText()
-        if not hasattr(self, "cached_text") or self.cached_text != full_text:
-            self.triple_quote_ranges = self.find_triple_quote_blocks()
-            self.cached_text = full_text
-
-        # ===== ماسک برای جلوگیری از بازنویسی فرمت =====
-        formatted_mask = [False] * len(text)
-
-        # ===== triple quotes =====
-        for start_offset, end_offset in self.triple_quote_ranges:
-            if start_offset <= block_end and end_offset >= block_start:
-                start = max(start_offset, block_start) - block_start
-                end = min(end_offset, block_end) - block_start
-                self.setFormat(start, end - start, self.string_format)
-                for i in range(start, end):
-                    formatted_mask[i] = True
-
-        # ===== single-line strings =====
-        single_match = self.single_quote_pattern.match(text)
-        double_match = self.double_quote_pattern.match(text)
-
-        if single_match.hasMatch():
-            s = single_match.capturedStart()
-            l = single_match.capturedLength()
-            self.setFormat(s, l, self.string_format)
-            for i in range(s, s + l):
-                formatted_mask[i] = True
-
-        if double_match.hasMatch():
-            s = double_match.capturedStart()
-            l = double_match.capturedLength()
-            self.setFormat(s, l, self.string_format)
-            for i in range(s, s + l):
-                formatted_mask[i] = True
-
-        # ===== قواعد عمومی تا قبل از کامنت =====
-        comment_start = text.find('#')
-        if comment_start < 0:
-            comment_start = len(text)
-
-        for pattern, fmt in self.rules:
-            index = pattern.indexIn(text)
-            while index >= 0:
-                length = pattern.matchedLength()
-                if index >= comment_start:
-                    break
-                if index + length > comment_start:
-                    length = comment_start - index
-                # فقط اگر هنوز فرمت نشده باشد
-                if not any(formatted_mask[index:index+length]):
-                    self.setFormat(index, length, fmt)
-                index = pattern.indexIn(text, index + length)
-
-        # ===== رنگ کردن کامنت‌ها =====
-        if comment_start < len(text):
-            comment_text = text[comment_start:]
-            if comment_text.startswith("###"):
-                self.setFormat(comment_start,
-                            len(text) - comment_start,
-                            self.comment_h3_format)
-            elif comment_text.startswith("##"):
-                self.setFormat(comment_start,
-                            len(text) - comment_start,
-                            self.comment_h2_format)
-            else:
-                self.setFormat(comment_start,
-                            len(text) - comment_start,
-                            self.comment_format)             
-                    
     def highlightBlock(self, text):
         self.setCurrentBlockState(0)
         block_start = self.currentBlock().position()
         block_end = block_start + len(text)
 
-        full_text = self.document().toPlainText()
-        if not hasattr(self, "cached_text") or self.cached_text != full_text:
-            self.triple_quote_ranges = self.find_triple_quote_blocks()
-            self.cached_text = full_text
+        self._update_triple_quotes_if_needed()
 
-        # ===== ماسک برای جلوگیری از بازنویسی فرمت =====
         formatted_mask = [False] * len(text)
 
-        # ===== triple quotes =====
-        for start_offset, end_offset in self.triple_quote_ranges:
+        # Triple quotes
+        for start_offset, end_offset in self._triple_quote_ranges:
             if start_offset <= block_end and end_offset >= block_start:
                 start = max(start_offset, block_start) - block_start
                 end = min(end_offset, block_end) - block_start
-                self.setFormat(start, end - start, self.string_format)
-                for i in range(start, end):
-                    formatted_mask[i] = True
+                if start < len(text) and end <= len(text):  # ← فقط این خط اضافه شده
+                    self.setFormat(start, end - start, self.string_format)
+                    for i in range(start, end):
+                        if i < len(text):  # ← فقط این خط اضافه شده
+                            formatted_mask[i] = True
 
-        # ===== single-line strings =====
+        # Single-line strings
         single_match = self.single_quote_pattern.match(text)
         double_match = self.double_quote_pattern.match(text)
 
         if single_match.hasMatch():
             s = single_match.capturedStart()
             l = single_match.capturedLength()
-            self.setFormat(s, l, self.string_format)
-            for i in range(s, s + l):
-                formatted_mask[i] = True
+            if s + l <= len(text):  # ← فقط این خط اضافه شده
+                self.setFormat(s, l, self.string_format)
+                for i in range(s, s + l):
+                    if i < len(text):  # ← فقط این خط اضافه شده
+                        formatted_mask[i] = True
 
         if double_match.hasMatch():
             s = double_match.capturedStart()
             l = double_match.capturedLength()
-            self.setFormat(s, l, self.string_format)
-            for i in range(s, s + l):
-                formatted_mask[i] = True
+            if s + l <= len(text):  # ← فقط این خط اضافه شده
+                self.setFormat(s, l, self.string_format)
+                for i in range(s, s + l):
+                    if i < len(text):  # ← فقط این خط اضافه شده
+                        formatted_mask[i] = True
 
-        # ===== قواعد عمومی تا قبل از کامنت =====
         comment_start = text.find('#')
         if comment_start < 0:
             comment_start = len(text)
 
-        # اگر # داخل رشته باشد، نادیده بگیر
         if comment_start < len(text) and formatted_mask[comment_start]:
             comment_start = len(text)
 
         for pattern, fmt in self.rules:
-            index = pattern.indexIn(text)
-            while index >= 0:
-                length = pattern.matchedLength()
+            match = pattern.match(text, 0, QRegularExpression.MatchType.NormalMatch)
+            while match.hasMatch():
+                index = match.capturedStart()
+                length = match.capturedLength()
                 if index >= comment_start:
                     break
                 if index + length > comment_start:
                     length = comment_start - index
-                # فقط اگر هنوز فرمت نشده باشد
-                if not any(formatted_mask[index:index+length]):
-                    self.setFormat(index, length, fmt)
-                index = pattern.indexIn(text, index + length)
+                if index < len(text) and index + length <= len(text):  # ← فقط این خط اضافه شده
+                    if not any(formatted_mask[index:index + length]):
+                        self.setFormat(index, length, fmt)
+                match = pattern.match(text, index + length, QRegularExpression.MatchType.NormalMatch)
 
-        # ===== رنگ کردن کامنت‌ها =====
         if comment_start < len(text):
             comment_text = text[comment_start:]
             if comment_text.startswith("###"):
-                self.setFormat(comment_start,
-                            len(text) - comment_start,
-                            self.comment_h3_format)
+                self.setFormat(comment_start, len(text) - comment_start, self.comment_h3_format)
             elif comment_text.startswith("##"):
-                self.setFormat(comment_start,
-                            len(text) - comment_start,
-                            self.comment_h2_format)
+                self.setFormat(comment_start, len(text) - comment_start, self.comment_h2_format)
             else:
-                self.setFormat(comment_start,
-                            len(text) - comment_start,
-                            self.comment_format)
+                self.setFormat(comment_start, len(text) - comment_start, self.comment_format)     
+                    
+                    
+                    
+                    
+                
+                
+                
+                
+                
+                
