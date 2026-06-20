@@ -1513,8 +1513,9 @@ class WorkWindow(QFrame):
                     self.ipynb_format_save_file()            
 
             elif choice == QMessageBox.Discard:
-                parent = self.parent()                
-                parent.close()
+                parent = self.parent() 
+                if parent :               
+                    parent.close()
 
             elif choice == QMessageBox.Cancel:
                 event.ignore()
@@ -1529,12 +1530,17 @@ class WorkWindow(QFrame):
         hash1 = self.compute_md5(self.temp_path)
         hash2 = self.compute_md5(self.file_path)
         
-        if hash1 == hash2 :            
+        if hash1 is None and hash2 is None:
+            return False
+        if hash1 is None or hash2 is None:
             return True
-        return False
+    
+        return hash1 != hash2  
      
     def compute_md5(self, path):
         try:
+            if not os.path.exists(path):
+                return None
             with open(path, "rb") as f:
                 data = f.read()
             hash_code = hashlib.md5(data).hexdigest()    

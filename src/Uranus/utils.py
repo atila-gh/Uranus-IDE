@@ -217,14 +217,12 @@ class FileTreeView(QTreeView):
             self.paste_item(path)
         elif event.key() == Qt.Key_F2:
             self.rename_item()
+        elif event.key() in (Qt.Key_Return, Qt.Key_Enter):  # ✅ اینجا باید باشد
             if os.path.exists(path) and os.path.isdir(path):
                 if self.isExpanded(index):
                     self.collapse(index)
                 else:
                     self.expand(index)
-            else:
-             
-                pass
         else:
             super().keyPressEvent(event)
 
