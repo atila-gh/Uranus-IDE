@@ -812,43 +812,51 @@ class PyCodeEditor(QPlainTextEdit):
             return    
   
         # ---------- Auto Indent for Enter after : ----------
-        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+        if event.key() in (Qt.Key_Return, Qt.Key_Enter):            
+            
             cursor = self.textCursor()
             block_text = cursor.block().text()
+            pos = cursor.positionInBlock()
             base_indent = len(block_text) - len(block_text.lstrip())
-
+            
+            # ========== اصلاح ایندنت ناقص ==========
             if base_indent > 0 and base_indent % self.tab_size > 0:
-               
                 fix_indent = self.tab_size - (base_indent % self.tab_size)
+               
+                
                 cursor.beginEditBlock()
                 cursor.movePosition(QTextCursor.StartOfBlock)
                 cursor.insertText(" " * fix_indent)
                 cursor.endEditBlock()
-
-                # recalculate base indent
+                
                 block_text = cursor.block().text()
                 base_indent = len(block_text) - len(block_text.lstrip())
-               
+              
 
-            # بررسی موقعیت کرسر نسبت به انتهای خط
-            cursor_at_end = cursor.positionInBlock() >= len(block_text.rstrip())
-            ends_with_colon = block_text.rstrip().endswith(":")
-
-            add_indent = self.tab_size if ends_with_colon and cursor_at_end else 0
-            total_indent = base_indent + add_indent
+            # ========== تشخیص موقعیت کرسر ==========
+            first_non_space = len(block_text) - len(block_text.lstrip())
+            last_non_space = len(block_text.rstrip())
             
+            is_before_code = pos <= first_non_space
+            is_at_end = pos >= last_non_space
+            ends_with_colon = block_text.rstrip().endswith(":")
+           
+
+            # ========== محاسبه ایندنت ==========
+            if is_at_end and ends_with_colon:
+                total_indent = base_indent + self.tab_size
+            elif is_before_code:
+                total_indent = pos
+            else:
+                total_indent = base_indent
+
+            # ========== اجرا ==========
             super().keyPressEvent(event)
-
             if total_indent > 0:
-                if total_indent % self.tab_size > 0:
-                    total_indent = ceil(total_indent / self.tab_size) * self.tab_size
-                    
-
                 self.insertPlainText(" " * total_indent)
-
-            delayed_emit()
+               
+            delayed_emit() 
             return
-
         # ---------- Default ----------
         super().keyPressEvent(event)        
         delayed_emit()
