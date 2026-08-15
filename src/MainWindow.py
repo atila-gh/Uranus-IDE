@@ -6,54 +6,21 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QSize , QEvent , QTimer
 
 
-from Uranus.utils import  FileTreePanel
- # Make sure your FileTreeView is updated as below
-from Uranus.WorkWindow import WorkWindow 
-
-from Uranus.SettingWindow import SettingsWindow , load_setting
-from Uranus.PythonTemplate import ProjectInfoDialog
-from Uranus.AboutWindow import AboutWindow
-from Uranus.WorkWindowPython import WorkWindowPython
+from utils import  FileTreePanel
+from WorkWindow import WorkWindow 
+from SettingWindow import SettingsWindow , load_setting
+from PythonTemplate import ProjectInfoDialog
+from AboutWindow import AboutWindow
+from WorkWindowPython import WorkWindowPython
 
 
 
-# noinspection PyUnresolvedReferences
 class MainWindow(QMainWindow):
-   
-
-    open_files = {}  # dict: file_path -> WorkWindow instance
-    """
-        The main application window for Uranus IDE.
-
-        This class serves as the central controller for the IDE, managing file operations,
-        dockable widgets, project structure, and multiple open notebooks via QMdiArea.
-
-        Key Responsibilities:
-        - Hosts multiple WorkWindow instances as subwindows (MDI architecture).
-        - Manages file tree navigation, selection, and double-click opening.
-        - Provides toolbars for file/folder creation, deletion, and project setup.
-        - Loads and saves .ipynb files using nbformat.
-        - Stores open file references to prevent duplicate subwindows.
-        - Integrates settings, about dialog, and project metadata via external modules.
-
-        Components:
-        - QMdiArea: Central workspace for notebook tabs.
-        - QDockWidget: File explorer with toolbar and tree view.
-        - QToolBar: Left and top toolbars for quick actions.
-        - FileTreeView: Custom tree view for filesystem navigation.
-        - WorkWindow: Editor container for code and markdown cells.
-
-        Class Variables:       
-        - open_files (dict): Maps file paths to active WorkWindow subwindows.
-
-        Usage:
-        This class is instantiated at application startup and remains active throughout
-        the user session. It coordinates user interactions, file management, and UI layout.
-        """
+    open_files = {}  
 
     def __init__(self):
         super().__init__()
-        
+
 
         self.debug = False
         self.work_widget_list = []
@@ -62,7 +29,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Uranus")
         self.setGeometry(100, 100, 1000, 1000)
         self.showMaximized()
-        
+
 
         icon_path = os.path.join(os.path.dirname(__file__), "image", "Uranus.png")   
         self.setWindowIcon(QIcon(icon_path))
@@ -71,13 +38,13 @@ class MainWindow(QMainWindow):
         self.mdi_area = QMdiArea()        
         self.setCentralWidget(self.mdi_area)
         self.mdi_area.subWindowActivated.connect(self.sync_working_directory)
-        
+
         # Set up the status bar with 3 sections
         self.mainwindow_statusbar = self.statusBar()
         self.mainwindow_statusbar.setStyleSheet("QStatusBar { border-top: 1px solid gray; }")
 
         # Create three QLabel sections
-        
+
         self.status_left = QLabel("Ready")
         self.status_center = QLabel()
         self.status_right = QLabel("Line: - | Col: -    ")
@@ -95,7 +62,6 @@ class MainWindow(QMainWindow):
         self.init_ui()
 
     def init_ui(self):
-
         # Tree View Model 
         self.tree = FileTreePanel()
         # Connect the clicked signal to update the selected path
@@ -104,7 +70,7 @@ class MainWindow(QMainWindow):
         self.tree.tree.pathChanged.connect(self.on_path_changed)
 
         # ----------------------------- MENU BAR -----------------------------
-        
+
         menubar = self.menuBar()
 
         # --- File Menu ---
@@ -121,28 +87,28 @@ class MainWindow(QMainWindow):
         file_menu.addAction(new_folder_action)
 
         file_menu.addSeparator()
-        
+
         open_file = QAction("Open File", self)      
         open_file.setShortcut("Ctrl+O") 
         open_file.triggered.connect(self.open_file)
         file_menu.addAction(open_file)
-        
+
         file_menu.addSeparator()        
-        
+
         save_action = QAction("Save", self)
         save_action.setShortcut("Ctrl+S")
         save_action.triggered.connect(self.trigger_save_on_active_workwindow)
         file_menu.addAction(save_action)
 
- 
+
         save_as = QAction("Save As", self)   
         save_as.setShortcut("Ctrl+Shift+S")     
         save_as.triggered.connect(self.save_as_file)
         file_menu.addAction(save_as)
-        
+
         file_menu.addSeparator() 
 
-      
+
         settings_action = QAction("Setting", self)
         settings_action.triggered.connect(self.open_settings_window)
         file_menu.addAction(settings_action)
@@ -164,14 +130,14 @@ class MainWindow(QMainWindow):
         redo_action = QAction("Redo", self)
         redo_action.setShortcut("Ctrl+Y")
         edit_menu.addAction(redo_action)
-       
+
         file_menu.addSeparator()
 
         find_action = QAction("Find And Replace", self)
         find_action.setShortcut("Ctrl+F")
         find_action.triggered.connect(self.trigger_find_on_active_workwindow)
         edit_menu.addAction(find_action)
-        
+
         # --- RUN Menu ---
         run_menu = menubar.addMenu("Run")
 
@@ -183,7 +149,7 @@ class MainWindow(QMainWindow):
 
 
 
-         # --- Window Menu ---
+        # --- Window Menu ---
         window_menu = menubar.addMenu("Window")
 
         cascade_action = QAction("Cascade", self)
@@ -250,7 +216,7 @@ class MainWindow(QMainWindow):
         self.select_folder_btn = QToolButton()
         self.select_folder_btn.setIcon(QIcon(icon_path))
         self.select_folder_btn.setToolTip("Select Project Folder")
-        
+
         self.select_folder_btn.clicked.connect(self.select_project_folder)
         self.select_folder_btn.setIconSize(QSize(48, 48))
 
@@ -269,8 +235,8 @@ class MainWindow(QMainWindow):
         self.add_file_btn.setToolTip("Add File")
         self.add_file_btn.clicked.connect(self.tree.tree.create_file)
         self.add_file_btn.setIconSize(QSize(32, 32))
-        
-        
+
+
         # Add Py_File Button
         icon_path = os.path.join(os.path.dirname(__file__), "image", "add_py_file.png")
         self.add_py_file_btn = QToolButton()
@@ -310,10 +276,9 @@ class MainWindow(QMainWindow):
         self.dock.setTitleBarWidget(QWidget())
 
     def toggle_dock_tree(self):
-        """Show or hide the file explorer dock based on toggle button state"""
         visible = self.toggle_btn.isChecked()
         self.dock.setVisible(visible)
-      
+
     def on_tree_item_double_clicked(self, index):
         path = self.tree.tree.fs_model.filePath(index)
 
@@ -330,18 +295,18 @@ class MainWindow(QMainWindow):
 
                     if os.path.getsize(path) > 0:
                         self.ipynb_format_load_file(path)
-                        
+
                     else:
                         work_widget = WorkWindow(file_path=path , status_l = self.set_status_left 
-                                                 , status_c = self.set_status_center 
-                                                 , status_r = self.set_status_right , mdi_area = self.mdi_area)
-                        
+                                                , status_c = self.set_status_center 
+                                                , status_r = self.set_status_right , mdi_area = self.mdi_area)
+
                         sub_window = self.mdi_area.addSubWindow(work_widget)
                         sub_window.destroyed.connect(lambda: MainWindow.open_files.pop(path, None))
                         sub_window.show()
                         MainWindow.open_files[path] = sub_window
                         self.work_widget_list.append(work_widget)
-            
+
             elif ext == '.py' :
                 existing_subwindow = MainWindow.open_files.get(path)
                 if existing_subwindow and not sip.isdeleted(existing_subwindow):
@@ -350,19 +315,18 @@ class MainWindow(QMainWindow):
 
                     if os.path.getsize(path) > 0:
                         self.py_format_load_file(path)
-                        
+
                     else:
                         work_widget = WorkWindowPython(file_path=path , status_l = self.set_status_left 
                                     , context = None, status_c = self.set_status_center 
                                     , status_r = self.set_status_right, mdi_area = self.mdi_area)
-                        
+
                         sub_window = self.mdi_area.addSubWindow(work_widget)
                         sub_window.destroyed.connect(lambda: MainWindow.open_files.pop(path, None))
                         sub_window.show()
                         MainWindow.open_files[path] = sub_window
                         self.work_widget_list.append(work_widget)
-    
-    
+
     def eventFilter(self, source, event):
         if source == self.tree and event.type() == QEvent.KeyPress:
             if event.key() in (Qt.Key_Return, Qt.Key_Enter):
@@ -374,13 +338,12 @@ class MainWindow(QMainWindow):
                         return True
         return super().eventFilter(source, event)
 
-
     def ipynb_format_load_file (self , path):
         if self.debug : print('[MainWindow]->[ipynb_format_load_file]')
         try:
             with open(path, "r", encoding="utf-8") as f:
                 nb = nbformat.read(f, as_version=4)
-        
+
         except UnicodeDecodeError as e:
             QMessageBox.warning(self, "Encoding Error", f"Cannot decode file:\n{e}")
         except json.JSONDecodeError as e:
@@ -388,11 +351,11 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Unexpected error:\n{e}")
 
-       
+
         # Make Instance Object
         work_widget = WorkWindow(file_path=path , nb_content = nb , status_l = self.set_status_left 
-                                 , status_c = self.set_status_center , status_r = self.set_status_right 
-                                 , mdi_area = self.mdi_area)
+                                , status_c = self.set_status_center , status_r = self.set_status_right 
+                                , mdi_area = self.mdi_area)
         sub_window = self.mdi_area.addSubWindow(work_widget)
         icon_path = os.path.join(os.path.dirname(__file__), "image", "ipynb_icon.png")  
         sub_window.setWindowIcon(QIcon(icon_path))   
@@ -400,32 +363,31 @@ class MainWindow(QMainWindow):
         sub_window.show()
         MainWindow.open_files[path] = sub_window
         self.work_widget_list.append(work_widget)
-        
-        
+
     def py_format_load_file(self,path):
         try:
             with open(path, "r", encoding="utf-8") as f:
                 py_code_context = f.read()
-               
+
         except UnicodeDecodeError as e:
             QMessageBox.warning(self, "Encoding Error", f"Cannot decode file:\n{e}")        
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Unexpected error:\n{e}")
         else :  
-                     
+
             # Make Instance Object
-            
+
             work_widget = WorkWindowPython(file_path=path , status_l = self.set_status_left 
-                                           , context = py_code_context, status_c = self.set_status_center 
-                                           , status_r = self.set_status_right , mdi_area = self.mdi_area)
-            
+                                        , context = py_code_context, status_c = self.set_status_center 
+                                        , status_r = self.set_status_right , mdi_area = self.mdi_area)
+
             sub_window = self.mdi_area.addSubWindow(work_widget)
             icon_path = os.path.join(os.path.dirname(__file__), "image", "python_icon.png")  
             sub_window.setWindowIcon(QIcon(icon_path))  
             sub_window.show()
             MainWindow.open_files[path] = sub_window
             self.work_widget_list.append(work_widget)
-   
+
     def open_settings_window(self):
         self.settings_window = SettingsWindow()
         self.settings_window.show()
@@ -467,33 +429,29 @@ class MainWindow(QMainWindow):
         self.select_project_folder(path = folder_path)
 
     @staticmethod
-    def save_settings(setting):
-       current_file = os.path.abspath(__file__)  # src/Uranus/SettingWindow.py
-       src_dir = os.path.dirname(os.path.dirname(current_file))  # ← src/
-       path =  os.path.join(src_dir, "setting.json")
 
-       try:
+    def save_settings(setting):
+        current_file = os.path.abspath(__file__)  # src/Uranus/SettingWindow.py
+        src_dir = os.path.dirname(os.path.dirname(current_file))  # ← src/
+        path =  os.path.join(src_dir, "setting.json")
+
+        try:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(setting, f, indent=4, ensure_ascii=False)
-       except FileNotFoundError :
-           return
+        except FileNotFoundError :
+        return
 
     def about(self):
         self.about_window = AboutWindow()
         self.about_window.show()
-       
 
     @staticmethod
+
     def on_path_changed(path):
         if os.path.isfile(path):
             path = os.path.dirname(path)
 
     def save_as_file(self):
-        """
-        Prompts the user to choose a new file path and delegates saving to the active WorkWindow.
-        """
-        
-
         active_subwindow = self.mdi_area.activeSubWindow()
         if not active_subwindow:
             QMessageBox.warning(self, "No Active File", "No notebook is currently open.")
@@ -502,30 +460,25 @@ class MainWindow(QMainWindow):
         work_widget = active_subwindow.widget()
 
         try:           
-            
+
             work_widget.save_as_file()
-               
-               
+
+
         except Exception as e:
             QMessageBox.warning(self, "Save Error", f"Could not save file:\n{e}")
-           
+
     def open_file(self):
-        """
-        Opens a file dialog to select a .ipynb file and loads it into a new WorkWindow.
-        Only accepts valid Jupyter Notebook files.
-        """
-       
         path, _ = QFileDialog.getOpenFileName(
         self,
         "Open File",
         "",
         "Notebook/Python (*.ipynb *.py);;All Files (*.*)"
-         )
+        )
 
         if not path:
             return  # کاربر لغو کرده
 
-      
+
         # بررسی اینکه آیا قبلاً باز شده
         existing_subwindow = MainWindow.open_files.get(path)
         if existing_subwindow and not sip.isdeleted(existing_subwindow):
@@ -540,8 +493,7 @@ class MainWindow(QMainWindow):
         else : 
             QMessageBox.warning(self, "Invalid File", "Selected file is not a valid File Type ")
             return
-       
-        
+
     def trigger_save_on_active_workwindow(self):
         active_subwindow = self.mdi_area.activeSubWindow()        
         if not active_subwindow:
@@ -559,9 +511,8 @@ class MainWindow(QMainWindow):
         work_widget = active_subwindow.widget()
         if hasattr(work_widget, "find_replace"):
             work_widget.find_replace()
-    
-    
-    def trigger_run_active_workwindow(self):        
+
+    def trigger_run_active_workwindow(self):
         active_subwindow = self.mdi_area.activeSubWindow()
         if not active_subwindow:
             return
@@ -570,14 +521,8 @@ class MainWindow(QMainWindow):
             work_widget.run_focused_cell()
         elif  hasattr(work_widget, "run"):
             work_widget.run()
-            
-            
-                   
+
     def sync_working_directory(self, subwindow):
-        """
-        Syncs the system working directory with the active WorkWindow's file path.
-        Called whenever the active subwindow changes.
-        """
         if not subwindow:
             return
 
@@ -590,24 +535,19 @@ class MainWindow(QMainWindow):
                     self.set_status_left('[Current Folder] '+folder)
                 except Exception as e:
                     print(f"⚠️ Failed to set working directory: {e}")
-    
+
     def set_status_left(self, text: str):
-        """Update the left section of the status bar."""
         self.status_left.setText(text)
         QTimer.singleShot(3000, lambda: self.status_left.clear())
 
     def set_status_center(self, text: str):
-        """Update the center section of the status bar."""
         self.status_center.setText(text)
         #QTimer.singleShot(3000, lambda: self.status_center.clear())
 
     def set_status_right(self, text ):
-        """Update the right section of the status bar."""
         self.status_right.setText(text)
-    
+
     def closeEvent(self, event):
-        
-        # بستن پنجره‌های شناور
         for widget in self.work_widget_list:
             if isinstance(widget, WorkWindowPython):
                 try : 
@@ -616,9 +556,9 @@ class MainWindow(QMainWindow):
                             widget.analyzer_window.close()
                 except:
                     print('[Exception Close Event in MainWindow Class]')
-                    
-            
-            
+
+
+
             if isinstance(widget, WorkWindow) and widget.detached and widget.detached_window:
                 widget.detached_window.close()
                 if not sip.isdeleted(widget) and not widget.isHidden():
@@ -629,10 +569,9 @@ class MainWindow(QMainWindow):
                 if not sip.isdeleted(widget) and not widget.isHidden():
                     event.ignore()
                     return
-                
-           
 
-        # بستن پنجره‌های داخل mdi_area
+
+
         for subwindow in self.mdi_area.subWindowList():
             widget = subwindow.widget()
             if isinstance(widget, WorkWindow) or isinstance(widget , WorkWindowPython):
@@ -640,21 +579,14 @@ class MainWindow(QMainWindow):
                 if not sip.isdeleted(widget) and not widget.isHidden():
                     event.ignore()
                     return
-        
-       
-       # بستن پنجره About اگر باز باشد
+
+
         if hasattr(self, "about_window") and self.about_window is not None:
             if not sip.isdeleted(self.about_window) and self.about_window.isVisible():
                 self.about_window.close()
-       
 
-        # بستن پنجره Settings اگر باز باشد
+
         if hasattr(self, "settings_window") and self.settings_window is not None:
             if not sip.isdeleted(self.settings_window) and self.settings_window.isVisible():
                 self.settings_window.close()
-
-
-
-        
         event.accept()
-

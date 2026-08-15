@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import (
 )
 
 
+
 class AutoCompleteSystem(QFrame):
 
     def __init__(self, editor):
@@ -81,7 +82,6 @@ class AutoCompleteSystem(QFrame):
         doc_layout.setContentsMargins(4, 4, 4, 4)
         doc_layout.addWidget(self.doc_label)
 
-            # تایمر برای تاخیر در پاسخ به تغییرات متن
         self.text_change_timer = QTimer()
         self.text_change_timer.setSingleShot(True)
         self.text_change_timer.timeout.connect(self.on_text_changed_delayed)
@@ -345,6 +345,25 @@ class AutoCompleteSystem(QFrame):
             self.list_widget.setCurrentRow(row + 1)
         else:
             self.list_widget.setCurrentRow(0)
+
+    def keyPressEvent(self, event):
+        if not self.isVisible():
+            event.ignore()
+            return
+
+        key = event.key()
+
+        if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Tab):
+            self.complete_selected()
+        elif key == Qt.Key.Key_Escape:
+            self.deactivate()
+            self.editor.setFocus()
+        elif key == Qt.Key.Key_Up:
+            self.select_previous()
+        elif key == Qt.Key.Key_Down:
+            self.select_next()
+        else:
+            super().keyPressEvent(event)
 
     def keyPressEvent(self, event):
         if not self.isVisible():

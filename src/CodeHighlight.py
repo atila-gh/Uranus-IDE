@@ -1,12 +1,12 @@
 from PyQt5.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor, QFont
-from PyQt5.QtCore import QRegExp
-from Uranus.SettingWindow import load_setting
+from PyQt5.QtCore import QRegExp,QRegularExpression
+from SettingWindow import load_setting
+
+
+
 
 
 class CodeHighlighter(QSyntaxHighlighter):
-    """
-    Syntax highlighter for Python code in the Uranus IDE.
-    """
 
     def __init__(self, document):
         super().__init__(document)
@@ -14,9 +14,9 @@ class CodeHighlighter(QSyntaxHighlighter):
         self._triple_quote_ranges = []
         self._cached_text = ""
         self._dirty = True
-        
+
         setting = load_setting()
-        
+
         # ------ Setting 
         code_font_size  = setting['Code Font Size']
         keyword_c = setting['colors_syntax']['keyword_color']
@@ -29,7 +29,7 @@ class CodeHighlighter(QSyntaxHighlighter):
         structure_c = setting['colors_syntax']['structure_color']
         decorator_c = setting['colors_syntax']['decorator_color']
         string_c = setting['colors_syntax']['string_color']
- 
+
         # ==========================
         # دسته‌بندی کلمات
         # ==========================
@@ -200,7 +200,7 @@ class CodeHighlighter(QSyntaxHighlighter):
 
         # اعداد
         self.rules.append((QRegExp(r"\b\d+(\.\d+)?\b"), number_format))
-        
+
         # دکوراتور 
         self.rules.append((QRegExp(r"^\s*@\w+(\(.*\))?"), decorator_format))
 
@@ -324,7 +324,3 @@ class CodeHighlighter(QSyntaxHighlighter):
                 self.setFormat(comment_start, len(text) - comment_start, self.comment_h2_format)
             else:
                 self.setFormat(comment_start, len(text) - comment_start, self.comment_format)
-                
-                
-                
-                

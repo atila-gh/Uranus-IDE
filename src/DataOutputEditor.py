@@ -1,8 +1,8 @@
-
-
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableView,QHeaderView
 from PyQt5.QtCore import Qt, QAbstractTableModel
 from PyQt5.QtGui import QFont
+
+
 
 class DataFrameModel(QAbstractTableModel):
     """
@@ -85,20 +85,15 @@ class DataFrameWidget(QWidget):
             return
 
         self.setStyleSheet("background:white;")
-
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.table = QTableView()
         self.table.setAlternatingRowColors(True)
         self.table.setSortingEnabled(True)
         self.table.horizontalHeader().setStretchLastSection(True)
-       
+
         header_font = QFont("Segoe UI", 10, QFont.Bold)
         self.table.horizontalHeader().setFont(header_font)
-        
-        # self.table.horizontalHeader().setMinimumHeight(40)
-        # self.table.horizontalHeader().setFixedHeight(40) 
-        
         self.table.horizontalHeader().setStyleSheet("""
                                                         QHeaderView::section {
                                                             padding: 4px;
@@ -108,8 +103,8 @@ class DataFrameWidget(QWidget):
                                                         }
                                                     """)
 
-        
-       
+
+
 
         self.layout.addWidget(self.table)
         self.setLayout(self.layout)
@@ -118,7 +113,6 @@ class DataFrameWidget(QWidget):
         self.table.setModel(self.model)
 
     def set_dataframe(self, df = None):
-        """تنظیم یا پاک کردن DataFrame"""
         try :
             import pandas as pd
         except ImportError:
@@ -126,5 +120,3 @@ class DataFrameWidget(QWidget):
         else :
             self.model = DataFrameModel(df)
             self.table.setModel(self.model)
-
-

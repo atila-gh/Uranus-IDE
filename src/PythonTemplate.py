@@ -111,50 +111,50 @@ class ProjectInfoDialog(QDialog):
         QMessageBox.information(self, "Success", f"✅ Project '{self.project_name}' created at:\n{base_path}")
         self.accept()
 
-
     @staticmethod
+
     def get_license_text(license_type, author, year):
         if license_type == "MIT":
             return f"""MIT License
 
-Copyright (c) {year} {author}
+    Copyright (c) {year} {author}
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction...
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction...
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND...
-"""
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND...
+    """
         elif license_type == "Apache 2.0":
             return f"""Apache License 2.0
 
-Copyright {year} {author}
+    Copyright {year} {author}
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License...
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License...
 
-Distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND...
-"""
+    Distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND...
+    """
         elif license_type == "GPL v3":
             return f"""GNU GENERAL PUBLIC LICENSE Version 3
 
-Copyright (C) {year} {author}
+    Copyright (C) {year} {author}
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License...
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License...
 
-WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY...
-"""
+    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY...
+    """
         elif license_type == "BSD 3-Clause":
             return f"""BSD 3-Clause License
 
-Copyright (c) {year}, {author}
-All rights reserved.
+    Copyright (c) {year}, {author}
+    All rights reserved.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted...
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted...
 
-THIS SOFTWARE IS PROVIDED "AS IS", AND ANY EXPRESS OR IMPLIED WARRANTIES ARE DISCLAIMED...
-"""
+    THIS SOFTWARE IS PROVIDED "AS IS", AND ANY EXPRESS OR IMPLIED WARRANTIES ARE DISCLAIMED...
+    """
         else:
             return "No license selected."

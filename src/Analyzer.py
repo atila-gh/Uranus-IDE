@@ -9,7 +9,7 @@ from PyQt5.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor
 
 
 class RuffHighlighter(QSyntaxHighlighter):
-    """Syntax highlighter for Ruff output"""
+
     def __init__(self, parent):
         super().__init__(parent)
         self.error_format = QTextCharFormat()
@@ -39,14 +39,13 @@ class RuffHighlighter(QSyntaxHighlighter):
         elif "All checks passed" in text or "Clean" in text:
             self.setFormat(0, len(text), self.success_format)
 
-
 class Analyzer(QWidget):
-    """Analyzer window with Ruff integration and category checkboxes"""
+
     def __init__(self, file_path="", parent=None):
         super().__init__(parent)
         self.path = file_path
 
-       
+
 
         self.layout = QVBoxLayout(self)
 

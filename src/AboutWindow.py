@@ -1,28 +1,11 @@
-
-
 from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout,  QFrame
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtCore import Qt
 import os
 
+
+
 class AboutWindow(QWidget):
-    """
-        A simple informational window displaying details about the Uranus IDE.
-
-        Features:
-        - Shows application logo, name, version, and description.
-        - Includes developer contact information and external links.
-        - Uses a clean vertical layout with styled labels and separators.
-
-        Components:
-        - QPixmap logo loaded from local image directory.
-        - QLabel elements for name, version, description, and developer info.
-        - QFrame separator for visual clarity.
-
-        Usage:
-        Typically invoked from the Help or About section of the Uranus IDE.
-        Provides branding and contact context for users and contributors.
-        """
 
     def __init__(self):
         super().__init__()
@@ -79,4 +62,3 @@ class AboutWindow(QWidget):
         layout.addWidget(developer_info)
 
         self.setLayout(layout)
-

@@ -1,31 +1,16 @@
 
-
 import os , base64
 from PyQt5.QtGui import QIcon, QTextCharFormat, QFont, QFontMetrics, QTextImageFormat, QTextCursor, QColor , QMouseEvent , QPixmap  
 from PyQt5.QtCore import  QSize , QEvent ,pyqtSignal, QBuffer, Qt 
 from PyQt5.QtWidgets import (QDialog, QToolBar, QDialogButtonBox, QLabel, QWidget, QVBoxLayout, QTextEdit,QAction , QScrollArea, QPlainTextEdit
 , QFileDialog, QMessageBox, QSlider, QComboBox, QHBoxLayout, QPushButton)
-from Uranus.SettingWindow import load_setting
+from SettingWindow import load_setting
+
+
 
 class RichTextEditor(QTextEdit):
-    clicked = pyqtSignal()  # سیگنال کلیک برای اتصال به سلول
+    clicked = pyqtSignal()  
     doubleClicked = pyqtSignal()
-    """
-       A rich text editor widget with extended clipboard and mouse event handling.
-
-       Features:
-       - Emits `clicked` and `doubleClicked` signals for integration with parent containers.
-       - Automatically converts pasted images into base64-encoded HTML <img> tags.
-       - Supports rich text formatting and custom event filtering.
-
-       Signals:
-       - clicked: Emitted when the editor is clicked.
-       - doubleClicked: Emitted on double-click, typically used to activate edit mode.
-
-       Usage:
-       This widget is designed to be embedded inside higher-level editors like DocumentEditor,
-       and supports both text and image input with enhanced interactivity.
-       """
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -33,22 +18,16 @@ class RichTextEditor(QTextEdit):
         self.setCursor(Qt.IBeamCursor)
         self.setAcceptRichText(True)
         self.installEventFilter(self)
-        
-        
+
     def wheelEvent(self, event):
-        # اگر ادیتور فوکوس دارد و در حالت editable است → فقط خودش اسکرول کند
         if self.hasFocus() and not self.isReadOnly():
             super().wheelEvent(event)
-            event.accept()   # جلوگیری از پاس دادن به والد
+            event.accept()  
         else:
-            # در غیر این صورت اجازه بده اسکرول خارجی کار کند
             event.ignore()
 
-
-
     def mousePressEvent(self, event: QMouseEvent):
-        # print('\n\n Editor.editor\n\n')
-        self.clicked.emit()  # فعال‌سازی سیگنال کلیک
+        self.clicked.emit()  
         super().mousePressEvent(event)
 
     def insertFromMimeData(self, source):
@@ -67,35 +46,9 @@ class RichTextEditor(QTextEdit):
         self.doubleClicked.emit()
         super().mouseDoubleClickEvent(event)
 
-
 class DocumentEditor(QWidget):
-
-    doc_returnPressed = pyqtSignal()  # KeyPress Event  signal
-    clicked = pyqtSignal()  # Click Signal
-    """
-        A styled rich text editor with formatting toolbar, designed for Markdown-like document cells.
-
-        Components:
-        - RichTextEditor: The core QTextEdit-based editor with extended image and event support.
-        - QToolBar: Provides formatting actions (bold, italic, underline, alignment, heading styles, color).
-        - Signals: Emits `clicked` and `doc_returnPressed` for integration with cell containers.
-
-        Features:
-        - Toggle between editable and read-only modes.
-        - Supports image insertion and resizing via dialogs.
-        - Auto-adjusts height based on content.
-        - Handles block-level indentation with Tab/Shift+Tab, including RTL-safe logic.
-        - Customizable font, tab size, and color scheme via external settings.
-
-        Event Handling:
-        - Shift+Enter: Switches to read-only mode.
-        - Double-click: Activates edit mode.
-        - Tab/Shift+Tab: Indents/unindents selected blocks with RTL-aware logic.
-
-        Intended Use:
-        This widget is used as the document cell editor in Uranus IDE, supporting styled text,
-        embedded images, and interactive formatting for notebook-style workflows.
-        """
+    doc_returnPressed = pyqtSignal()  
+    clicked = pyqtSignal()  
 
     def __init__(self, parent=None ):
         super().__init__(parent)
@@ -111,7 +64,7 @@ class DocumentEditor(QWidget):
         self.readonly_mode = False
         self.editor_height = 0
         self.flag_doc_height_adjust = False
-      
+
 
         # Toolbar
         self.toolbar = QToolBar()
@@ -145,9 +98,9 @@ class DocumentEditor(QWidget):
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.scroll_area.setStyleSheet("QScrollArea { border: 1px solid #444; padding: 3px; }"
-)
+    )
         self.scroll_area.setWidget(self.editor)
-        
+
 
         # Internal layout
         self.editor_frame = QWidget()
@@ -156,7 +109,7 @@ class DocumentEditor(QWidget):
         self.editor_layout.setSpacing(0)
         self.editor_layout.addWidget(self.toolbar)
         self.editor_layout.addWidget(self.scroll_area)
-       
+
 
         # Main layout
         layout = QVBoxLayout(self)
@@ -170,10 +123,7 @@ class DocumentEditor(QWidget):
         # Toolbar setup
         self.setup_toolbar()
 
-
     def set_font_and_size(self,font,size):
-
-        
         self.default_font = QFont(font, size)
         self.default_format = QTextCharFormat()
         self.default_format.setFont(self.default_font)
@@ -195,20 +145,7 @@ class DocumentEditor(QWidget):
         super().keyPressEvent(event)
 
     def setup_toolbar(self):
-        """
-        Adds formatting actions to the toolbar.
-        Restores editor focus after each action is triggered.
-        """
-        # print('[DocumentEditor->setup_toolbar]')
-
         def wrap(slot):
-            """
-            This function provides a simple pattern for wrapping another function and performing additional actions.
-            Any function we want can be passed as an argument, and it will be executed first.
-            Then, we attach our desired process to it — which in this case is focusing the editor itself.
-            """
-
-
             def wrapped():
                 slot()
                 self.editor.setFocus()
@@ -231,9 +168,9 @@ class DocumentEditor(QWidget):
                 fmt.setFontWeight(QFont.Normal if fmt.fontWeight() == QFont.Bold else QFont.Bold)
                 self.editor.setCurrentCharFormat(fmt)
 
-           
-            
-            
+
+
+
         # Bold - Deactivate
         icon_path = os.path.join(os.path.dirname(__file__), "image", "bold.png")
         bold_action = QAction(QIcon(icon_path), "Bold", self)
@@ -241,7 +178,7 @@ class DocumentEditor(QWidget):
         bold_action.setCheckable(True)
         self.toolbar.addAction(bold_action)
         self.toolbar.addSeparator()
-        
+
 
         def toggle_italic():
             cursor = self.editor.textCursor()
@@ -262,18 +199,18 @@ class DocumentEditor(QWidget):
                 fmt.setFontItalic(not fmt.fontItalic())
                 self.editor.setCurrentCharFormat(fmt)
 
-            
+
         # Italic - Deactivate
         icon_path = os.path.join(os.path.dirname(__file__), "image", "italic.png")
         italic_action = QAction(QIcon(icon_path), "Italic", self)
         italic_action.toggled.connect(wrap(toggle_italic))
         italic_action.setCheckable(True)
-            
+
         self.toolbar.addAction(italic_action)
 
         self.toolbar.addSeparator()
 
-        
+
 
 
         def toggle_underline():
@@ -295,25 +232,25 @@ class DocumentEditor(QWidget):
                 fmt.setFontUnderline(not fmt.fontUnderline())
                 self.editor.setCurrentCharFormat(fmt)
 
-            
+
 
         # Underline - Deactivate
         icon_path = os.path.join(os.path.dirname(__file__), "image", "underline.png")
         underline_action = QAction(QIcon(icon_path), "Underline", self)
-      
+
         underline_action.toggled.connect(wrap(toggle_underline))
         underline_action.setCheckable(True)
         self.toolbar.addAction(underline_action)
         self.toolbar.addSeparator()
 
-        
+
 
         # Center Align
         icon_path = os.path.join(os.path.dirname(__file__), "image", "center.png")
         align_center = QAction(QIcon(icon_path), "Center", self)
         align_center.triggered.connect(wrap(lambda: self.editor.setAlignment(Qt.AlignCenter)))
         self.toolbar.addAction(align_center)
-        
+
         self.toolbar.addSeparator()
 
         # Justify Text
@@ -329,7 +266,7 @@ class DocumentEditor(QWidget):
         image_action = QAction(QIcon(icon_path), "Insert Image", self)
         image_action.triggered.connect(wrap(self.insert_image))
         self.toolbar.addAction(image_action)
-        
+
         self.toolbar.addSeparator()
 
         # Resize image
@@ -337,7 +274,7 @@ class DocumentEditor(QWidget):
         resize_action = QAction(QIcon(icon_path), "Resize Image", self)
         resize_action.triggered.connect(wrap(self.resize_selected_image))
         self.toolbar.addAction(resize_action)
-        
+
         self.toolbar.addSeparator()
 
 
@@ -361,7 +298,7 @@ class DocumentEditor(QWidget):
                 cursor.mergeCharFormat(char_fmt)
                 self.editor.setTextCursor(cursor)
 
-                
+
                 new_cursor = self.editor.textCursor()
                 new_cursor.setPosition(start)
                 new_cursor.setPosition(end, QTextCursor.KeepAnchor)
@@ -382,8 +319,8 @@ class DocumentEditor(QWidget):
 
 
         self.toolbar.addSeparator()
-        
-        
+
+
         # Color choose button and its functions
         def show_color_dialog():
             dialog = QDialog(self)
@@ -412,7 +349,7 @@ class DocumentEditor(QWidget):
             fmt = QTextCharFormat()
             fmt.setForeground(QColor(color))
 
-            
+
             original_format = self.editor.currentCharFormat()
 
             if cursor.hasSelection():
@@ -422,7 +359,7 @@ class DocumentEditor(QWidget):
                 cursor.mergeCharFormat(fmt)
                 self.editor.setTextCursor(cursor)
 
-               
+
                 new_cursor = self.editor.textCursor()
                 new_cursor.setPosition(start)
                 new_cursor.setPosition(end, QTextCursor.KeepAnchor)
@@ -434,21 +371,21 @@ class DocumentEditor(QWidget):
         color_action = QAction(QIcon(icon_path), "Text Color", self)
         self.toolbar.addAction(color_action)
         color_action.triggered.connect(apply_text_color)
-        
-        
+
+
 
         self.toolbar.addSeparator()
-       
+
         # Clear Format 
         icon_path = os.path.join(os.path.dirname(__file__), "image", "clear_format.png")
         c_format = QAction(QIcon(icon_path), "Clear Format", self)
         c_format.triggered.connect(self.clear_selection_format)
         self.toolbar.addAction(c_format)
-        
+
         self.toolbar.addSeparator()
-       
-        
-        
+
+
+
         def toggle_alignment():
             cursor = self.editor.textCursor()
             block_format = cursor.blockFormat()
@@ -459,34 +396,33 @@ class DocumentEditor(QWidget):
             cursor.setBlockFormat(block_format)
             self.editor.setTextCursor(cursor)
             self.editor.setFocus()
-        
+
         # Text alignment
         icon_path = os.path.join(os.path.dirname(__file__), "image", "text_direction.png")
         align = QAction(QIcon(icon_path), "Change Align", self)
         align.triggered.connect(wrap(toggle_alignment))
         self.toolbar.addAction(align)
-        
+
 
         self.toolbar.addSeparator()
-        
-          
-    
-         # Text RTL / LTR
+
+
+
+        # Text RTL / LTR
         icon_path = os.path.join(os.path.dirname(__file__), "image", "rtl.png")
         rtl_action = QAction(QIcon(icon_path), "RTL Action", self)
         rtl_action.setToolTip("Force Right-to-Left direction for selected text")
         rtl_action.triggered.connect(lambda: self.apply_direction_to_selection(Qt.RightToLeft))
         self.toolbar.addAction(rtl_action)
-        
-        
-          # Text RTL / LTR
+
+
+        # Text RTL / LTR
         icon_path = os.path.join(os.path.dirname(__file__), "image", "ltr.png")
         ltr_action = QAction(QIcon(icon_path), "LTR Action", self)
         ltr_action.setToolTip("Force Left-to-Right direction for selected text")
         ltr_action.triggered.connect(lambda: self.apply_direction_to_selection(Qt.LeftToRight))
         self.toolbar.addAction(ltr_action)
 
-    
     def insert_image(self):
         path, _ = QFileDialog.getOpenFileName(self, "Select Image", "", "Images (*.png *.jpg *.bmp)")
         if path:
@@ -507,9 +443,6 @@ class DocumentEditor(QWidget):
             self.editor.insertHtml(html)
 
     def selected_image_format(self):
-        """
-        Returns the QTextImageFormat of the image under the current cursor, if any.
-        """
         # print('[DocumentEditor->selected_image_format]')
         cursor = self.editor.textCursor()
         char_format = cursor.charFormat()
@@ -518,17 +451,9 @@ class DocumentEditor(QWidget):
         return None
 
     def set_text_cursor(self, cursor):
-
-        #solve The Right click problem on editor
-
-         #print('[DocumentEditor->set_text_cursor]')
-         self.editor.setTextCursor(cursor)
+        self.editor.setTextCursor(cursor)
 
     def resize_selected_image(self):
-        """
-        Opens a dialog to resize the currently selected image.
-        Applies percentage-based scaling while preserving aspect ratio.
-        """
         # print('[DocumentEditor->resize_selected_image]')
         image_format = self.selected_image_format()
         if not image_format or not image_format.name():
@@ -593,127 +518,8 @@ class DocumentEditor(QWidget):
         buttons.accepted.connect(apply_resize)
         buttons.rejected.connect(dialog.reject)
         dialog.exec()
-   
-    def resize_selected_image(self):
-            """
-            Resize the selected image (Base64 or file-based) with proper Base64 decoding,
-            QPixmap reconstruction, scaling, and reinsertion.
-            """
-            image_format = self.selected_image_format()
-            if not image_format or not image_format.name():
-                return
 
-            name = image_format.name()
-
-            # ---------------------------------------------------------
-            # 1) Load QPixmap correctly (Base64 OR a file path)
-            # ---------------------------------------------------------
-            
-            pixmap = QPixmap()
-
-            if name.startswith("data:image"):
-                try:
-                    base64_data = name.split(",")[1]
-                    raw_bytes = base64.b64decode(base64_data)
-                    pixmap.loadFromData(raw_bytes)
-                except Exception:
-                    QMessageBox.warning(self, "Resize Failed", "Could not decode Base64 image.")
-                    return
-            else:
-                # شاید کاربر عکس از فایل وارد کرده باشد
-                if not pixmap.load(name):
-                    QMessageBox.warning(self, "Resize Failed", "Could not load image from file.")
-                    return
-
-            original_width = pixmap.width()
-            original_height = pixmap.height()
-
-            if original_width == 0 or original_height == 0:
-                QMessageBox.warning(self, "Resize Failed", "Could not load image dimensions.")
-                return
-
-            # ---------------------------------------------------------
-            # 2) Create resize dialog
-            # ---------------------------------------------------------
-            dialog = QDialog(self)
-            dialog.setWindowTitle("Resize Image")
-            layout = QVBoxLayout(dialog)
-
-            percent_label = QLabel("Size: 100%")
-            percent_label.setAlignment(Qt.AlignCenter)
-            layout.addWidget(percent_label)
-
-            size_slider = QSlider(Qt.Horizontal)
-            size_slider.setRange(10, 200)
-            size_slider.setValue(100)
-            layout.addWidget(size_slider)
-
-            size_slider.valueChanged.connect(lambda v: percent_label.setText(f"Size: {v}%"))
-
-            buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-            layout.addWidget(buttons)
-
-            # ---------------------------------------------------------
-            # 3) Apply resize when OK is pressed
-            # ---------------------------------------------------------
-            def apply_resize():
-                scale = size_slider.value() / 100.0
-                new_width = int(original_width * scale)
-                new_height = int(original_height * scale)
-
-                # Scale pixmap
-                new_pixmap = pixmap.scaled(
-                    new_width, new_height,
-                    Qt.KeepAspectRatio,
-                    Qt.SmoothTransformation
-                )
-
-                # ---------------------------------------------------------
-                # 4) Convert back to Base64 (always store as Base64)
-                # ---------------------------------------------------------
-                buffer = QBuffer()
-                buffer.open(QBuffer.WriteOnly)
-                new_pixmap.save(buffer, "PNG")
-
-                new_base64 = base64.b64encode(buffer.data()).decode("utf-8")
-                new_src = f"data:image/png;base64,{new_base64}"
-
-                # ---------------------------------------------------------
-                # 5) Insert image back into the document
-                # ---------------------------------------------------------
-                cursor = self.editor.textCursor()
-
-                # اگر کاربر تصویر را انتخاب کرده بود → پاک کن
-                if cursor.hasSelection():
-                    cursor.removeSelectedText()
-                else:
-                    # اگر روی تصویر هست → تصویر قبلی را حذف کن
-                    temp_cursor = QTextCursor(cursor)
-                    temp_cursor.movePosition(QTextCursor.Left, QTextCursor.MoveAnchor, 1)
-                    if temp_cursor.charFormat().isImageFormat():
-                        temp_cursor.deleteChar()
-                        cursor = temp_cursor
-
-                # فرمت جدید + سایز جدید
-                new_format = QTextImageFormat()
-                new_format.setName(new_src)
-                new_format.setWidth(new_width)
-                new_format.setHeight(new_height)
-
-                cursor.insertImage(new_format)
-                self.editor.setTextCursor(cursor)
-                self.editor.setFocus()
-
-                dialog.accept()
-
-            buttons.accepted.connect(apply_resize)
-            buttons.rejected.connect(dialog.reject)
-
-            dialog.exec()
-       
-     
     def mousePressEvent(self, event):
-       
         super().mousePressEvent(event)
         if self.parent():
             self.parent().mousePressEvent(event)
@@ -726,8 +532,7 @@ class DocumentEditor(QWidget):
         self.editor.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         if not init :
             self.adjust_height_document_editor()
-       
-    
+
     def activate_edit_mode(self):
         self.readonly_mode = False
         self.toolbar.show()
@@ -769,7 +574,7 @@ class DocumentEditor(QWidget):
                         return True
 
                     except Exception as e:
-                        
+
                         return True
 
                 # ---------- Shift+Tab ----------
@@ -800,7 +605,7 @@ class DocumentEditor(QWidget):
                         return True
 
                     except Exception as e:
-                        
+
                         return True
 
             elif event.type() == QEvent.MouseButtonDblClick:
@@ -813,7 +618,6 @@ class DocumentEditor(QWidget):
     def apply_direction_to_selection(self, direction: Qt.LayoutDirection):
         cursor = self.editor.textCursor()
 
-        # اگر چیزی انتخاب نشده بود، فقط روی بلاک جاری اعمال کن
         if not cursor.hasSelection():
             block = cursor.block()
             temp_cursor = QTextCursor(block)
@@ -822,7 +626,6 @@ class DocumentEditor(QWidget):
             temp_cursor.mergeBlockFormat(block_format)
             return
 
-        # اگر انتخاب وجود دارد، روی همهٔ بلاک‌ها اعمال کن
         start = min(cursor.selectionStart(), cursor.selectionEnd())
         end = max(cursor.selectionStart(), cursor.selectionEnd())
 
@@ -836,22 +639,20 @@ class DocumentEditor(QWidget):
             block_format.setLayoutDirection(direction)
             temp_cursor.mergeBlockFormat(block_format)
             block = block.next()
-    
+
     def update_heading_combo(self):
         cursor = self.editor.textCursor()
-        
+
 
         if cursor.hasSelection():
             self.heading_combo.blockSignals(True)
             self.heading_combo.setCurrentIndex(-1)
             self.heading_combo.blockSignals(False)
             return
-          
-        
-        
+
         fmt = cursor.charFormat()
         size = fmt.fontPointSize()
-        
+
         if size == 26:
             self.heading_combo.setCurrentIndex(1)  # Heading 1
         elif size == 18:
@@ -862,32 +663,26 @@ class DocumentEditor(QWidget):
             self.heading_combo.setCurrentIndex(4)  # Heading 4
         else:
             self.heading_combo.setCurrentIndex(0)  # Normal
- 
- 
+
     def adjust_height_document_editor(self):
-        #print('[adjust_height_document_editor]')
         doc = self.editor.document()
         layout = doc.documentLayout()
 
-        # ارتفاع واقعی محتوای رندر شده
         content_height = layout.documentSize().height()
-               
+
         cm = self.editor.contentsMargins()
         toolbar_height = 30 if self.toolbar.isVisible() else 0
-        
 
-        
         new_height = int(content_height 
-                 + toolbar_height 
-                 + doc.documentMargin()   # می‌تونی اینو کم یا حذف کنی
-                 + self.editor.frameWidth() * 2  # یا فقط یک بار بذاری
-                 + cm.top() 
-                 + cm.bottom()
-                 + 2)   # به جای 10، فقط 2 پیکسل اضافه
+                + toolbar_height 
+                + doc.documentMargin()   
+                + self.editor.frameWidth() * 2  
+                + cm.top() 
+                + cm.bottom()
 
 
         self.editor_height = new_height #  New Height to save to file metadata
-        
+
         if self.readonly_mode:
             self.setMinimumHeight(new_height)
             self.setMaximumHeight(new_height)
@@ -900,51 +695,25 @@ class DocumentEditor(QWidget):
 
         self.updateGeometry()
         self.flag_doc_height_adjust = True
-        # print(f"Applied new_h: {new_height}, editor.h now: {self.editor.height()}")
-        # doc = self.editor.document()
-        # layout = doc.documentLayout()
 
-        # print(f"widgetResizable: {self.scroll_area.widgetResizable()}")
-        # print(f"documentSize.h: {layout.documentSize().height()}")   # ارتفاع واقعی محتوای رندرشده
-        # print(f"documentMargin: {doc.documentMargin()}")
-
-        # cm = self.editor.contentsMargins()
-        # print(f"contentsMargins: {cm.left()}, {cm.top()}, {cm.right()}, {cm.bottom()}")
-        # print(f"frameWidth: {self.editor.frameWidth()}")
-
-        # print(f"sizeHint.h: {self.editor.sizeHint().height()}")
-        # print(f"viewport.h: {self.scroll_area.viewport().size().height()}")
-        # print(f"editor.h before: {self.editor.height()}")
-     
     def set_fixed_height(self , height = 0):
-        """Set editor to exact pixel height (from metadata)"""
-        #print('[SET FIXED HEIGHT METHOD] ' ,height)
-      
-        self.setFixedHeight(height)   # دقیقاً همون ارتفاع
-        self.resize(self.width(), height)  # اگر داخل layout باشه، این هم کمک می‌کنه
+        self.setFixedHeight(height)   
+        self.resize(self.width(), height)  
         self.updateGeometry()
 
-
     def clear_selection_format(self):
-        """
-        Remove all formatting from the selected text and reset to default font size.
-        """
         cursor = self.editor.textCursor()
         if cursor.hasSelection():
-            # ساخت فرمت جدید با تنظیمات پیش‌فرض
             fmt = QTextCharFormat()
             fmt.setFontWeight(QFont.Normal)
             fmt.setFontItalic(False)
             fmt.setFontUnderline(False)
             fmt.setForeground(QColor(Qt.black))
-            fmt.setFontPointSize(self.code_font_size)  # سایز پیش‌فرض از تنظیمات
-
-            # اعمال فرمت روی کل محدوده انتخاب‌شده
+            fmt.setFontPointSize(self.code_font_size)  
             start = cursor.selectionStart()
             end = cursor.selectionEnd()
 
             cursor.setPosition(start)
             cursor.setPosition(end, QTextCursor.KeepAnchor)
-            cursor.setCharFormat(fmt)   # اینجا کل انتخاب را با فرمت جدید جایگزین می‌کند
-
+            cursor.setCharFormat(fmt)   
             self.editor.setTextCursor(cursor)

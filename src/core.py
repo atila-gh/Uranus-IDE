@@ -3,12 +3,16 @@ import os
 import sys
 from PyQt5.QtGui import QFontDatabase
 from PyQt5.QtWidgets import QApplication, QStyleFactory
+from MainWindow import MainWindow
+
 
 current_file = os.path.abspath(__file__)
 project_root = os.path.abspath(os.path.join(current_file, "..", ".."))
 src_path = os.path.join(project_root, "src")
 if src_path not in sys.path:
     sys.path.insert(0, src_path)
+
+
 
 def install_fonts():
     """
@@ -26,7 +30,7 @@ def install_fonts():
         "JetBrainsMono-Light.ttf",          
         "Technology.ttf",
         "SpaceMono-Regular.ttf",
-       
+
     ]
 
     existing_fonts = set(QFontDatabase().families())
@@ -57,13 +61,11 @@ def install_fonts():
         print("\nℹ️ No new fonts were added (they may already be installed).")
 
 def main():
-   
     app = QApplication(sys.argv)
     # app.setStyle("Fusion")
     install_fonts()
     print("🎨 Available styles:", QStyleFactory.keys())
 
-    from Uranus.MainWindow import MainWindow
     # For Dark Mode
     #import qdarktheme
     #qdarktheme.setup_theme("dark")
@@ -72,6 +74,8 @@ def main():
     window.show()
     sys.exit(app.exec_())
 
+
 if __name__ == "__main__":
     main()
+
 

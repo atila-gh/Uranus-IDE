@@ -1,65 +1,53 @@
+from math import ceil 
+import  json , re , os
+from PyQt5.QtGui import  QFont,QFontMetrics,QTextCursor, QTextCursor,QKeySequence , QColor
+from PyQt5.QtCore import Qt,pyqtSignal,QEvent 
+from PyQt5.QtWidgets import (
+    QFrame,
+    QListWidget,
+    QListWidgetItem,
+    QVBoxLayout,
+    QShortcut,
+    QLabel,
+    QPlainTextEdit,
+    QApplication
+)
 
-from PyQt5.QtGui import QFont, QFontMetrics, QTextCursor, QKeySequence, QColor
-from PyQt5.QtCore import Qt, pyqtSignal, QEvent 
-from PyQt5.QtWidgets import QPlainTextEdit, QApplication
 
-from Uranus.CodeHighlight import CodeHighlighter
-from Uranus.auto_complete_system import AutoCompleteSystem
-from Uranus.SettingWindow import load_setting
+from CodeHighlight import CodeHighlighter
+from Uauto_complete_system import AutoCompleteSystem
+
+from SettingWindow import load_setting  
+
+        
+    
+    
 
 
 class CodeEditor(QPlainTextEdit):
-    cursorPositionInfo = pyqtSignal(int, int)   # سیگنال ارسال شماره خط و کاراکتر 
+    cursorPositionInfo = pyqtSignal(int, int)  
     clicked = pyqtSignal()
 
-    """
-        A custom plain text editor designed for code cells in the Uranus IDE.
-
-        Features:
-        - Monospaced font with syntax highlighting via CodeHighlighter.
-        - Emits real-time cursor position updates (line and column) via `cursorPositionInfo`.
-        - Supports block-level indentation/unindentation with Tab and Shift+Tab.
-        - Auto-inserts paired characters (quotes, brackets, braces, parentheses).
-        - Smart commenting/uncommenting with Ctrl+/ for single or multi-line selections.
-        - Auto-indents after colon (:) for Python blocks.
-        - Handles visual column calculation with tab-aware logic.
-        - Dynamically adjusts height based on content (line count).
-
-        Signals:
-        - cursorPositionInfo(int line, int column): Emitted after each key press to update line/column info.
-        - clicked(): Emitted when the editor is clicked, used to notify parent cell.
-
-        Settings:
-        - Tab size, font, colors, and syntax highlighting are loaded from external configuration via `load_setting()`.
-
-        Usage:
-        This editor is embedded inside Cell widgets and interacts with the kernel for code execution.
-        It is optimized for Python editing but can be extended for other languages via the highlighter.
-        """
-
     def __init__(self, parent=None):
-        #print('[CodeEditor->__init__]')
-
         super().__init__(parent)
         setting = load_setting()
         self.copy = self.my_copy()
-        self.autocomplete_status = False # define the auto complet On or Off
-        
+        self.autocomplete_status = False 
+
         # ------ Setting 
-        self.tab_size = 4  # تعداد فاصله برای هر تب
+        self.tab_size = 4 
         bg_code         = setting['colors']['Back Ground Color Code']       
         fg_code         = setting['colors']['ForGround Color Code']
         code_font       = setting['Code Font']
         code_font_size  = setting['Code Font Size']
-      
 
-        # ✅ ارتفاع اولیه (مثلاً 80 پیکسل)
-        
+
+
         self.setFixedHeight(80)        
-        self.setFont(QFont(code_font, code_font_size,QFont.Bold))  # تست با فونت معتبر        
+        self.setFont(QFont(code_font, code_font_size,QFont.Bold))  
         self.installEventFilter(self)
-        self.setTabStopDistance(self.tab_size * self.fontMetrics().horizontalAdvance(' ')) # adjust Tab From 8 Char to 4
-        
+        self.setTabStopDistance(self.tab_size * self.fontMetrics().horizontalAdvance(' ')) #
+
         self.setStyleSheet(f"""
                 QPlainTextEdit {{
                     background-color: {bg_code};
@@ -72,18 +60,13 @@ class CodeEditor(QPlainTextEdit):
             """)
 
 
-       
-        # حذف اسکرول و اتصال تغییر ارتفاع
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # noinspection PyTypeChecker
 
-       
-        # ✅ فعال‌سازی های‌لایت سینتکس
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)       
         self.highlighter = CodeHighlighter(self.document())
         self.autocomplete = AutoCompleteSystem(self)
 
-
-
     @staticmethod
+
     def get_visual_column(cursor, tab_size=4):
         block_text = cursor.block().text()
         column = 0
@@ -96,47 +79,43 @@ class CodeEditor(QPlainTextEdit):
         return column + 1
 
     def eventFilter(self, obj, event):
-        if obj == self and event.type() == QEvent.KeyPress:
-            if event.key() in (Qt.Key_Return, Qt.Key_Enter):
-                self.adjust_height_code()
-        return super().eventFilter(obj, event)
+            if obj == self and event.type() == QEvent.KeyPress:
+                if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+                    self.adjust_height_code()
+            return super().eventFilter(obj, event)
 
     def keyPressEvent(self, event):
-        
         def delayed_emit():
             QApplication.processEvents() 
             _cursor = self.textCursor()
             line = _cursor.blockNumber() + 1
             column = self.get_visual_column(_cursor, self.tab_size)
             self.cursorPositionInfo.emit(line, column)
-            
-            
+
+
         if hasattr(self, 'autocomplete') and self.autocomplete.active:
-                # اگر کلید Escape بود، اتوکامپلیت خودش مدیریت می‌کند
                 if event.key() == Qt.Key_Escape:
                     self.autocomplete.keyPressEvent(event)
                     delayed_emit()
                     return
-                # اگر Enter یا Tab بود
                 elif event.key() in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_Tab):
                     self.autocomplete.keyPressEvent(event)
                     delayed_emit()
                     return
-                # اگر بالا یا پایین بود
                 elif event.key() in (Qt.Key_Up, Qt.Key_Down):
                     self.autocomplete.keyPressEvent(event)
                     return
-        
-            
+
+
         cursor = self.textCursor()
         selected_text = cursor.selectedText()  
-        
-       
+
+
 
         # # ---------- Tab / Shift+Tab for selected block ----------
-        
+
         if event.key() == Qt.Key_Tab and cursor.hasSelection():
-           
+
             try:
                 cursor.beginEditBlock()
                 start = min(cursor.anchor(), cursor.position())
@@ -158,9 +137,9 @@ class CodeEditor(QPlainTextEdit):
             except Exception as e:
                 pass
                 # print(f"[Tab Error] {e}")
-        
+
         elif event.key() == Qt.Key_Backtab and cursor.hasSelection():
-           
+
             try:
                 cursor.beginEditBlock()
                 start = min(cursor.anchor(), cursor.position())
@@ -187,7 +166,7 @@ class CodeEditor(QPlainTextEdit):
             except Exception as e:
                 pass
                 # print(f"[Shift+Tab Error] {e}")
-        
+
         elif event.key() == Qt.Key_Backtab :
             try:
                 cursor.beginEditBlock()
@@ -217,14 +196,14 @@ class CodeEditor(QPlainTextEdit):
                 # print(f"[Shift+Tab Error] {e}")
         # ---------- Shift + Down → Select previous word ----------
         if event.key() == Qt.Key_Down and event.modifiers() == Qt.ControlModifier:
-           
+
             cursor.movePosition(QTextCursor.PreviousWord, QTextCursor.KeepAnchor)
             self.setTextCursor(cursor)
             return
-        
+
         # ---------- Shift + Left → Select Current Line ----------
         if event.key() == Qt.Key_Left and event.modifiers() == Qt.ControlModifier:
-          
+
             cursor = self.textCursor()
             current_pos = cursor.positionInBlock()
             if current_pos > 0:
@@ -233,7 +212,7 @@ class CodeEditor(QPlainTextEdit):
             delayed_emit()
             return
 
-        
+
         #---------- quote and double quote control ----------
         if event.text() in ["'", '"'] and not cursor.hasSelection():
             quote = event.text()
@@ -241,7 +220,6 @@ class CodeEditor(QPlainTextEdit):
             block_text = cursor.block().text()
             pos_in_block = cursor.positionInBlock()
 
-            # بررسی تعداد کوتیشن‌های پشت سر کرسر
             count_behind = 0
             i = pos_in_block - 1
             while i >= 0 and block_text[i] == quote:
@@ -249,22 +227,19 @@ class CodeEditor(QPlainTextEdit):
                 i -= 1
 
             if count_behind == 0:
-                # حالت ۱: هیچ کوتیشن پشت کرسر نیست → درج دو تا و کرسر وسط
                 cursor.insertText(f"{quote}{quote}")
                 cursor.movePosition(QTextCursor.Left, QTextCursor.MoveAnchor, 1)
                 self.setTextCursor(cursor)
-                
+
 
             elif count_behind == 1:
-                # حالت ۲: یک کوتیشن پشت کرسر → فقط کرسر جلو بره
                 cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor, 1)
                 self.setTextCursor(cursor)
-                
+
 
             elif count_behind == 2:
-                # حالت ۳: دو کوتیشن پشت کرسر → یک کوتیشن اضافه کن، سه تا جلو، کرسر وسط
-                cursor.insertText(quote)  # اضافه کردن سومین کوتیشن پشت سر
-                cursor.insertText(f"{quote*3}")  # سه تا جلوی کرسر
+                cursor.insertText(quote)  
+                cursor.insertText(f"{quote*3}")  
                 cursor.movePosition(QTextCursor.Left, QTextCursor.MoveAnchor, 3)
                 self.setTextCursor(cursor)
             delayed_emit()
@@ -283,16 +258,16 @@ class CodeEditor(QPlainTextEdit):
             cursor = self.textCursor()
             block_text = cursor.block().text()
             pos_in_block = cursor.positionInBlock()
-            
+
             if block_text.strip().startswith("#"):
                 if pos_in_block != 0:
                     cursor.movePosition(QTextCursor.EndOfBlock)
                     self.setTextCursor(cursor)          
-                
-                super().keyPressEvent(event)  # اینتر واقعی برای خطوط غیرکامنت
+
+                super().keyPressEvent(event)  
                 delayed_emit()
                 return
-      
+
         # ---------- Wrap selected text in parentheses ----------
         if event.text() == "(":
             cursor = self.textCursor()
@@ -354,21 +329,19 @@ class CodeEditor(QPlainTextEdit):
                 cursor.movePosition(cursor.Left, cursor.KeepAnchor, remove_count)
                 cursor.removeSelectedText()
             else :
-                # بک‌اسپیس معمولی
-                 super().keyPressEvent(event)
+                super().keyPressEvent(event)
 
             delayed_emit()
             return
 
 
-        
+
         # -----------------make current line Comment --------------
         if event.key() == Qt.Key_Slash and event.modifiers() & Qt.ControlModifier:
             cursor = self.textCursor()
 
             cursor.beginEditBlock()
 
-            # حالت چند خط انتخاب‌شده
             if cursor.hasSelection():
                 start = min(cursor.anchor(), cursor.position())
                 end = max(cursor.anchor(), cursor.position())
@@ -376,7 +349,6 @@ class CodeEditor(QPlainTextEdit):
                 block = self.document().findBlock(start)
                 end_block = self.document().findBlock(end)
 
-                # بررسی اینکه آیا همه‌ی خطوط کامنت هستند
                 all_commented = True
                 check_block = block
                 while check_block.isValid() and check_block.position() <= end_block.position():
@@ -385,13 +357,11 @@ class CodeEditor(QPlainTextEdit):
                         break
                     check_block = check_block.next()
 
-                                # اعمال تغییرات
                 while block.isValid() and block.position() <= end_block.position():
                     line_cursor = QTextCursor(block)
                     line_text = block.text()
                     line_cursor.movePosition(QTextCursor.StartOfBlock)
                     if all_commented:
-                        # حذف کامنت
                         index = line_text.find("#")
                         if index != -1:
                             after_hash = line_text[index+1:].lstrip()
@@ -400,11 +370,9 @@ class CodeEditor(QPlainTextEdit):
                             line_cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, end_index)
                             line_cursor.removeSelectedText()
                     else:
-                        # اضافه کردن کامنت
                         line_cursor.insertText("# ")
                     block = block.next()
 
-            # حالت بدون انتخاب → فقط خط جاری
             else:
                 block = cursor.block()
                 block_text = block.text()
@@ -428,37 +396,34 @@ class CodeEditor(QPlainTextEdit):
 
         # ---------- Auto Indent for Enter after : ----------
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):            
-            
+
             cursor = self.textCursor()
             block_text = cursor.block().text()
             pos = cursor.positionInBlock()
             base_indent = len(block_text) - len(block_text.lstrip())
-            
-            # ========== اصلاح ایندنت ناقص ==========
+
             if base_indent > 0 and base_indent % self.tab_size > 0:
                 fix_indent = self.tab_size - (base_indent % self.tab_size)
-               
-                
+
+
                 cursor.beginEditBlock()
                 cursor.movePosition(QTextCursor.StartOfBlock)
                 cursor.insertText(" " * fix_indent)
                 cursor.endEditBlock()
-                
+
                 block_text = cursor.block().text()
                 base_indent = len(block_text) - len(block_text.lstrip())
-              
 
-            # ========== تشخیص موقعیت کرسر ==========
+
             first_non_space = len(block_text) - len(block_text.lstrip())
             last_non_space = len(block_text.rstrip())
-            
+
             is_before_code = pos <= first_non_space
             is_middle_code = first_non_space < pos < last_non_space
             is_at_end = pos >= last_non_space
             ends_with_colon = block_text.rstrip().endswith(":")
-           
 
-            # ========== محاسبه ایندنت ==========
+
             if is_at_end and ends_with_colon:
                 total_indent = base_indent + self.tab_size
             elif is_before_code:
@@ -466,19 +431,17 @@ class CodeEditor(QPlainTextEdit):
             else:
                 total_indent = base_indent
 
-            # ========== اجرا ==========
             super().keyPressEvent(event)
             if total_indent > 0:
                 self.insertPlainText(" " * total_indent)
-               
+
             delayed_emit() 
             return
 
 
-        # ---------- Default ----------       
-           
+
         super().keyPressEvent(event)    
-            
+
         delayed_emit()        
         self.highlighter.triple_quote_ranges = self.highlighter.find_triple_quote_blocks()
         self.highlighter.rehighlight()
@@ -499,38 +462,26 @@ class CodeEditor(QPlainTextEdit):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff) # noinspection PyTypeChecker
 
     def mousePressEvent(self, event):
-        
         super().mousePressEvent(event)
         if self.parent():
             self.parent().mousePressEvent(event)
 
-
     def my_copy(self):
-        
         cursor = self.textCursor()
         if cursor.hasSelection():
             selected_text = cursor.selectedText()
-            # حذف فضای خالی قبل و بعد
             trimmed_text = selected_text.strip()
-            # ذخیره در حافظه (clipboard)
             QApplication.clipboard().setText(trimmed_text)
         else:
             super().copy()
 
-
     def fix_indentation(self, tab_size=4):
-        '''
-        This method is for solve 
-        '''
-        #print('[Indentation Fixed]')
-        
         text = self.toPlainText()
         lines = text.split("\n")
 
         fixed = []
 
         for line in lines:
-            # جدا کردن بخش اول خط (indentation)
             prefix = ""
             rest = line.lstrip(" \t")
 
@@ -540,11 +491,8 @@ class CodeEditor(QPlainTextEdit):
                 else:
                     break
 
-            # اول همه tab ها را تبدیل کن
             prefix = prefix.replace("\t", " " * tab_size)
 
-            # حالا تعداد اسپیس‌ها را استاندارد کن (اختیاری ولی بهتر)
-            # مثلا همیشه مضرب 4 شود
             spc = len(prefix)
             level = spc // tab_size
             prefix = " " * (level * tab_size)
@@ -553,14 +501,3 @@ class CodeEditor(QPlainTextEdit):
 
         new_text = "\n".join(fixed)
         self.setPlainText(new_text)
-
-
-
-
-if __name__ == "__main__":
-    import sys
-    from PyQt5.QtWidgets import QApplication
-    app = QApplication(sys.argv)
-    window = CodeEditor()
-    window.show()
-    sys.exit(app.exec_())

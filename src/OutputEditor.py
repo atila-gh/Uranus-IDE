@@ -3,7 +3,8 @@
 from PyQt5.QtGui import QFont,QFontMetrics, QTextCursor
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QVBoxLayout,QApplication,QWidget, QSizePolicy,QTextEdit
-from Uranus.SettingWindow import load_setting
+from SettingWindow import load_setting
+
 
 
 class OutputEditor(QWidget):
@@ -32,7 +33,6 @@ class OutputEditor(QWidget):
     def __init__(self):
         super().__init__()
         self.setVisible(False)
-
 
         setting = load_setting()
         bg         = setting['colors']['Back Ground Color OutPut']
@@ -87,9 +87,7 @@ class OutputEditor(QWidget):
 
         self.layout.addWidget(self.text_output)
 
-
     def adjust_height(self):
-        
         text = self.text_output.toPlainText()
         lines = text.splitlines()
         line_count = max(len(lines), 1)  # min 1 line
@@ -107,8 +105,6 @@ class OutputEditor(QWidget):
         )
         self.text_output.updateGeometry()
 
-
     def clear(self):
         self.text_output.clear()
         self.setVisible(False)
-

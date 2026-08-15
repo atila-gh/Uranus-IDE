@@ -3,14 +3,11 @@ from PyQt5.QtCore import Qt, QPoint, QSize , pyqtSignal , QModelIndex
 from PyQt5.QtGui import QCursor,QIcon
 from PyQt5.QtWidgets import QFileSystemModel
 import shutil , os , stat ,platform , subprocess
+from SettingWindow import load_setting
 
 
-
-from Uranus.SettingWindow import load_setting
-# Override Tree View Standard Class
 
 class CustomIconProvider(QFileIconProvider):
-
 
     def icon(self, file_info):
         if file_info.isDir():
@@ -26,32 +23,29 @@ class CustomIconProvider(QFileIconProvider):
         elif ext == "ipynb":
             icon_path = os.path.join(os.path.dirname(__file__), "image", "ipynb_icon.png")
             return QIcon(icon_path)
-        
+
         elif ext == "txt":
             icon_path = os.path.join(os.path.dirname(__file__), "image", "txt.png")
             return QIcon(icon_path)
-        
+
         elif ext == "json":
             icon_path = os.path.join(os.path.dirname(__file__), "image", "json.png")
             return QIcon(icon_path)
-        
+
         elif ext == "csv":
             icon_path = os.path.join(os.path.dirname(__file__), "image", "csv.png")
             return QIcon(icon_path)
-        
+
         elif ext == "db":
             icon_path = os.path.join(os.path.dirname(__file__), "image", "db.png")
             return QIcon(icon_path)
-        
+
         elif ext == "png" or ext == 'jpg':
             icon_path = os.path.join(os.path.dirname(__file__), "image", "image.png")
             return QIcon(icon_path)
-        
+
         else:
             return QIcon(os.path.join(os.path.dirname(__file__), "image", "file_unknown.png"))
-
-
-
 
 class FileTreePanel(QWidget):
     """
@@ -67,7 +61,6 @@ class FileTreePanel(QWidget):
     Automatically updates path display when root changes.
     """
     pathChanged = pyqtSignal(str)
-
 
     def __init__(self):
         super().__init__()
@@ -95,53 +88,12 @@ class FileTreePanel(QWidget):
         # Connect signal to update path display if root changes
         self.tree.pathChanged.connect(self.path_display.setText)
 
-   
-
-
 class FileTreeView(QTreeView):
-   
-
-
-    """
-        A customized file explorer widget for Uranus IDE, extending QTreeView.
-
-        This class provides an interactive tree-based view of the filesystem with enhanced features
-    for file and folder management. It supports inline editing, custom icons, keyboard shortcuts,
-    and context menus for common operations.
-
-        Features:
-        - Displays filesystem using QFileSystemModel with custom icons for .py and .ipynb files.
-        - Supports renaming, deleting, copying, pasting, and creating folders via keyboard or context menu.
-        - Automatically loads the last accessed path from settings.
-        - Hides extra columns for a cleaner UI (size, type, date modified).
-        - Integrates with clipboard for path copy/paste operations.
-        - Handles folder expansion/collapse via Enter key.
-
-        Keyboard Shortcuts:
-        - Delete: Remove selected file/folder.
-        - Ctrl+C: Copy path to clipboard.
-        - Ctrl+V: Paste copied item into selected directory.
-        - F2: Rename selected item.
-        - Enter: Expand/collapse folder.
-
-        Context Menu Actions:
-        - Open: Launch file/folder using system default.
-        - Delete: Remove item with confirmation.
-        - Rename: Inline rename with validation.
-        - New Folder: Create and rename a new folder.
-        - Copy Path: Copy full path to clipboard.
-        - Paste: Paste file/folder from clipboard.
-
-        Usage:
-        Used as the left-side dock widget in MainWindow to navigate and manage project files.
-        Automatically reflects changes in the filesystem and supports direct interaction.
-        """
-    
     pathChanged = pyqtSignal(str)
 
     def __init__(self):
         self.debug = False
-        
+
         super().__init__()
         setting = load_setting()
 
@@ -179,29 +131,20 @@ class FileTreeView(QTreeView):
         # ✅ Fix: update path immediately on any selection change
         self.selectionModel().selectionChanged.connect(self._on_selection_changed)
 
-    # ------------------------------------------------------------
-    # Selection Handling
-    # ------------------------------------------------------------
     def _on_selection_changed(self, selected, deselected):
-        
-        """Triggered whenever a new file/folder is selected."""
         if selected.indexes():
             index = selected.indexes()[0]
             self.on_item_selected(index)
 
     def on_item_selected(self, index):
-        """Update path when a tree item is selected."""
         path = os.path.abspath(self.fs_model.filePath(index))
         project_root = os.path.abspath(self.project_root)
 
-        
+
         if path != project_root:
             self.path = path
             self.pathChanged.emit(path)
 
-    # ------------------------------------------------------------
-    # Keyboard Events
-    # ------------------------------------------------------------
     def keyPressEvent(self, event):
         index = self.currentIndex()
         if not index.isValid():
@@ -226,10 +169,6 @@ class FileTreeView(QTreeView):
         else:
             super().keyPressEvent(event)
 
-
-    # ------------------------------------------------------------
-    # Context Menu
-    # ------------------------------------------------------------
     def show_context_menu(self, position: QPoint):
         index = self.indexAt(position)
         if index.isValid():
@@ -246,7 +185,7 @@ class FileTreeView(QTreeView):
         open_action.triggered.connect(self.open_item)
         menu.addAction(open_action)
 
-      
+
         add_file_action = QAction("Add File", self)
         add_file_action.triggered.connect(self.create_file)
         menu.addAction(add_file_action)
@@ -273,17 +212,12 @@ class FileTreeView(QTreeView):
 
         menu.exec_(QCursor.pos())
 
-    # ------------------------------------------------------------
-    # File Operations
-    # ------------------------------------------------------------
     def create_file(self):
-        """Create a new untitled .ipynb file in the selected folder."""
-
         index = self.currentIndex()
         if index.isValid():
             path = self.fs_model.filePath(index)
         else:
-            path = self.path  # مسیر جاری که در select_project_folder تنظیم شده
+            path = self.path  
 
 
         target_dir = path if os.path.isdir(path) else os.path.dirname(path)
@@ -311,27 +245,19 @@ class FileTreeView(QTreeView):
             self.edit(index)
             editor = self.findChild(QLineEdit)
             if editor:
-                # گرفتن متن کامل از editor
                 full_text = editor.text()                
-                # پیدا کردن موقعیت آخرین نقطه (برای فایل‌هایی که چند نقطه دارند)
                 last_dot_index = full_text.rfind('.')                
                 if last_dot_index != -1:
-                    # انتخاب از ابتدا تا قبل از نقطه
                     editor.setSelection(0, last_dot_index)
                 else:
-                    # اگر نقطه‌ای نبود، کل متن را انتخاب کن
                     editor.selectAll()
-                    
-    
-    
-    def create_py_file(self):
-        """Create a new untitled .ipynb file in the selected folder."""
 
+    def create_py_file(self):
         index = self.currentIndex()
         if index.isValid():
             path = self.fs_model.filePath(index)
         else:
-            path = self.path  # مسیر جاری که در select_project_folder تنظیم شده
+            path = self.path  
 
 
         target_dir = path if os.path.isdir(path) else os.path.dirname(path)
@@ -359,24 +285,19 @@ class FileTreeView(QTreeView):
             self.edit(index)
             editor = self.findChild(QLineEdit)
             if editor:
-                # گرفتن متن کامل از editor
                 full_text = editor.text()                
-                # پیدا کردن موقعیت آخرین نقطه (برای فایل‌هایی که چند نقطه دارند)
                 last_dot_index = full_text.rfind('.')                
                 if last_dot_index != -1:
-                    # انتخاب از ابتدا تا قبل از نقطه
                     editor.setSelection(0, last_dot_index)
                 else:
-                    # اگر نقطه‌ای نبود، کل متن را انتخاب کن
                     editor.selectAll()
-            
- 
+
     def open_item(self, path):
         index = self.currentIndex()
         if index.isValid():
             path = self.fs_model.filePath(index)
         else:
-            path = self.path  # مسیر جاری که در select_project_folder تنظیم شده
+            path = self.path 
 
         try:
             system = platform.system()
@@ -397,7 +318,7 @@ class FileTreeView(QTreeView):
         if index.isValid():
             path = self.fs_model.filePath(index)
         else:
-            path = self.path  # مسیر جاری که در select_project_folder تنظیم شده
+            path = self.path  
 
 
         reply = QMessageBox.question(self, "Delete", f"Are you sure you want to delete?\n{path}")
@@ -422,7 +343,7 @@ class FileTreeView(QTreeView):
         if index.isValid():
             path = self.fs_model.filePath(index)
         else:
-            path = self.path  # مسیر جاری که در select_project_folder تنظیم شده
+            path = self.path  
 
         base_dir = os.path.dirname(path)
         old_name = os.path.basename(path)
@@ -439,10 +360,10 @@ class FileTreeView(QTreeView):
         if index.isValid():
             path = self.fs_model.filePath(index)
         else:
-            path = self.path  # مسیر جاری که در select_project_folder تنظیم شده
+            path = self.path  
 
 
-        
+
         target_dir = path if os.path.isdir(path) else os.path.dirname(path)
         if target_dir and os.path.exists(target_dir):
             current_dir = target_dir
@@ -473,7 +394,7 @@ class FileTreeView(QTreeView):
             QMessageBox.warning(self, "Warning", "No item selected.")
             return
 
-       
+
         source = QApplication.clipboard().text()
         if not os.path.exists(source):
             QMessageBox.warning(self, "Error", "Clipboard does not contain a valid path.")
@@ -490,22 +411,12 @@ class FileTreeView(QTreeView):
                 shutil.copytree(source, dest_path)
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Could not paste:\n{e}")
- 
+
     def mousePressEvent(self, event):
         index = self.indexAt(event.pos())
-
         if not index.isValid():
-            # کلیک روی فضای خالی درخت فایل
-
-            # 1. پاک‌کردن انتخاب فعلی
             self.clearSelection()
             self.setCurrentIndex(QModelIndex())
-
-            # 2. تنظیم مسیر جاری به ریشه پروژه
             self.path = self.project_root
             self.pathChanged.emit(self.project_root)
-
-        # 3. ادامهٔ رفتار پیش‌فرض برای کلیک‌های معتبر
         super().mousePressEvent(event)
-        
-        

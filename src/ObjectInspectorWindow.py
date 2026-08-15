@@ -7,8 +7,9 @@ from PyQt5.QtCore import Qt
 import reprlib
 import json
 
+
+
 class ObjectInspectorWindow(QWidget):
-    
     """
     A floating window for inspecting Python objects in a structured, type-aware table.
 
@@ -62,13 +63,13 @@ class ObjectInspectorWindow(QWidget):
     Notes:
     ------
     - This class is designed to be launched as a floating window from within
-      the Uranus IDE or any PyQt-based environment.
+    the Uranus IDE or any PyQt-based environment.
     - Future enhancements may include:
         - Tree-based viewers for nested structures
         - Specialized viewers for NumPy arrays, Pandas DataFrames, etc.
         - Export and copy-to-clipboard functionality
     """
-    
+
     def __init__(self, parent=None ,  file_name = ''):
         super().__init__(parent)
         self.setWindowTitle(file_name)
@@ -114,7 +115,7 @@ class ObjectInspectorWindow(QWidget):
         mod = t.__module__
         name = t.__name__
 
-        # ساختارهای داده‌ای ساده
+            # ساختارهای داده‌ای ساده
         if isinstance(value, (list, tuple, set, frozenset)):
             return f"{name}({len(value)} items)"
         if isinstance(value, dict):
@@ -153,7 +154,7 @@ class ObjectInspectorWindow(QWidget):
         if mod in {"io", "re", "types", "threading", "asyncio"}:
             return name
 
-        # سایر موارد
+            # سایر موارد
         try:
             text = str(value)
             return text if len(text) <= max_len else text[:max_len] + " ..."
@@ -167,7 +168,7 @@ class ObjectInspectorWindow(QWidget):
         self.data = data
         self.table.setRowCount(len(data))
         self.table.clearContents()
-       
+
 
         color_map = {
         # Built-in types
@@ -245,7 +246,7 @@ class ObjectInspectorWindow(QWidget):
             self.table.setItem(i, 1, type_item)
             self.table.setItem(i, 2, size_item)
             self.table.setItem(i, 3, value_item)
-            
+
 
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
@@ -273,7 +274,7 @@ class ObjectInspectorWindow(QWidget):
             import io
             return isinstance(val, (io.TextIOBase, io.StringIO, io.BytesIO))
 
-        # مقدار کامل
+            # مقدار کامل
         if is_file_like(value):
             try:
                 value.seek(0)
@@ -288,7 +289,7 @@ class ObjectInspectorWindow(QWidget):
         else:
             full_text = reprlib.repr(value)
 
-        # ساخت پنجره
+            # ساخت پنجره
         dialog = QDialog(self)
         dialog.setWindowTitle(f"Full Value: {self.data[row]['name']}")
         dialog.setMinimumSize(600, 400)
@@ -307,33 +308,3 @@ class ObjectInspectorWindow(QWidget):
 
         dialog.setLayout(layout)
         dialog.exec_()
-        
-        
-        
-# import sys
-# from PyQt5.QtWidgets import QApplication
-# from ObjectInspectorWindow import ObjectInspectorWindow  
-# if __name__ == "__main__":
-#     app = QApplication(sys.argv)
-
-
-    sample_data = [
-        {"name": "x", "type": "int", "size": 28, "value": 42},
-        {"name": "pi", "type": "float", "size": 24, "value": 3.1415},
-        {"name": "name", "type": "str", "size": 53, "value": "Attila"},
-        {"name": "active", "type": "bool", "size": 24, "value": True},
-        {"name": "items", "type": "list", "size": 88, "value": [1, 2, 3]},
-        {"name": "config", "type": "dict", "size": 120, "value": {"debug": True}},
-        {"name": "callback", "type": "function", "size": 64, "value": "<function run_cell>"},
-        {"name": "data_set", "type": "set", "size": 72, "value": {1, 2, 3}},
-        {"name": "nothing", "type": "NoneType", "size": 16, "value": None}
-    ]
-
-
-#     inspector = ObjectInspectorWindow()
-#     inspector.add_objects(sample_data)
-
-
-#     inspector.show()
-
-#     sys.exit(app.exec_())

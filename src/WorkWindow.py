@@ -1,4 +1,4 @@
- 
+
 import os ,base64  ,io ,builtins ,uuid , importlib , hashlib , sys,inspect , nbformat , sys
 from nbformat.v4 import  new_output
 from contextlib import redirect_stdout, redirect_stderr
@@ -9,13 +9,13 @@ import subprocess,  tempfile
 from PyQt5.QtGui import  QIcon , QKeySequence , QTextCursor 
 from PyQt5.QtCore import  QSize ,QMetaObject, Qt, pyqtSlot, QObject ,QEventLoop ,QTimer
 from PyQt5.QtWidgets import (QToolBar, QToolButton, QColorDialog, QShortcut, QWidget , QFrame , QMainWindow
-    , QVBoxLayout , QSpacerItem, QSizePolicy , QScrollArea,QDialog, QVBoxLayout, QLineEdit , QMdiSubWindow , QStatusBar
+    , QVBoxLayout , QSpacerItem, QSizePolicy , QScrollArea,QDialog, QVBoxLayout, QLineEdit , QMdiSubWindow , QStatusBar,QInputDialog
     , QPushButton , QLabel, QHBoxLayout , QFileDialog, QMessageBox , QCheckBox)
 
+
 # Import Uranus Class
-from Uranus.Cell import Cell
-from Uranus.ObjectInspectorWindow import ObjectInspectorWindow
-#from Uranus.AstDetection import RelationChartView
+from Cell import Cell
+from ObjectInspectorWindow import ObjectInspectorWindow
 
 
 
@@ -28,31 +28,24 @@ class TerminalRunner:
         return cls._instance
 
     def run_code(self, code_text: str):
-        """اجرای کد پایتون در ترمینال متناسب با سیستم‌عامل"""
-        # ذخیرهٔ کد در فایل موقت
         temp_file = os.path.join(tempfile.gettempdir(), "uranus_temp.py")
         with open(temp_file, "w", encoding="utf-8") as f:
             f.write(code_text)
 
         python_exe = sys.executable
 
-        # انتخاب دستور بر اساس سیستم‌عامل
         if sys.platform.startswith("win"):
-            # ویندوز
             cmd = f'start cmd /k "{python_exe} -u {temp_file}"'
-            # cmd = f'start /min cmd /k "{python_exe} -u {temp_file}"'
 
 
             subprocess.Popen(cmd, shell=True)
 
         elif sys.platform.startswith("linux"):
-            # لینوکس (gnome-terminal)
             cmd = f'gnome-terminal -- bash -c "{python_exe} -u {temp_file}; exec bash"'
-            
+
             subprocess.Popen(cmd, shell=True)
 
         elif sys.platform == "darwin":
-            # macOS (AppleScript برای باز کردن ترمینال)
             apple_script = f'''
             tell application "Terminal"
                 do script "{python_exe} -u {temp_file}"
@@ -61,15 +54,10 @@ class TerminalRunner:
             '''
 
             subprocess.Popen(["osascript", "-e", apple_script])
-
         else:
             raise OSError(f"Unsupported platform: {sys.platform}")
 
 class FindReplaceDialog(QDialog):
-    """
-    Find/replace with preindexed matches. No overlapping search. Navigation and replacement
-    operate on stored ranges to avoid rebuilding and infinite loops (e.g., prin -> print).
-    """
 
     def __init__(self, editor, parent=None):
         super().__init__(parent)
@@ -235,24 +223,22 @@ class FindReplaceDialog(QDialog):
             self.status_label.setText(f"Match {self.current_index + 1} of {len(self.matches)}")
         else:
             self.status_label.setText("No matches")
- 
 
 class InputWaiter(QObject): # for Covering Input
     """
-       A blocking input handler that replaces Python's built-in input() with a GUI dialog.
+    A blocking input handler that replaces Python's built-in input() with a GUI dialog.
+    Purpose:
+    - Enables synchronous input collection from users during code execution.
+    - Used by IPythonKernel to intercept input() calls and show QInputDialog.
 
-       Purpose:
-       - Enables synchronous input collection from users during code execution.
-       - Used by IPythonKernel to intercept input() calls and show QInputDialog.
+    Attributes:
+    - _prompt (str): The input prompt text.
+    - _value (str): The value entered by the user.
+    - _dialog_parent (QWidget): Parent widget for the input dialog.
 
-       Attributes:
-       - _prompt (str): The input prompt text.
-       - _value (str): The value entered by the user.
-       - _dialog_parent (QWidget): Parent widget for the input dialog.
-
-       Usage:
-       Called via wait_for_input(prompt), which blocks until user input is received.
-       """
+    Usage:
+    Called via wait_for_input(prompt), which blocks until user input is received.
+    """
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -266,49 +252,35 @@ class InputWaiter(QObject): # for Covering Input
         return self._value
 
     @pyqtSlot()
-    def _show_dialog(self):
-        from PyQt5.QtWidgets import QInputDialog
 
+    def _show_dialog(self):
         dlg = QInputDialog(self._dialog_parent)
         dlg.setWindowTitle("Input")
-        dlg.setLabelText(self._prompt)
-        
-        # نمایش دیالوگ و دریافت نتیجه
-        # اگر کاربر Cancel را بزند، مقدار برگشتی None یا یک رشته خالی خواهد بود (بسته به تنظیمات)
-        # اما روش استاندارد در PyQt برای چک کردن Cancel به شرح زیر است:
-        
+        dlg.setLabelText(self._prompt)   
+
         if dlg.exec_() == QInputDialog.Accepted:
-            # کاربر دکمه OK را زده است
             self._value = dlg.textValue()
-        else:
-            # کاربر دکمه Cancel را زده است یا دیالوگ را بسته است
-            # فراخوانی متد توقف اجرا
-            # توجه: شما باید به متد stop_execution دسترسی داشته باشید.
-            # اگر این کد در داخل WorkWindow است، می‌توانید از self.stop_execution() استفاده کنید.
-            # اگر در کلاس جداگانه است، باید ارجاعی به WorkWindow داشته باشید.
-            
-            # فرض بر این است که این کد در WorkWindow است یا self.parent() WorkWindow است:
+        else:            
             parent = self.parent()
             if hasattr(parent, 'stop_execution'):
                 parent.stop_execution()
 
-
-class StreamCatcher(io.StringIO): # 2025-10-11 - edited
+class StreamCatcher(io.StringIO):
     """
-       A stream interceptor that captures stdout/stderr line-by-line and emits structured output.
+    A stream interceptor that captures stdout/stderr line-by-line and emits structured output.
 
-       Purpose:
-       - Used during code execution to redirect and format console output.
-       - Converts each line into a Jupyter-compatible nbformat output object.
+    Purpose:
+    - Used during code execution to redirect and format console output.
+    - Converts each line into a Jupyter-compatible nbformat output object.
 
-       Parameters:
-       - name (str): Stream name ("stdout" or "stderr").
-       - callback (function): Function to receive each parsed output line.
+    Parameters:
+    - name (str): Stream name ("stdout" or "stderr").
+    - callback (function): Function to receive each parsed output line.
 
-       Behavior:
-       - Buffers incoming text until newline.
-       - Emits each complete line via callback as nbformat stream output.
-       """
+    Behavior:
+    - Buffers incoming text until newline.
+    - Emits each complete line via callback as nbformat stream output.
+    """
 
     def __init__(self, name, callback):
         super().__init__()
@@ -324,30 +296,27 @@ class StreamCatcher(io.StringIO): # 2025-10-11 - edited
                 out = new_output("stream", name=self._name, text=line)
                 self.callback(out)
 
-
 class IPythonKernel:
     """
-       A lightweight wrapper around IPython's InteractiveShell for executing notebook cells.
+    A lightweight wrapper around IPython's InteractiveShell for executing notebook cells.
 
-       Responsibilities:
-       - Executes code cells and captures stdout, stderr, and display outputs.
-       - Handles input() via InputWaiter.
-       - Converts matplotlib and image outputs to base64 PNG for inline display.
-       - Maps Python objects to appropriate output editors (e.g., table, image, text).
+    Responsibilities:
+    - Executes code cells and captures stdout, stderr, and display outputs.
+    - Handles input() via InputWaiter.
+    - Converts matplotlib and image outputs to base64 PNG for inline display.
+    - Maps Python objects to appropriate output editors (e.g., table, image, text).
 
-       Attributes:
-       - shell (InteractiveShell): IPython shell instance.
-       - input_waiter (InputWaiter): Handles blocking input dialogs.
-       - object_store (dict): Stores references to large objects for later inspection.
+    Attributes:
+    - shell (InteractiveShell): IPython shell instance.
+    - input_waiter (InputWaiter): Handles blocking input dialogs.
+    - object_store (dict): Stores references to large objects for later inspection.
 
-       Methods:
-       - run_cell(code, callback): Executes code and emits outputs via callback.
-       - __uranus_inspect_variables(): Returns a DataFrame of global variables (optional).
-       """
+    Methods:
+    - run_cell(code, callback): Executes code and emits outputs via callback.
+    - __uranus_inspect_variables(): Returns a DataFrame of global variables (optional).
+    """
 
     def __init__(self):
-
-        
         cfg = Config()
         cfg.InteractiveShellEmbed = Config()
         cfg.InteractiveShellEmbed.user_ns = {}
@@ -358,10 +327,7 @@ class IPythonKernel:
         self.object_store = {}
 
     def run_cell(self, code: str, callback):
-
         builtins.input = self.input_waiter.wait_for_input
-
-        # 🔧 تزریق backend امن و جایگزینی plt.show() با ذخیره‌سازی فایل
         if ("matplotlib" in code or "plt." in code) and importlib.util.find_spec("matplotlib") is not None:
             injected = "import matplotlib; matplotlib.use('Agg')\n"
             code = injected + code.replace("plt.show()", "plt.savefig('plot.png')")
@@ -369,16 +335,16 @@ class IPythonKernel:
         outputs = []
         stdout_catcher = StreamCatcher("stdout", callback)
         stderr_buffer = io.StringIO()
-        
+
         # 🚫 Block problematic event-loop libraries in one condition
         if (
             "tkinter" in code or "Tk(" in code or
             "PyQt5" in code or "PySide2" in code or "QApplication(" in code or
             "asyncio" in code or "await " in code or "async def" in code
         ):
-            
+
             terminal = TerminalRunner()        
-            terminal.run_code(code)  # اجرای متن در همان ترمینال
+            terminal.run_code(code)  
             tb_lines = [
                 "⚠️ Code execution blocked.",
                 "Reason: Event-loop based libraries (Tkinter, Qt, asyncio) conflict with IPython/QThread execution.",
@@ -394,14 +360,14 @@ class IPythonKernel:
             outputs.append(out)
             callback(out)
             return outputs
-        
+
 
         with redirect_stdout(stdout_catcher), redirect_stderr(stderr_buffer):
             result = self.shell.run_cell(code)
-       
+
         obj = result.result
-        stderr_text = stderr_buffer.getvalue().strip()      
-        
+        stderr_text = stderr_buffer.getvalue().strip()     
+
 
         # 🖼️ image
         if os.path.exists("plot.png"):
@@ -409,13 +375,13 @@ class IPythonKernel:
                 with open("plot.png", "rb") as f:
                     encoded = base64.b64encode(f.read()).decode("utf-8")
                 out = new_output("display_data", data={"image/png": encoded},
-                                 metadata={"object_type": "Figure", "editor": "output_image"})
+                                metadata={"object_type": "Figure", "editor": "output_image"})
                 outputs.append(out)
                 callback(out)
             except Exception:
                 pass
             finally:
-                
+
                 try:
                     user_ns = self.shell.user_ns
                     if "plt" in user_ns:
@@ -425,7 +391,7 @@ class IPythonKernel:
                     pass
 
                 try :
-                     os.remove("plot.png")
+                    os.remove("plot.png")
                 except Exception:
                     pass
 
@@ -445,7 +411,6 @@ class IPythonKernel:
         if obj is None or (isinstance(obj, str) and stderr_text):
             return outputs
 
-        # ✅ نگاشت نوع به ادیتور — فقط مواردی که ژوپیتر هم نمایش می‌دهد
         obj_type = type(obj).__name__
         obj_module = obj.__class__.__module__
         full_type = f"{obj_module}.{obj_type}" if obj_module != "builtins" else obj_type
@@ -498,12 +463,9 @@ class IPythonKernel:
                 callback(out)
             except Exception:
                 return outputs
-            
-            
-        
+
         return outputs
-    
-    
+
     def inspect_all_user_attributes(self, shell):
         user_ns = shell.user_ns
         results = []
@@ -558,7 +520,7 @@ class IPythonKernel:
                 "name": name,
                 "type": type(obj).__name__,
                 "size": safe_size(obj),
-                "value": obj  # ✅ مقدار واقعی حفظ شود
+                "value": obj  
             })
 
             try:
@@ -593,46 +555,12 @@ class IPythonKernel:
                 pass
 
         return results
-            
-    
-    
+
 class WorkWindow(QFrame):
-    """
-       The main notebook interface for Uranus IDE.
-
-       Responsibilities:
-       - Hosts and manages multiple Cell instances (code/doc_editor).
-       - Provides toolbars for cell manipulation, execution, and styling.
-       - Integrates with IPythonKernel for backend execution.
-       - Supports undo stack for deleted cells and find/replace dialog.
-
-       Attributes:
-       - cell_widgets (list): List of all Cell instances in the notebook.
-       - focused_cell (Cell): Currently focused cell.
-       - file_path (str): Path to the associated .ipynb file.
-       - content (NotebookNode): Parsed nbformat content (optional).
-       - ipython_kernel (IPythonKernel): Execution backend.
-       - deleted_cells_stack (list): Stack for undoing deleted cells.
-       - outputs (list): List of outputs emitted during execution.
-
-       Methods:
-       - add_cell(): Adds a new cell to the notebook.
-       - run_focused_cell(): Executes the currently focused cell.
-       - ipynb_format_save_file(): Saves notebook content to disk.
-       - load_file(): Loads notebook content from nbformat.
-       - undo_delete_cell(): Restores the last deleted cell.
-       - move_cell_up/down(): Reorders cells.
-       - choose_border_color(): Opens color dialog for cell styling.
-       - find_replace(): Opens find/replace dialog.
-       """
-
     focused_cell = None
 
-    def __init__(self, nb_content=None, file_path=None , status_l = None 
-                 , status_c = None , status_r = None  , mdi_area = None):
-        self.debug = False
-        if self.debug: print('[WorkWindow]->[__init__]')
-
+    def __init__(self, nb_content=None, file_path=None , status_l = None
+            , status_c = None , status_r = None  , mdi_area = None):
         super().__init__()
 
         self.ipython_kernel = IPythonKernel()
@@ -643,23 +571,23 @@ class WorkWindow(QFrame):
         self.status_l = status_l
         self.status_c = status_c
         self.status_r = status_r
-        
+
         self.cell_widgets = []
         self.outputs = []
         self.original_sources = []
         self.deleted_cells_stack = []
-        
+
         self.execution_in_progress = False        
-        
+
         self.detached = False
         self.detached_window = None
         self.fake_close = False
-       
-       
+
+
         # path of temp.chk file 
         base_dir = os.path.dirname(os.path.abspath(__file__))
         self.temp_path = os.path.join(base_dir, 'temp.chk')
-        
+
         # Set window title from file name
         if self.file_path:
             filename = os.path.basename(self.file_path)
@@ -668,12 +596,12 @@ class WorkWindow(QFrame):
 
 
         # --------------------------- GRAPHIC -----------------------------
-        
+
         # Define New QFrame
-    
-        self.setFrameShape(QFrame.StyledPanel)   # خط دور فریم
-        self.setFrameShadow(QFrame.Raised)       # حالت برجسته
-        self.setLineWidth(2)                      # ضخامت خط دور فریم
+
+        self.setFrameShape(QFrame.StyledPanel)  
+        self.setFrameShadow(QFrame.Raised)       
+        self.setLineWidth(2)                     
 
         # Set minimum window size
         self.setMinimumSize(620, 600)
@@ -688,7 +616,7 @@ class WorkWindow(QFrame):
         top_bar_layout = QHBoxLayout()
         top_bar_layout.setContentsMargins(0, 0, 0, 0)
         top_bar_layout.setSpacing(0)
-        top_bar_layout.addSpacing(64)  # فاصله افقی از سمت چپ
+        top_bar_layout.addSpacing(64)  
         top_bar_layout.addWidget(self.top_toolbar)
 
         # --- Vertical Toolbar ---
@@ -744,12 +672,12 @@ class WorkWindow(QFrame):
 
         btn_save.clicked.connect(self.ipynb_format_save_file)
         self.top_toolbar.addWidget(btn_save)
-        self.top_toolbar.addSeparator()  # فاصله یا خط نازک بین دکمه‌ها
-       
+        self.top_toolbar.addSeparator()  
+
 
         # Move Cell Up
         btn_move_up = QToolButton()
-        icon_path = os.path.join(os.path.dirname(__file__), "image", "move_up.png")  # آیکون دلخواه
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "move_up.png")  
         btn_move_up.setIcon(QIcon(icon_path))
         btn_move_up.setToolTip("""
                             <b>Move Cell Up</b><br>
@@ -776,7 +704,7 @@ class WorkWindow(QFrame):
                             """)
         btn_move_down.clicked.connect(self.move_cell_down)
         self.top_toolbar.addWidget(btn_move_down)
-        
+
 
         # Define ShortCut F4
         shortcut_move_down = QShortcut(QKeySequence("F8"), self)
@@ -821,87 +749,77 @@ class WorkWindow(QFrame):
         btn_undo.clicked.connect(self.undo_delete_cell)
         self.top_toolbar.addWidget(btn_undo)
         self.top_toolbar.addSeparator()
-        
-       
+
+
         # Memory Variable List
         memory = QToolButton()
         icon_path = os.path.join(os.path.dirname(__file__), "image", "memory.png")
         memory.setIcon(QIcon(icon_path))
         memory.setToolTip("""
-                                   <b>Objects List</b><br>
-                                   <span style='color:gray;'>Shortcut: <kbd>F9</kbd></span><br>
-                                   Object And Variable List
-                                   """)
+                                <b>Objects List</b><br>
+                                <span style='color:gray;'>Shortcut: <kbd>F9</kbd></span><br>
+                                Object And Variable List
+                                """)
         memory.clicked.connect(self.variable_table)
         self.top_toolbar.addWidget(memory)
         self.top_toolbar.addSeparator()
-        
-        
+
+
         # Memory Reset
         clear_memory = QToolButton()
         icon_path = os.path.join(os.path.dirname(__file__), "image", "clear.png")
         clear_memory.setIcon(QIcon(icon_path))
         clear_memory.setToolTip("""
-                                   <b>Reset Ipython Memory</b><br>                                   
-                                   """)
+                                <b>Reset Ipython Memory</b><br>                                   
+                                """)
         clear_memory.clicked.connect(self.clear_memory)
         self.top_toolbar.addWidget(clear_memory)
         self.top_toolbar.addSeparator()
-        
-       
+
+
         # print cell
         print_cell = QToolButton()
         icon_path = os.path.join(os.path.dirname(__file__), "image", "print.png")
         print_cell.setIcon(QIcon(icon_path))
         print_cell.setToolTip("""
-                                   <b>Print</b><br>                                   
-                                   Print Focused Cell 
-                                   """)
+                                <b>Print</b><br>                                   
+                                Print Focused Cell 
+                                """)
         print_cell.clicked.connect(self.print_cell)
         self.top_toolbar.addWidget(print_cell)
         self.top_toolbar.addSeparator()
-        
-        # # Drawing  Graph
-        # graph = QToolButton()
-        # icon_path = os.path.join(os.path.dirname(__file__), "image", "graph.png")
-        # graph.setIcon(QIcon(icon_path))
-        # graph.setToolTip("""
-        #                            <b>Graph</b><br>                                   
-        #                            Drawing Graph For Run cell Focused Cell 
-        #                            """)
-        # graph.clicked.connect(self.graph)
-        # self.top_toolbar.addWidget(graph)
-        # self.top_toolbar.addSeparator()
-        
-        
+
+
+
+
         # IPYTON TO PY  
         ippy = QToolButton()
         icon_path = os.path.join(os.path.dirname(__file__), "image", "iptopy.png")
         ippy.setIcon(QIcon(icon_path))
         ippy.setToolTip("""
-                                   <b>IPYTON TO PYTHON</b><br>                                   
-                                   Convert Ipython To py 
-                                   """)
+                                <b>IPYTON TO PYTHON</b><br>                                   
+                                Convert Ipython To py 
+                                """)
         ippy.clicked.connect(self.iptopy)
         self.top_toolbar.addWidget(ippy)
-        
-         # Stop Execution  
+
+        # Stop Execution  
         self.stop = QToolButton()
         icon_path = os.path.join(os.path.dirname(__file__), "image", "stop.png")
         self.stop.setIcon(QIcon(icon_path))
         self.stop.setToolTip("""
-                                   <b>Stop Execution</b><br>                                   
-                                   Stop Runing  
-                                   """)
+                                <b>Stop Execution</b><br>                                   
+                                Stop Runing  
+                                """)
         self.stop.clicked.connect(self.stop_execution)
         self.top_toolbar.addWidget(self.stop)
-      
-        
+
+
         # Detach Check Button 
         icon_path = os.path.join(os.path.dirname(__file__), "image", "detach.png")
         self.chk_detach = QCheckBox()
         self.chk_detach.setToolTip("Toggle floating mode")
-        self.chk_detach.setIcon(QIcon(icon_path))  # یا مسیر مستقیم فایل
+        self.chk_detach.setIcon(QIcon(icon_path)) 
         self.chk_detach.setToolTip("""
                             <b>Detach Window</b><br>                            
                             "Detach editor into a floating window." 
@@ -909,8 +827,8 @@ class WorkWindow(QFrame):
         self.chk_detach.clicked.connect(self.toggle_detach_mode)
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        self.top_toolbar.addWidget(spacer)         # این فاصله‌دهنده همه‌چیز رو به چپ می‌چسبونه
-        self.top_toolbar.addWidget(self.chk_detach)  # این می‌ره سمت راست
+        self.top_toolbar.addWidget(spacer)        
+        self.top_toolbar.addWidget(self.chk_detach)  
 
     def setup_toolbar_buttons(self):
         if self.debug :print('[WorkWindow->setup_toolbar_buttons]')
@@ -971,9 +889,8 @@ class WorkWindow(QFrame):
                                 """)
 
     def add_cell(self, editor_type=None, nb_cell={},
-             src_content=None, border_color=None,
-             origin="uranus", outputs=None, height=0):
-        
+        src_content=None, border_color=None,
+        origin="uranus", outputs=None, height=0):
         cell = Cell(
             editor_type=editor_type,
             src_content=src_content,
@@ -988,8 +905,6 @@ class WorkWindow(QFrame):
             nb_cell=nb_cell
         )
 
-
-
         # Mouse Event Handler
         cell.clicked.connect(lambda c=cell: self.set_focus(c))
         cell.doc_editor_clicked.connect(lambda c=cell: self.set_focus(c))
@@ -1002,43 +917,43 @@ class WorkWindow(QFrame):
         self.set_focus(cell)  # set cell focused
 
         return cell
-          
+
     def set_focus(self, cell):
         if self.debug:print('[WorkWindow->set_focus]')
-        
+
         # UnFocus Last Cell
         if self.focused_cell and cell is not self.focused_cell and len(self.cell_widgets) > 1 :
             self.focused_cell.border_color = self.focused_cell.border_color or self.focused_cell.bg_border_color_default
             self.focused_cell.setStyleSheet(f"""
-                           QFrame {{
-                               border: 2px solid {self.focused_cell.border_color};
-                               border-radius: 5px;
-                               background-color: {self.focused_cell.bg_main_window};
-                               padding: 6px;
-                           }}""")           
-            
+                        QFrame {{
+                            border: 2px solid {self.focused_cell.border_color};
+                            border-radius: 5px;
+                            background-color: {self.focused_cell.bg_main_window};
+                            padding: 6px;
+                        }}""")           
+
             if hasattr(self.focused_cell, 'output_data'):
                 self.focused_cell.output_data.setStyleSheet("border: 1px solid black; padding: 0px;")
                 if hasattr(self.focused_cell.output_data,'table'):
                     self.focused_cell.output_data.table.setStyleSheet("border: 1px solid gray; padding: 0px;")
                     self.focused_cell.output_data.table.horizontalHeader().setStyleSheet("border: 0px solid gray; padding: 0px;")
-                
-        
+
+
         # Focus Current Cell  
         self.focused_cell = cell  
         # cell / totall cell in status bar
         cell_indedx = self.cell_widgets.index(self.focused_cell)+1
         self.status_c(f'[Cell: {cell_indedx} / {len(self.cell_widgets) }]')
-              
+
         cell.border_color = cell.border_color or cell.bg_border_color_default
         cell.setStyleSheet(f"""
-               QFrame {{
-                   border: 5px solid {cell.border_color};
-                   border-radius: 5px;
-                   background-color: {cell.bg_main_window};
-                   padding: 6px;
-               }}""")
-        
+            QFrame {{
+                border: 5px solid {cell.border_color};
+                border-radius: 5px;
+                background-color: {cell.bg_main_window};
+                padding: 6px;
+            }}""")
+
         if hasattr(cell, 'output_data'):
             cell.output_data.setStyleSheet("border: 1px solid black; padding: 0px;")
             if hasattr(cell.output_data,'table'):
@@ -1056,7 +971,6 @@ class WorkWindow(QFrame):
         self.run_btn.setEnabled(False)
         self.btn_run_all.setEnabled(False)
 
-        # اتصال پایان اجرا به فعال‌سازی دکمه‌ها
         def on_done():
             #print("[run_focused_cell] execution finished")
             self.run_btn.setEnabled(True)
@@ -1070,11 +984,7 @@ class WorkWindow(QFrame):
         self.execution_in_progress = False
         self.set_focus(self.focused_cell)
 
-    # Connected to a Button 1
     def add_cell_above(self):
-        """
-        Inserts a new cell above the currently active cell.
-        """
         if self.debug:
             print('[WorkWindow->add_cell_above]')
 
@@ -1090,8 +1000,8 @@ class WorkWindow(QFrame):
                 status_c = self.status_c ,
                 status_r = self.status_r,
                 nb_cell={}
-                
-                
+
+
             )
 
             cell.clicked.connect(lambda c=cell: self.set_focus(c))
@@ -1104,16 +1014,12 @@ class WorkWindow(QFrame):
             self.cell_layout.insertWidget(index, cell)
             self.set_focus(cell)
 
-    # Connected to a Button 2
     def add_cell_below(self):
-        """
-        Inserts a new cell below the currently active cell.
-        """
         if self.debug:
             print('[WorkWindow->add_cell_below]')
 
         if not self.cell_widgets:
-           return
+        return
 
         elif self.focused_cell:
             index = self.cell_widgets.index(self.focused_cell)
@@ -1136,11 +1042,7 @@ class WorkWindow(QFrame):
             self.cell_layout.insertWidget(index + 1, cell)
             self.set_focus(cell)
 
-    # Connected to a Button 3
     def delete_active_cell(self):
-        """
-        Deletes the currently active cell from the notebook and stores it for multistep undo.
-        """
         content = None
         context = {}
         if self.debug:
@@ -1156,18 +1058,16 @@ class WorkWindow(QFrame):
         if self.focused_cell and self.cell_widgets:
             index = self.cell_widgets.index(self.focused_cell)
 
-            # استخراج محتوا بسته به نوع سلول
             if self.focused_cell.editor_type == 'code':
                 content = self.focused_cell.editor.toPlainText()
             elif self.focused_cell.editor_type == 'doc_editor':
                 content = self.focused_cell.d_editor.editor.toHtml()
             elif self.focused_cell.editor_type == 'markdown':
-               
+
                 content = self.focused_cell.m_editor.editor.raw_text
-             
-            # ذخیره اطلاعات در پشته
+
             if self.focused_cell.editor_type in ('code', 'doc_editor', 'markdown'):
-                
+
                 context = {
                     "index": index,
                     "cell_type": self.focused_cell.editor_type,
@@ -1175,45 +1075,28 @@ class WorkWindow(QFrame):
                     "color": self.focused_cell.border_color,
                     "origin": self.focused_cell.origin,
                     "nb_cell": self.focused_cell.nb_cell,                    
-                    
+
                 }
                 if self.focused_cell.editor_type == 'markdown':
-                   context['nb_cell']['attachments'] = self.focused_cell.m_editor.editor.images or {} # markdown images
-                
-                
-                
-                
-                self.deleted_cells_stack.append(context)
-                
+                context['nb_cell']['attachments'] = self.focused_cell.m_editor.editor.images or {} # markdown images
 
-            # حذف سلول از رابط کاربری و لیست
+                self.deleted_cells_stack.append(context)                
+
             self.cell_layout.removeWidget(self.focused_cell)
             self.focused_cell.deleteLater()
             self.cell_widgets.remove(self.focused_cell)
 
-            # فعال‌سازی سلول قبلی
             if self.cell_widgets:
                 new_index = max(0, index - 1)
                 self.set_focus(self.cell_widgets[new_index])
-               
-    # Connected to a Button 4
-    def choose_border_color(self):
-        """
-        Opens a color dialog to change the title color of the active cell.
-        """
-        if self.debug :print('[WorkWindow->choose_border_color]')
-        if self.focused_cell:
-            color = QColorDialog.getColor()   # دیالوک انتخاب رنگ را باز میکند
-            if color.isValid():          # چک میکند که رنگ انتخابی معتبر میباشد
-                self.focused_cell.set_color(color.name()) # رنگ سلول جاری را تغییر میدهد
 
-    # called by ipynb_format_save_file
-    # this method convert image file to string with base64 for puts instead of image path im html file
+    def choose_border_color(self):
+        if self.focused_cell:
+            color = QColorDialog.getColor()   
+            if color.isValid():          
+                self.focused_cell.set_color(color.name()) 
+
     def image_to_base64(self,image_path):
-        """
-        Converts an image file to a base64 encoded string.
-        """
-        if self.debug :print('[WorkWindow->image_to_base64]')
         try:
             with open(image_path, "rb") as image_file:
                 encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
@@ -1224,15 +1107,8 @@ class WorkWindow(QFrame):
             print(f"Error while converting image {image_path}: {e}")
         return None
 
-    # Connected to Save File Button
-    # gather all cell_widgets contents and build an ipynb file (SAVE FILE)
     def ipynb_format_save_file(self , temp = False):
-        """
-        Converts all cells into nbformat-compatible structure and saves to disk.
-        """
-        
-        # print('[Save File]')
-        open(self.temp_path, "w").close()     # to clear temp.chk file 
+        open(self.temp_path, "w").close()    
         cells = []
         for cell in self.cell_widgets:
             if cell.editor_type == "code":
@@ -1241,32 +1117,28 @@ class WorkWindow(QFrame):
             elif cell.editor_type == "doc_editor":
                 cells.append(cell.get_nb_doc_editor_cell())
                 self.original_sources.append(cell.d_editor.editor.toHtml().strip())
-                
+
             elif cell.editor_type == "markdown":
                 cells.append(cell.get_nb_markdown_cell())
                 self.original_sources.append(cell.m_editor.editor.toPlainText())
-                
-                
-        
+
+
+
         if cells :
             nb = nbformat.v4.new_notebook()        
             nb["cells"] = cells
-            
+
             file_path = self.temp_path if temp else self.file_path
 
             if file_path:
-            
+
                 with open(file_path, "w", encoding="utf-8") as f:
                     nbformat.write(nb, f)
-              
+
                 if not temp :                
                     self.status_l('Saved To : '+self.file_path)
-            
-  
-    def load_file(self, content):
-        if self.debug:
-            print('[WorkWindow->load_file]')
 
+    def load_file(self, content):
         if not content or not isinstance(content.cells, list):
             self.add_cell(origin='uranus')
             return
@@ -1275,27 +1147,27 @@ class WorkWindow(QFrame):
         self.cell_widgets.clear()
 
         # WorkWindow.load_file
-        
+
         for cell_data in content.cells:
             metadata = cell_data["metadata"]
             origin = metadata.get('uranus',{}).get('origin' , 'jupyter') # after Save all Jupyter Notebook Get Jupyter Origin
-            
-            
+
+
             if cell_data.cell_type == "code" : 
                 editor_type = "code" 
             elif cell_data.cell_type == "markdown" and origin == 'uranus':
                 editor_type = "doc_editor" 
-                
+
             elif cell_data.cell_type == "markdown" and origin != 'uranus':
                 editor_type = 'markdown'                
-                
-            
-            
+
+
+
             source = cell_data.source            
             border_color = metadata.get("bg")
             height = metadata.get('height', 0)
             outputs = None
-            
+
             if editor_type == "code" and hasattr(cell_data, "outputs"):
                 outputs = [
                     out for out in cell_data.outputs
@@ -1311,37 +1183,26 @@ class WorkWindow(QFrame):
                 origin=origin,
                 outputs=outputs,
                 height=height,
-                nb_cell=cell_data  # ← پاس دادن سلول
+                nb_cell=cell_data  
             )
 
-        # تمرکز روی آخرین سلول
         if self.cell_widgets:
             self.set_focus(self.cell_widgets[-1])
 
-        # فضای اضافه برای اسکرول
         self.cell_layout.addItem(QSpacerItem(20, 400, QSizePolicy.Minimum, QSizePolicy.Fixed))
-
 
     def move_cell_up(self):
         if self.debug: print('[WorkWindow->move_cell_up]')
         if self.focused_cell and self.cell_widgets:
             index = self.cell_widgets.index(self.focused_cell)
             if index > 0:
-                # جابجایی در لیست
                 self.cell_widgets[index], self.cell_widgets[index - 1] = self.cell_widgets[index - 1], \
                     self.cell_widgets[index]
-                # جابجایی در layout
                 self.cell_layout.removeWidget(self.focused_cell)
                 self.cell_layout.insertWidget(index - 1, self.focused_cell)
                 self.set_focus(self.focused_cell)
 
     def undo_delete_cell(self):
-        """
-        Restores the last deleted cell.
-        """
-        if self.debug:
-            print('[WorkWindow->undo_delete_cell]')
-
         if not self.deleted_cells_stack:
             return
 
@@ -1352,7 +1213,7 @@ class WorkWindow(QFrame):
         color = cell_info["color"]
         origin = cell_info['origin']
         nb_cell = cell_info['nb_cell']
-        
+
 
         cell = Cell(
             editor_type=cell_type,
@@ -1364,8 +1225,8 @@ class WorkWindow(QFrame):
             status_c = self.status_c ,
             status_r = self.status_r,
             nb_cell = nb_cell
-            
-            
+
+
         )
 
         cell.clicked.connect(lambda c=cell: self.set_focus(c))
@@ -1379,17 +1240,12 @@ class WorkWindow(QFrame):
         self.set_focus(cell)
 
     def move_cell_down(self):
-        """
-        Moves the currently focused cell one position down in the notebook.
-        """
         if self.debug: print('[WorkWindow->move_cell_down]')
         if self.focused_cell and self.cell_widgets:
             index = self.cell_widgets.index(self.focused_cell)
             if index < len(self.cell_widgets) - 1:
-                # جابجایی در لیست داده‌ای
                 self.cell_widgets[index], self.cell_widgets[index + 1] = self.cell_widgets[index + 1], \
                 self.cell_widgets[index]
-                # حذف و درج مجدد در لایه گرافیکی
                 self.cell_layout.removeWidget(self.focused_cell)
                 self.cell_layout.insertWidget(index + 1, self.focused_cell)
                 self.set_focus(self.focused_cell)
@@ -1398,7 +1254,6 @@ class WorkWindow(QFrame):
         # save File at First
         self.ipynb_format_save_file()
 
-        # 🔒 غیرفعال کردن دکمه‌ها
         self.run_btn.setEnabled(False)
         self.btn_run_all.setEnabled(False)
 
@@ -1407,32 +1262,23 @@ class WorkWindow(QFrame):
                 self.set_focus(cell)
                 self.run_cell_blocking(cell)
 
-        # ✅ فعال کردن دکمه‌ها بعد از پایان کامل
         self.run_btn.setEnabled(True)
         self.btn_run_all.setEnabled(True)
 
-    def find_replace(self):      
-        
-        
+    def find_replace(self):
         if self.focused_cell :
             if hasattr(self.focused_cell, "editor"): # for Code Editor
                 editor = self.focused_cell.editor
                 dialog = FindReplaceDialog(editor, self)
                 dialog.exec_()
 
-                
+
             elif hasattr(self.focused_cell, "d_editor"):  # for  DocumentEditor
                 editor = self.focused_cell.d_editor.editor
                 dialog = FindReplaceDialog(editor, self)
                 dialog.exec_()
 
     def save_as_file(self):
-        """
-        Prompts the user to choose a new file path and saves the notebook content there.
-        Updates self.file_path and status bar message.
-        """
-        
-
         new_path, _ = QFileDialog.getSaveFileName(
             self,
             "Save As",
@@ -1466,40 +1312,38 @@ class WorkWindow(QFrame):
         loop = QEventLoop()
 
         def on_done():
-            
+
             loop.quit()
 
         cell.notify_done = on_done
         cell.run()
         loop.exec_()
-    
+
     def variable_table(self, refresh=False):
-        
         new_data = self.ipython_kernel.inspect_all_user_attributes(self.ipython_kernel.shell)
-       
+
         if not new_data  :
             self.status_c(" No Data For Showing In Table " )
             return
 
         if hasattr(self, 'obj_table_window') and self.obj_table_window.isVisible() and refresh:
-            
-            
+
+
             self.obj_table_window.add_objects(new_data)
         elif not refresh:
-            
+
             self.obj_table_window = ObjectInspectorWindow(file_name=self.name_only)
             self.obj_table_window.add_objects(new_data)
-              
+
     def closeEvent(self, event):
-            
             if self.fake_close :
                 self.fake_close = False
                 return
-            
+
             if  self.is_notebook_modified():
                 return 
-            
-            
+
+
             msg = QMessageBox(self)            
             msg.setIcon(QMessageBox.Question)
             msg.setWindowTitle("Save File")
@@ -1521,22 +1365,20 @@ class WorkWindow(QFrame):
                 event.ignore()
                 return
 
-        # اگر از حلقه با موفقیت خارج شد یعنی هیچ Cancel وجود ندارد
             event.accept()
 
-    
     def is_notebook_modified(self):
         self.ipynb_format_save_file(True)
         hash1 = self.compute_md5(self.temp_path)
         hash2 = self.compute_md5(self.file_path)
-        
+
         if hash1 is None and hash2 is None:
             return False
         if hash1 is None or hash2 is None:
             return True
-    
+
         return hash1 != hash2  
-     
+
     def compute_md5(self, path):
         try:
             if not os.path.exists(path):
@@ -1544,26 +1386,23 @@ class WorkWindow(QFrame):
             with open(path, "rb") as f:
                 data = f.read()
             hash_code = hashlib.md5(data).hexdigest()    
-           
+
             return hash_code[:6] # return only 6 char of hashcode 
         except Exception as e:
             print(f"[compute_md5] Error: {e}")
             return None         
-        
-        
+
     def print_cell(self):
         if self.focused_cell : 
             self.focused_cell.print_full_cell()
-            
-    
+
     def toggle_detach_mode(self):
         self.fake_close = True
         if self.chk_detach.isChecked():
-            
-            # مسیر رفت: از MDI به QMainWindow
+
             mdi_subwindow = self.parent()
             if mdi_subwindow and isinstance(mdi_subwindow, QMdiSubWindow):
-                self.setParent(None)  # قطع ارتباط با QMdiSubWindow                
+                self.setParent(None)         
                 mdi_subwindow.close()
 
             self.detached_window = QMainWindow()
@@ -1572,18 +1411,16 @@ class WorkWindow(QFrame):
             self.detached_window.closeEvent = self._handle_detached_close_event
             self.detached_window.resize(1000, 800)
             icon_path = os.path.join(os.path.dirname(__file__), "image", "ipynb_icon.png")  
-            icon = QIcon(icon_path)  # مسیر آیکن یا QRC
+            icon = QIcon(icon_path)  
             self.detached_window.setWindowIcon(icon)
 
 
-            # افزودن status bar
             status_bar = QStatusBar()
             status_bar.setStyleSheet("background-color: #f0f0f0; color: #444; font-size: 11px;")
             status_bar.showMessage("Detached mode active")
             self.detached_window.setStatusBar(status_bar)
             self.detached_window.show()
             self.detached = True
-             # 🔑 ساخت شورتکات F5 مخصوص detached
             self._detach_shortcut = QShortcut(QKeySequence("F5"), self.detached_window)
             self._detach_shortcut.activated.connect(self.run_focused_cell)
             self.detached_window.show()
@@ -1592,7 +1429,6 @@ class WorkWindow(QFrame):
 
 
         else:
-            # مسیر برگشت: از QMainWindow به MDI
             if self.detached_window:
                 if hasattr(self, "_detach_shortcut"):
                     self._detach_shortcut.disconnect()
@@ -1600,109 +1436,78 @@ class WorkWindow(QFrame):
                     self._detach_shortcut = None
 
 
-                self.detached_window.takeCentralWidget()  # جلوگیری از حذف self
+                self.detached_window.takeCentralWidget()  
                 self.detached_window.close()
                 self.detached_window = None
                 self.detached = False
                 if self.mdi_area and hasattr(self.mdi_area, "addSubWindow"):                  
                     sub_window = self.mdi_area.addSubWindow(self)
                     sub_window.show()
-            
 
     def _handle_detached_close_event(self, event):
-        """
-        Custom closeEvent for detached QMainWindow.
-        This ensures WorkWindow's closeEvent logic is triggered.
-        """
         self.closeEvent(event)  # اجرای منطق ذخیره‌سازی و هشدار
         if event.isAccepted():
             self.detached_window = None
             self.detached = False
-            
-            
-    def graph (self) :
-        pass
-        
-        # if hasattr(self.focused_cell , 'editor'):
-        #     text = self.focused_cell.editor.toPlainText()
-        #     self.graph_window = QMainWindow(self)
-        #     self.graph_window.setWindowTitle("Graph Window")
-        #     # ویجت گراف
-        #     chart = RelationChartView(code=text)
-        #     # قرار دادن در پنجرهٔ جدید
-        #     self.graph_window.setCentralWidget(chart)
-        #     self.graph_window.resize(800, 600)
-        #     self.graph_window.show()
 
     def iptopy(self):
         if not self.file_path :
             return
-            
+
         i = 0
         base_dir = os.path.dirname(self.file_path)
         new_path = os.path.join(base_dir, f'{self.name_only}.py')
-        
-        
+
+
 
         with open (new_path , 'w' , encoding='utf-8') as f:
-            
+
             for cell in self.cell_widgets :
                 i  = i + 1
                 if cell.editor_type == 'code' and  hasattr(cell , 'editor') and cell.editor :                    
-                                
+
                     f.write('\n#--------------------------------------')
                     f.write(f'\n# CODE CELL {i}')                                          
                     f.write('\n#--------------------------------------')                 
                     f.write('\n'+cell.editor.toPlainText() + '\n')
-                    
+
                 elif cell.editor_type == 'doc_editor' and hasattr(cell , 'd_editor') and cell.d_editor.editor : 
-                    
+
                     f.write('\n#--------------------------------------')
                     f.write(f'\n# DOCUMENT CELL {i}')                                          
                     f.write('\n#--------------------------------------')     
-                    
-                    
+
+
                     f.write('\n""" \n')
                     f.write(cell.d_editor.editor.toPlainText()+ '\n')
                     f.write('"""\n')
-                    
+
                 elif cell.editor_type == 'markdown' and hasattr(cell , 'm_editor') and cell.m_editor.editor : 
-                    
+
                     f.write('\n#--------------------------------------')
                     f.write(f'\n# MARKDOWN CELL {i}')                                          
                     f.write('\n#--------------------------------------')     
-                    
-                    
+
+
                     f.write('\n""" \n')
                     f.write(cell.m_editor.editor.toPlainText()+ '\n')
                     f.write('"""\n')
-                
+
     def clear_memory(self):
-       
-        """
-        Clear all user-defined variables from the IPython kernel memory.
-        Keeps builtins and special variables intact.
-        """
         try:
             if self.ipython_kernel and self.ipython_kernel.shell:
-                # پاک کردن فضای نام کاربر
                 self.ipython_kernel.shell.user_ns.clear()
-                # دوباره مقداردهی اولیه برای builtins و متغیرهای ضروری
                 self.ipython_kernel.shell.init_user_ns()
                 print("[WorkWindow] IPython memory cleared.")
         except Exception as e:
             print("[WorkWindow] Error clearing memory:", e)
-                    
-    
-    
+
     def stop_execution(self):
         if hasattr(self.focused_cell , 'set_led_color') :
-           
+
             self.focused_cell.set_led_color('violet')
             self.focused_cell.led_permission = False
-            
+
         if self.focused_cell and hasattr(self.focused_cell, 'runner'):
             runner = self.focused_cell.runner
-            # فعال کردن پرچم توقف در رانر            
-            runner.stop()
-           
+            runner.stop()    
