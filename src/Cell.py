@@ -598,13 +598,12 @@ class Cell(QFrame):
                 self.output_editor_enable = False
 
             if not self.output_editor_enable :
-            clean = ''                 
+                clean = ''                 
 
             for line in clean.splitlines():
                 cursor.insertText(line)
                 cursor.insertBlock()
 
-                # 🔑 تشخیص خطا بر اساس قالب متن
                 if ("Traceback" in line) and ("Error" in line) and ("Exception" in line):
                     self.set_led_color("red")
                 else:

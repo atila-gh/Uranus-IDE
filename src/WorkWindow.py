@@ -595,9 +595,6 @@ class WorkWindow(QFrame):
             self.setWindowTitle(self.name_only)
 
 
-        # --------------------------- GRAPHIC -----------------------------
-
-        # Define New QFrame
 
         self.setFrameShape(QFrame.StyledPanel)  
         self.setFrameShadow(QFrame.Raised)       
@@ -657,8 +654,6 @@ class WorkWindow(QFrame):
         self.cell_layout.addItem(extra_scroll_space)
 
     def setup_top_toolbar_buttons(self):
-        if self.debug: print('[WorkWindow->setup_top_toolbar_buttons]')
-
         # Save ipynb File
         btn_save = QToolButton()
         icon_path = os.path.join(os.path.dirname(__file__), "image", "save.png")
@@ -831,9 +826,6 @@ class WorkWindow(QFrame):
         self.top_toolbar.addWidget(self.chk_detach)  
 
     def setup_toolbar_buttons(self):
-        if self.debug :print('[WorkWindow->setup_toolbar_buttons]')
-
-
         # Add cell above
         btn_up = QToolButton()
         icon_path = os.path.join(os.path.dirname(__file__), "image", "up.png")
@@ -919,8 +911,6 @@ class WorkWindow(QFrame):
         return cell
 
     def set_focus(self, cell):
-        if self.debug:print('[WorkWindow->set_focus]')
-
         # UnFocus Last Cell
         if self.focused_cell and cell is not self.focused_cell and len(self.cell_widgets) > 1 :
             self.focused_cell.border_color = self.focused_cell.border_color or self.focused_cell.bg_border_color_default
@@ -985,9 +975,6 @@ class WorkWindow(QFrame):
         self.set_focus(self.focused_cell)
 
     def add_cell_above(self):
-        if self.debug:
-            print('[WorkWindow->add_cell_above]')
-
         if not self.cell_widgets:
             return
 
@@ -1019,7 +1006,7 @@ class WorkWindow(QFrame):
             print('[WorkWindow->add_cell_below]')
 
         if not self.cell_widgets:
-        return
+            return
 
         elif self.focused_cell:
             index = self.cell_widgets.index(self.focused_cell)
@@ -1078,7 +1065,7 @@ class WorkWindow(QFrame):
 
                 }
                 if self.focused_cell.editor_type == 'markdown':
-                context['nb_cell']['attachments'] = self.focused_cell.m_editor.editor.images or {} # markdown images
+                    context['nb_cell']['attachments'] = self.focused_cell.m_editor.editor.images or {} 
 
                 self.deleted_cells_stack.append(context)                
 

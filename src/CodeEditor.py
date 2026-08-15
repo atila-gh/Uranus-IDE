@@ -15,7 +15,7 @@ from PyQt5.QtWidgets import (
 
 
 from CodeHighlight import CodeHighlighter
-from Uauto_complete_system import AutoCompleteSystem
+from auto_complete_system import AutoCompleteSystem
 
 from SettingWindow import load_setting  
 

@@ -678,7 +678,7 @@ class DocumentEditor(QWidget):
                 + doc.documentMargin()   
                 + self.editor.frameWidth() * 2  
                 + cm.top() 
-                + cm.bottom()
+                + cm.bottom())
 
 
         self.editor_height = new_height #  New Height to save to file metadata

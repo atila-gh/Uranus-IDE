@@ -439,7 +439,7 @@ class MainWindow(QMainWindow):
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(setting, f, indent=4, ensure_ascii=False)
         except FileNotFoundError :
-        return
+            return
 
     def about(self):
         self.about_window = AboutWindow()
