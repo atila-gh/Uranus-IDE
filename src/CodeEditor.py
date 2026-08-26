@@ -136,7 +136,6 @@ class CodeEditor(QPlainTextEdit):
 
             except Exception as e:
                 pass
-                # print(f"[Tab Error] {e}")
 
         elif event.key() == Qt.Key_Backtab and cursor.hasSelection():
 
@@ -193,7 +192,6 @@ class CodeEditor(QPlainTextEdit):
 
             except Exception as e:
                 pass
-                # print(f"[Shift+Tab Error] {e}")
         # ---------- Shift + Down → Select previous word ----------
         if event.key() == Qt.Key_Down and event.modifiers() == Qt.ControlModifier:
 
