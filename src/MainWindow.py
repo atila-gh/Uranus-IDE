@@ -22,7 +22,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
 
-        self.debug = False
+
         self.work_widget_list = []
         self.setting = load_setting()
 
@@ -339,7 +339,6 @@ class MainWindow(QMainWindow):
         return super().eventFilter(source, event)
 
     def ipynb_format_load_file (self , path):
-        if self.debug : print('[MainWindow]->[ipynb_format_load_file]')
         try:
             with open(path, "r", encoding="utf-8") as f:
                 nb = nbformat.read(f, as_version=4)

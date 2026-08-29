@@ -72,9 +72,6 @@ class Cell(QFrame):
         super().__init__()
 
         os.environ["QT_LOGGING_RULES"] = "*.debug=false"        
-        self.debug = False
-        if self.debug: print('[Cell->init]')
-
 
         self.outputs = outputs or []
         self.origin = origin
@@ -329,7 +326,6 @@ class Cell(QFrame):
         self.thread.start()
 
     def mousePressEvent(self, event):
-        if self.debug :print('[Cell->mousePressEvent]')
         if self.editor_type  == 'code':
             cursor = self.editor.textCursor()
             line = cursor.blockNumber() + 1       
@@ -356,7 +352,6 @@ class Cell(QFrame):
             self.toggle_output_button.setText("⮞⮞   TEXT OUTPUT    ⮞⮞" if is_visible else "⮟⮟   TEXT OUTPUT    ⮟⮟")
 
     def set_color(self, color):
-        if self.debug :print('[Cell->set_color]')
         self.border_color = color or self.bg_border_color_default
         self.setStyleSheet(f"""
                 QFrame {{
@@ -379,9 +374,6 @@ class Cell(QFrame):
         return ansi_escape.sub('', text)
 
     def initialize_editor(self , editor_type ) :
-        if self.debug:
-            print('[Cell->initialize_editor]')
-
         self.editor_type = editor_type
 
         # Hide type selector radio buttons if present
@@ -850,7 +842,6 @@ class Cell(QFrame):
 
     def set_led_color(self, color):
         if self.led_permission :
-            if self.debug: print('[Cell->set_led_color]')
             self.run_status.setStyleSheet(f"""
                 QLabel#Status {{
                     background-color: {color};

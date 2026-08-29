@@ -92,8 +92,6 @@ class FileTreeView(QTreeView):
     pathChanged = pyqtSignal(str)
 
     def __init__(self):
-        self.debug = False
-
         super().__init__()
         setting = load_setting()
 

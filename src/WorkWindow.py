@@ -1002,9 +1002,6 @@ class WorkWindow(QFrame):
             self.set_focus(cell)
 
     def add_cell_below(self):
-        if self.debug:
-            print('[WorkWindow->add_cell_below]')
-
         if not self.cell_widgets:
             return
 
@@ -1032,8 +1029,7 @@ class WorkWindow(QFrame):
     def delete_active_cell(self):
         content = None
         context = {}
-        if self.debug:
-            print('[WorkWindow->delete_active_cell]')
+
 
         if len(self.cell_widgets) <= 1:
             self.status_l(
@@ -1179,7 +1175,6 @@ class WorkWindow(QFrame):
         self.cell_layout.addItem(QSpacerItem(20, 400, QSizePolicy.Minimum, QSizePolicy.Fixed))
 
     def move_cell_up(self):
-        if self.debug: print('[WorkWindow->move_cell_up]')
         if self.focused_cell and self.cell_widgets:
             index = self.cell_widgets.index(self.focused_cell)
             if index > 0:
@@ -1227,7 +1222,6 @@ class WorkWindow(QFrame):
         self.set_focus(cell)
 
     def move_cell_down(self):
-        if self.debug: print('[WorkWindow->move_cell_down]')
         if self.focused_cell and self.cell_widgets:
             index = self.cell_widgets.index(self.focused_cell)
             if index < len(self.cell_widgets) - 1:

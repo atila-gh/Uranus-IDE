@@ -277,7 +277,6 @@ class WorkWindowPython(QFrame):
     def __init__(self, file_path=None , status_l=None , context=None,
             status_c=None , status_r=None , mdi_area=None):
         super().__init__()
-        self.debug = False
         self.file_path = file_path        
         self.content = context or ''
         self.mdi_area = mdi_area        
@@ -573,8 +572,6 @@ class WorkWindowPython(QFrame):
         self.status_bar.showMessage(f"Line: {line} | Chr: {column}     ")    
 
     def mousePressEvent(self, event):
-        if self.debug :print('[Cell->mousePressEvent]')
-
         cursor = self.editor.textCursor()
         line = cursor.blockNumber() + 1       
         column = cursor.positionInBlock() + 1 
