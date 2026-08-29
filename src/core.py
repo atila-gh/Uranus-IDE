@@ -1,16 +1,15 @@
-
 import os
 import sys
+import importlib.util
 from PyQt5.QtGui import QFontDatabase
 from PyQt5.QtWidgets import QApplication, QStyleFactory
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
 from MainWindow import MainWindow
 
-
-current_file = os.path.abspath(__file__)
-project_root = os.path.abspath(os.path.join(current_file, "..", ".."))
-src_path = os.path.join(project_root, "src")
-if src_path not in sys.path:
-    sys.path.insert(0, src_path)
 
 
 
