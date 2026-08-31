@@ -1,21 +1,448 @@
 {
  "cells": [
   {
+   "cell_type": "markdown",
+   "id": "3f307a6e",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "source": [
+    "# Counter"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "0781071d",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "source": [
+    "این ساختار داده یک ساختار داده را به عنوان ورودی میگیرد و اجزای داخل آنرا مجزا نموده و شمارش مینماید."
+   ]
+  },
+  {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "42eab6e2",
+   "id": "e638ec64",
    "metadata": {
-    "bg": "#BEBDBD",
+    "bg": "#000000",
     "uranus": {
-     "origin": "uranus"
+     "origin": "jupyter"
     }
    },
    "outputs": [],
    "source": [
-    "####یلکامبمکنلات\n",
-    "#بملکتناک\n",
-    "#lsfkgjlkd\n",
+    "Counter()\n",
+    ".most_counter()\n",
+    ".element()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "7b5be5ca",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Counter({'b': 11, 'a': 9, 'c': 8})"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "******************************"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "First Most Common : [('b', 11)]"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "******************************"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'b', 'b', 'b', 'b', 'b', 'b', 'b', 'b', 'b', 'b', 'b', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c']"
+     ]
+    }
+   ],
+   "source": [
+    "from collections import Counter\n",
+    "a = 'aaabbbaabcccbabcbabcbabcccba'\n",
+    "my_counter = Counter(a) # Type is collections.Counter\n",
+    "print(my_counter)\n",
+    "print('*'*30)\n",
+    "\n",
+    "print('First Most Common :' , my_counter.most_common(1)) # بالاترین مورد تکرار\n",
+    "\n",
+    "element = list (my_counter.elements()) # لیست المانهای داخل \n",
+    "print('*'*30)\n",
+    "print(element)\n",
     "\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "08c993d3",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "source": [
+    "### Name Tuple"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "269fb411",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "source": [
+    "در پایتون، namedtuple یکی از قابلیت‌های بسیار مفید ماژول collections است که به ما اجازه می‌دهد تا ساختارهایی شبیه به کلاس اما سبک و بدون پیچیدگی‌های کلاس کامل تعریف کنیم. بیایید قدم‌به‌قدم با آن آشنا شویم:  \n",
+    "\n",
+    "namedtuple چیست؟  \n",
+    "namedtuple نوعی تاپل (Tuple) است که به هر مقدار در آن می‌توان نام مشخص داد. برخلاف تاپل معمولی که فقط با اندیس (index) به اعضایش دسترسی داریم، در namedtuple می‌توان با نام مشخص به هر عضو دسترسی داشت.  \n",
+    "\n",
+    " چرا از namedtuple استفاده کنیم؟\n",
+    "کد خواناتر و معنادارتر می‌شود.  \n",
+    "شبیه یک شیء کلاس‌دار است ولی سبک‌تر.  \n",
+    "اعضا تغییرناپذیر (immutable) هستند، مثل tuple.  "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "c0b0f1e2",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "from collections import namedtuple\n",
+    "Person = namedtuple(\"Person\", [\"name\", \"age\", \"city\"])\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "9035d5e9",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "source": [
+    "در این مثال: \n",
+    "Person یک نوع داده‌ی جدید شبیه کلاس ساختیم. \n",
+    "این ساختار سه فیلد دارد: name، age، city."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "2154ba90",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "p1 = Person(name=\"Ali\", age=30, city=\"Tehran\")\n",
+    "\n",
+    "print(p1.name)   # Ali\n",
+    "print(p1.age)    # 30\n",
+    "print(p1.city)   # Tehran\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c97e0692",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "source": [
+    "#### _asdict()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "4f3c1946",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "print(p1._asdict())\n",
+    "# {'name': 'Ali', 'age': 30, 'city': 'Tehran'}"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "ed460f58",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "source": [
+    "### OrderedDict"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e0c24d0e",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "source": [
+    "این ساختار داده همانند دیکشنری عادی میباشد با این تفاوت که ترتیب ورود اطلاعات را حفظ مینماید یعنی به ترتیب ورودی اطلاعات دست نمیزند البته از ورژن 3.6 پایتون نیز این قابلیت به دیکشنری عادی نیز اضافه شد بنابر این از آن به بعد نیازی به استفاده از OrderedDict نمیباشد.\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3b240940",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "source": [
+    "### defaultdict"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "4e304972",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "OrderedDict([('b', 9), ('a', 6), ('d', 7), ('c', 3)])\n"
+     ]
+    }
+   ],
+   "source": [
+    "from collections import OrderedDict\n",
+    "od = OrderedDict() # type OrderedDict\n",
+    "od['b'] = 9\n",
+    "od['a'] = 6\n",
+    "od['d'] = 7\n",
+    "od['c'] = 3\n",
+    "\n",
+    "print(od)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "6cdff5ce",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "source": [
+    "در این نوع ساختار داده در هنگام ساختن باید یک تایپ به آن بدهیم حال اگر کلیدی داده شود که در دیکشنری موجود نباشد مقدار تهی از آن نوع تایپ داده را باز میگرداند توجه داشته باشید این نوع ساختار داده مانع دادن انواع دیگر Value نمیشود و مانند یک دیکشنری عادی مقدار گیری مینماید فقط در هنگامی که کلید سوال شده موجود نباشد مقدار تهی از تایپ داده شده را باز میگرداند میشود این موضوع را با دستور get دیکشنری شبیه سازی نمود.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "d0a337ac",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0\n"
+     ]
+    }
+   ],
+   "source": [
+    "from collections import defaultdict\n",
+    "d = defaultdict(int) # int , str , list ,float ,....\n",
+    "\n",
+    "d['a'] = 1\n",
+    "d['b'] = 'a'\n",
+    "\n",
+    "print(d['c'])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "133fbaa7",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "source": [
+    "### deque"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4c395c64",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "source": [
+    "( دک ) : با کسره دال یک نوع لیست میباشد که چند تابع اضافی هم دارد که عموما اعمال مقادیر یا خروج مقادیر از سمت چپ میباشد ولی بقیه موارد در لیست عادی هم موجود است دستور rotate دستوری برای چرخواندن مقادیر از آخر به اول میباشد که با دادن تعداد ایتم چرخش میتوان آنرا دقیقا مشخص نمود."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "828af23b",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "source": [
+    "deque()\n",
+    ".append()\n",
+    ".appendleft()\n",
+    ".pop()\n",
+    ".popleft()\n",
+    ".extend()\n",
+    ".extendleft()\n",
+    ".clear()\n",
+    ".rotate(#)    #  rotate list by number + or - "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "2828477b",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "deque([1, 2, 3])\n",
+      "deque([5, 1, 2, 3])\n",
+      "deque([3, 5, 1, 2])\n"
+     ]
+    }
+   ],
+   "source": [
+    "from collections import deque\n",
+    "d = deque()\n",
+    "d.append(1) # append to right side of list\n",
+    "d.append(2)\n",
+    "d.append(3)\n",
+    "print(d)\n",
+    "d.appendleft(5) # append to left side \n",
+    "print(d)\n",
+    "d.rotate(1) \n",
+    "print(d)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "296eb151",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "source": [
+    "__کیو (Queue) - (صف) :__\n",
+    "\n",
+    "صف یک ساختار عملکردی در ساختار داه ها میباشد که ورود و خروج اطلاعات از آن بصورت FIFO میباشد عملا یک لیست عادی توابعی اماده برای تبدیل آن به صف را ندارد ولی لیست از نوع (دک) deque  به علت داشتن توابع مناسب مانند ()popleft میتواند برای این منظو مورد استفاده قرار گیرد.\n",
+    "\n",
+    "\n",
+    "\n",
+    " "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "9855ab26",
+   "metadata": {
+    "bg": "#000000",
+    "uranus": {
+     "origin": "jupyter"
+    }
+   },
+   "source": [
+    "__استک (Stack) - پشته__:\n",
+    "\n",
+    "معمول ساختارداده ها از نوع stack هستند ماندد لیست و غیره که عملا کارکرد آنها به این گونه میباشد که آیتمها روی هم چیده میشنود و آخرین عضو اولین عضو است که استخراج میگردد که این فرایند همان LIFO میباشد.\n",
+    "این فرایندها با append وpop قابل اجرا میباشد "
    ]
   }
  ],
