@@ -14,50 +14,40 @@ from MainWindow import MainWindow
 
 
 def install_fonts():
-    """
-    Installs custom fonts required by Uranus IDE.
-    Compatible with both source-based execution and pip-installed package mode.
-    """
-
-    try:
-        from Uranus import font
-    except ImportError:
-        print("❌ Font package not found. Ensure 'src/Uranus/font/' contains __init__.py.")
-        return
+    # font folder is a sibling of this file
+    font_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "font")
 
     font_files = [
-        "JetBrainsMono-Light.ttf",          
+        "JetBrainsMono-Light.ttf",
         "Technology.ttf",
         "SpaceMono-Regular.ttf",
-
     ]
 
     existing_fonts = set(QFontDatabase().families())
 
     for font_file in font_files:
-        font_path = os.path.join(os.path.dirname(font.__file__), font_file)
+        font_path = os.path.join(font_dir, font_file)
         try:
             with open(font_path, "rb") as f:
                 font_data = f.read()
-                font_id = QFontDatabase.addApplicationFontFromData(font_data)
-
+            font_id = QFontDatabase.addApplicationFontFromData(font_data)
             if font_id == -1:
                 print(f"⚠️ Failed to load font: {font_file}")
             else:
-                loaded_fonts = QFontDatabase.applicationFontFamilies(font_id)
-                print(f"✅ Font installed: {loaded_fonts[0] if loaded_fonts else font_file}")
+                loaded = QFontDatabase.applicationFontFamilies(font_id)
+                print(f"✅ Font installed: {loaded[0] if loaded else font_file}")
+        except FileNotFoundError:
+            print(f"❌ Font file not found: {font_path}")
         except Exception as e:
-            print(f"❌ Error loading font '{font_file}': {e}")
+            print(f"❌ Error loading '{font_file}': {e}")
 
-    updated_fonts = set(QFontDatabase().families())
-    newly_added = updated_fonts - existing_fonts
-
+    newly_added = set(QFontDatabase().families()) - existing_fonts
     if newly_added:
         print("\n📋 Fonts added by Uranus:")
-        for font in sorted(newly_added):
-            print(f"  • {font}")
+        for f in sorted(newly_added):
+            print(f"  • {f}")
     else:
-        print("\nℹ️ No new fonts were added (they may already be installed).")
+        print("\nℹ️ No new fonts were added.")
 
 def main():
     app = QApplication(sys.argv)
