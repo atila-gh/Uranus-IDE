@@ -12,9 +12,15 @@ from SettingWindow import SettingsWindow , load_setting
 from PythonTemplate import ProjectInfoDialog
 from AboutWindow import AboutWindow
 from WorkWindowPython import WorkWindowPython
-from core import __version__   
+from importlib.metadata import version, PackageNotFoundError   # ✅ اضافه
 
 
+
+def get_version():
+    try:
+        return version("Uranus-IDE")
+    except PackageNotFoundError:
+        return "0.0.0-dev"
 
 class MainWindow(QMainWindow):
     open_files = {}  
@@ -27,7 +33,7 @@ class MainWindow(QMainWindow):
         self.work_widget_list = []
         self.setting = load_setting()
 
-        self.setWindowTitle(f"Uranus IDE  V{__version__}")
+        self.setWindowTitle(f"Uranus IDE  V{get_version()}")
         self.setGeometry(100, 100, 1000, 1000)
         self.showMaximized()
 

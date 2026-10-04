@@ -2,10 +2,17 @@ from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout,  QFrame
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtCore import Qt
 import os
-from _version import __version__   
+from importlib.metadata import version, PackageNotFoundError   # ✅ اضافه
 
 
 
+
+
+def get_version():
+    try:
+        return version("Uranus-IDE")
+    except PackageNotFoundError:
+        return "0.0.0-dev"
 
 class AboutWindow(QWidget):
 
@@ -26,7 +33,7 @@ class AboutWindow(QWidget):
         name_label.setFont(QFont("Arial", 20, QFont.Bold))
         name_label.setAlignment(Qt.AlignCenter)
 
-        version_label = QLabel(f"Version {__version__}")   
+        version_label = QLabel(f"Version {get_version()}")   
         version_label.setFont(QFont("Arial", 12))
         version_label.setAlignment(Qt.AlignCenter)
 

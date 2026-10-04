@@ -1,18 +1,19 @@
-import os
+import os ,sys
 os.environ["QT_LOGGING_RULES"] = "*.debug=false;qt.qpa.*=false"
 os.environ["QT_PLUGIN_PATH"] = ""   
 
-import sys
+
 from importlib.metadata import version, PackageNotFoundError
 import importlib.util
 from PyQt5.QtGui import QFontDatabase
 from PyQt5.QtWidgets import QApplication, QStyleFactory
 
-from _version import __version__
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
+
+
 
 from MainWindow import MainWindow
 
@@ -59,7 +60,7 @@ def main():
     app = QApplication(sys.argv)
     # app.setStyle("Fusion")
     install_fonts()
-    print(f"🚀 Uranus IDE v{__version__}")
+    print(f"🚀 Uranus IDE v{get_version()}")
     print("🎨 Available styles:", QStyleFactory.keys())
 
     # For Dark Mode
@@ -69,6 +70,12 @@ def main():
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())
+
+def get_version():
+    try:
+        return version("Uranus-IDE")
+    except PackageNotFoundError:
+        return "0.0.0-dev"
 
 
 if __name__ == "__main__":
