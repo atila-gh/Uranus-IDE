@@ -643,7 +643,6 @@ class DocumentEditor(QWidget):
     def update_heading_combo(self):
         cursor = self.editor.textCursor()
 
-
         if cursor.hasSelection():
             self.heading_combo.blockSignals(True)
             self.heading_combo.setCurrentIndex(-1)
@@ -653,16 +652,22 @@ class DocumentEditor(QWidget):
         fmt = cursor.charFormat()
         size = fmt.fontPointSize()
 
-        if size == 26:
-            self.heading_combo.setCurrentIndex(1)  # Heading 1
-        elif size == 18:
-            self.heading_combo.setCurrentIndex(2)  # Heading 2
-        elif size == 18:
-            self.heading_combo.setCurrentIndex(3)  # Heading 3
-        elif size == 16:
-            self.heading_combo.setCurrentIndex(4)  # Heading 4
-        else:
-            self.heading_combo.setCurrentIndex(0)  # Normal
+        # ✅ محاسبه داینامیک اندازه‌ها (مثل setup_toolbar)
+        base = self.code_font_size
+        sizes = [
+            base,          # Normal
+            base + 8,      # Heading 1
+            base + 6,      # Heading 2
+            base + 4,      # Heading 3
+            base + 2,      # Heading 4
+        ]
+
+        # ✅ پیدا کردن ایندکس بر اساس اندازه
+        try:
+            index = sizes.index(int(size))
+        except (ValueError, TypeError):
+            index = 0  # Normal
+        self.heading_combo.setCurrentIndex(index)
 
     def adjust_height_document_editor(self):
         doc = self.editor.document()
