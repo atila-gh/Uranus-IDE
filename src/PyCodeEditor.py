@@ -449,28 +449,31 @@ class PyCodeEditor(QPlainTextEdit):
     def fix_indentation(self, tab_size=4):
         text = self.toPlainText()
         lines = text.split("\n")
-
         fixed = []
-
         for line in lines:
             prefix = ""
             rest = line.lstrip(" \t")
-
             for ch in line:
                 if ch in (" ", "\t"):
                     prefix += ch
                 else:
                     break
-
-            prefix = prefix.replace("\t", " " * tab_size)            
+            prefix = prefix.replace("\t", " " * tab_size)
             spc = len(prefix)
             level = spc // tab_size
             prefix = " " * (level * tab_size)
-
             fixed.append(prefix + rest)
 
         new_text = "\n".join(fixed)
+
+        # ✅ فقط این خط اضافه شد
+        if new_text == text:
+            return
+
+        # ✅ فقط این دو خط اضافه/جابجا شد
+        self.setUndoRedoEnabled(False)
         self.setPlainText(new_text)
+        self.setUndoRedoEnabled(True)
 
     def my_copy(self):
         cursor = self.textCursor()
