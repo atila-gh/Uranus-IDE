@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import QWidget
 from PyQt5.QtCore import Qt, QRect, QSize
 from PyQt5.QtGui import QPainter, QColor
 from Analyzer import Analyzer
+from SettingWindow import load_setting   
 
 
 
@@ -268,6 +269,8 @@ class FindReplaceDialog(QDialog):
     def _update_status(self):
         if self.matches and self.current_index >= 0:
             self.status_label.setText(f"Match {self.current_index + 1} of {len(self.matches)}")
+        elif self.matches:
+            self.status_label.setText(f"{len(self.matches)} matches remaining")
         else:
             self.status_label.setText("No matches")
 

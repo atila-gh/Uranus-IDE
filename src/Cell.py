@@ -609,7 +609,7 @@ class Cell(QFrame):
 
     def finalize(self):
         self._stop_time = time.perf_counter()
-        if self.thread:
+        if hasattr(self, 'thread') and self.thread: 
             self.thread.quit()
             self.thread.wait()
             self.compute_execution_time()
@@ -617,7 +617,6 @@ class Cell(QFrame):
 
 
 
-        # 🔑 بررسی کل متن خروجی در ادیتور
         if hasattr(self, 'output_editor'):
             full_text = self.output_editor.text_output.toPlainText()
             has_traceback = "Traceback (most recent call last)" in full_text
@@ -628,7 +627,6 @@ class Cell(QFrame):
             else:
                 self.set_led_color("green")
         else:
-            # اگر ادیتور خروجی ساخته نشده بود، فرض بر موفقیت
             self.set_led_color("green")
 
         if callable(self.notify_done):
@@ -688,6 +686,12 @@ class Cell(QFrame):
         self.main_layout.addWidget(self.output_image)
 
     def create_output_data(self):
+        try :
+            import pandas as pd
+        except ImportError :
+            return
+
+
         self.output_data = DataFrameWidget()
         #Scroll Widget
         self.scroll = QScrollArea()

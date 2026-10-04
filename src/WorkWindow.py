@@ -172,18 +172,26 @@ class FindReplaceDialog(QDialog):
         cursor.setPosition(start + length, QTextCursor.KeepAnchor)
         cursor.insertText(self.replace_text)
 
-        # compute delta and update subsequent match positions
+        # compute delta
         delta = len(self.replace_text) - length
-        self.matches[self.current_index] = (start, len(self.replace_text))
 
-        for i in range(self.current_index + 1, len(self.matches)):
+        # ✅ حذف match فعلی از لیست
+        self.matches.pop(self.current_index)
+
+        # ✅ آپدیت موقعیت matchهای بعدی
+        for i in range(self.current_index, len(self.matches)):
             s, l = self.matches[i]
             self.matches[i] = (s + delta, l)
 
-        # move to next match (if any)
-        if len(self.matches) > 1:
-            self.current_index = (self.current_index + 1) % len(self.matches)
+        # ✅ اگه match دیگه‌ای هست، برو به بعدی
+        if self.matches:
+            if self.current_index >= len(self.matches):
+                self.current_index = 0
             self._select_match(self.current_index)
+        else:
+            self.current_index = -1
+            self.status_label.setText("All matches replaced")
+
         self._update_status()
 
     def replace_all(self):

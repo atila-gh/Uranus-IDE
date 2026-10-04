@@ -1,8 +1,14 @@
 import os
+os.environ["QT_LOGGING_RULES"] = "*.debug=false;qt.qpa.*=false"
+os.environ["QT_PLUGIN_PATH"] = ""   
+
 import sys
+from importlib.metadata import version, PackageNotFoundError
 import importlib.util
 from PyQt5.QtGui import QFontDatabase
 from PyQt5.QtWidgets import QApplication, QStyleFactory
+
+from _version import __version__
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
@@ -53,6 +59,7 @@ def main():
     app = QApplication(sys.argv)
     # app.setStyle("Fusion")
     install_fonts()
+    print(f"🚀 Uranus IDE v{__version__}")
     print("🎨 Available styles:", QStyleFactory.keys())
 
     # For Dark Mode

@@ -172,11 +172,8 @@ class FileTreeView(QTreeView):
         if index.isValid():
             path = self.fs_model.filePath(index)
         else:
-            path = self.path  # مسیر جاری
+            path = self.path  
 
-
-
-        path = self.fs_model.filePath(index)
         menu = QMenu()
 
         open_action = QAction("Open", self)
@@ -306,7 +303,8 @@ class FileTreeView(QTreeView):
             else:  # Linux and others
                 subprocess.run(["xdg-open", path], check=True)
 
-            os.chdir(path)
+            if os.path.isdir(path):
+                os.chdir(path)
 
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Could not open:\n{e}")

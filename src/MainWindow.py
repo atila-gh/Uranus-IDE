@@ -12,6 +12,7 @@ from SettingWindow import SettingsWindow , load_setting
 from PythonTemplate import ProjectInfoDialog
 from AboutWindow import AboutWindow
 from WorkWindowPython import WorkWindowPython
+from core import __version__   
 
 
 
@@ -26,7 +27,7 @@ class MainWindow(QMainWindow):
         self.work_widget_list = []
         self.setting = load_setting()
 
-        self.setWindowTitle("Uranus")
+        self.setWindowTitle(f"Uranus IDE  V{__version__}")
         self.setGeometry(100, 100, 1000, 1000)
         self.showMaximized()
 

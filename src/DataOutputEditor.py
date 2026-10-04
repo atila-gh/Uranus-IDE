@@ -28,6 +28,7 @@ class DataFrameModel(QAbstractTableModel):
 
     def __init__(self, df=None, parent=None):
         super().__init__(parent)
+        self._df = None
         try :
             import pandas as pd
         except ImportError :
@@ -36,9 +37,13 @@ class DataFrameModel(QAbstractTableModel):
             self._df = df if df is not None else pd.DataFrame()
 
     def rowCount(self, parent=None):
+        if self._df is None :
+            return 0
         return len(self._df)
 
     def columnCount(self, parent=None):
+        if self._df is None :
+            return 0
         return len(self._df.columns)
 
     def data(self, index, role=Qt.DisplayRole):
