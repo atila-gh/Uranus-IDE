@@ -596,7 +596,7 @@ class Cell(QFrame):
                 cursor.insertText(line)
                 cursor.insertBlock()
 
-                if ("Traceback" in line) and ("Error" in line) and ("Exception" in line):
+                if ("Traceback" in line) or ("Error" in line) or ("Exception" in line):
                     self.set_led_color("red")
                 else:
                     self.set_led_color("green")

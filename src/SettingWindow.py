@@ -386,7 +386,7 @@ class SettingsWindow(QWidget):
                 self.update_font_preview("OutPut")
             elif target == "LineNumber":
                 self.settings["Line Number Font"] = font.family()
-                self.output_font_preview.setText(font.family())
+                self.line_number_font_preview.setText(font.family())
                 self.update_font_preview("LineNumber")
 
 
