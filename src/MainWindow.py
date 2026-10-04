@@ -65,7 +65,7 @@ class MainWindow(QMainWindow):
         # Tree View Model 
         self.tree = FileTreePanel()
         # Connect the clicked signal to update the selected path
-        self.tree.installEventFilter(self)
+        self.tree.tree.installEventFilter(self)
         self.tree.tree.doubleClicked.connect(self.on_tree_item_double_clicked) # Event On DoubleClick
         self.tree.tree.pathChanged.connect(self.on_path_changed)
 
@@ -328,7 +328,7 @@ class MainWindow(QMainWindow):
                         self.work_widget_list.append(work_widget)
 
     def eventFilter(self, source, event):
-        if source == self.tree and event.type() == QEvent.KeyPress:
+        if source == self.tree.tree and event.type() == QEvent.KeyPress:
             if event.key() in (Qt.Key_Return, Qt.Key_Enter):
                 index = self.tree.tree.currentIndex()
                 if index.isValid():
