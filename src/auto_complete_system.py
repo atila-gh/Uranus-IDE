@@ -365,25 +365,6 @@ class AutoCompleteSystem(QFrame):
         else:
             super().keyPressEvent(event)
 
-    def keyPressEvent(self, event):
-        if not self.isVisible():
-            event.ignore()
-            return
-
-        key = event.key()
-
-        if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Tab):
-            self.complete_selected()
-        elif key == Qt.Key.Key_Escape:
-            self.deactivate()
-            self.editor.setFocus()
-        elif key == Qt.Key.Key_Up:
-            self.select_previous()
-        elif key == Qt.Key.Key_Down:
-            self.select_next()
-        else:
-            super().keyPressEvent(event)
-
     def hideEvent(self, event):
         if hasattr(self, 'doc_popup'):
             self.doc_popup.hide()
