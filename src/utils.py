@@ -1,8 +1,10 @@
+import shutil , os , stat ,platform , subprocess
+
+
 from PyQt5.QtWidgets import QWidget, QTreeView, QInputDialog, QMenu , QAction , QApplication , QMessageBox , QFileIconProvider , QLineEdit , QVBoxLayout
 from PyQt5.QtCore import Qt, QPoint, QSize , pyqtSignal , QModelIndex
 from PyQt5.QtGui import QCursor,QIcon
 from PyQt5.QtWidgets import QFileSystemModel
-import shutil , os , stat ,platform , subprocess
 from SettingWindow import load_setting
 
 
@@ -180,6 +182,9 @@ class FileTreeView(QTreeView):
         open_action.triggered.connect(self.open_item)
         menu.addAction(open_action)
 
+        show_in_explorer_action = QAction("Show in File Explorer", self)
+        show_in_explorer_action.triggered.connect(lambda: self.show_in_explorer(path))
+        menu.addAction(show_in_explorer_action)
 
         add_file_action = QAction("Add File", self)
         add_file_action.triggered.connect(self.create_file)
@@ -416,3 +421,61 @@ class FileTreeView(QTreeView):
             self.path = self.project_root
             self.pathChanged.emit(self.project_root)
         super().mousePressEvent(event)
+
+    def show_in_explorer(self, path=None):
+        if path is None:
+            index = self.currentIndex()
+            if index.isValid():
+                path = self.fs_model.filePath(index)
+            else:
+                path = self.path
+
+        if not path or not os.path.exists(path):
+            QMessageBox.warning(self, "Error", f"Path does not exist:\n{path}")
+            return
+
+        try:
+            system = platform.system()
+
+            if system == "Windows":
+                if os.path.isdir(path):
+                    subprocess.run(["explorer", path], check=False)
+                else:
+                    subprocess.run(["explorer", "/select,", path], check=False)
+
+            elif system == "Darwin":  # macOS
+                subprocess.run(["open", "-R", path], check=False)
+
+            else:  # Linux and others
+                self._show_in_linux_explorer(path)
+
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Could not open file manager:\n{e}")
+
+    def _show_in_linux_explorer(self, path):
+        if os.path.isdir(path):
+            subprocess.Popen(["xdg-open", path])
+            return
+
+        parent_dir = os.path.dirname(path)
+
+        candidates = [
+            (["nautilus", "--select", path], "nautilus"),      # GNOME
+            (["dolphin", "--select", path], "dolphin"),        # KDE
+            (["nemo", path], "nemo"),                          # Cinnamon
+            (["thunar", path], "thunar"),                      # XFCE
+            (["pcmanfm", path], "pcmanfm"),                    # LXDE
+        ]
+
+        for cmd, exe in candidates:
+            if shutil.which(exe):
+                try:
+                    subprocess.Popen(cmd)
+                    return
+                except Exception:
+                    continue
+
+        try:
+            subprocess.Popen(["xdg-open", parent_dir])
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Could not open folder:\n{e}")

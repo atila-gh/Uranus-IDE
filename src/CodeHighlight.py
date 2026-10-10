@@ -16,7 +16,6 @@ class CodeHighlighter(QSyntaxHighlighter):
         self.dirty = True
 
         setting = load_setting()
-        code_font_size = setting['Code Font Size']
 
         # Load colors from settings
         keyword_c = setting['colors_syntax']['keyword_color']
@@ -29,6 +28,7 @@ class CodeHighlighter(QSyntaxHighlighter):
         structure_c = setting['colors_syntax']['structure_color']
         decorator_c = setting['colors_syntax']['decorator_color']
         string_c = setting['colors_syntax']['string_color']
+        method_c = setting['colors_syntax'].get('method_color', '#00897B')
 
         # ============================================================
         # DEFINE FORMATS
@@ -40,6 +40,9 @@ class CodeHighlighter(QSyntaxHighlighter):
 
         builtin_format = QTextCharFormat()
         builtin_format.setForeground(QColor(builtin_c))
+
+        method_format = QTextCharFormat()
+        method_format.setForeground(QColor(method_c))
 
         datatype_format = QTextCharFormat()
         datatype_format.setForeground(QColor(datatype_c))
@@ -63,13 +66,6 @@ class CodeHighlighter(QSyntaxHighlighter):
         self.comment_format.setForeground(QColor(comment_c))
         self.comment_format.setFontPointSize(14)
 
-        self.comment_h2_format = QTextCharFormat(self.comment_format)
-        self.comment_h2_format.setFontPointSize(code_font_size + 2)
-
-        self.comment_h3_format = QTextCharFormat(self.comment_format)
-        self.comment_h3_format.setFontPointSize(code_font_size + 4)
-        self.comment_h3_format.setFontWeight(QFont.Bold)
-
         structure_format = QTextCharFormat()
         structure_format.setForeground(QColor(structure_c))
         structure_format.setFontWeight(QFont.Bold)
@@ -92,44 +88,149 @@ class CodeHighlighter(QSyntaxHighlighter):
         datatypes = [
             "int", "float", "complex", "bool", "str", "list", "tuple", "set",
             "frozenset", "dict", "bytes", "bytearray", "memoryview", "NoneType",
-            "type", "Ellipsis", "NotImplemented", "collections.Counter",
-            "collections.OrderedDict", "collections.defaultdict", "collections.deque",
-            "np.int8", "np.int16", "np.int32", "np.int64", "np.uint8",
-            "np.float16", "np.float32", "np.float64", "np.complex64",
-            "np.ndarray", "pd.Series", "pd.DataFrame", "pd.Categorical",
+            "type", "object", "Ellipsis", "NotImplemented",
+            "collections.Counter", "collections.OrderedDict", "collections.defaultdict",
+            "collections.deque", "collections.namedtuple", "collections.ChainMap",
+            "np.int8", "np.int16", "np.int32", "np.int64",
+            "np.uint8", "np.uint16", "np.uint32", "np.uint64",
+            "np.float16", "np.float32", "np.float64",
+            "np.complex64", "np.complex128",
+            "np.ndarray", "np.array", "np.matrix", "np.dtype",
+            "pd.Series", "pd.DataFrame", "pd.Categorical",
             "pd.Timestamp", "pd.Timedelta", "pd.Period", "pd.Interval",
-            "scipy.sparse.csr_matrix", "decimal.Decimal", "fractions.Fraction",
-            "datetime.date", "datetime.datetime", "uuid.UUID", "pathlib.Path"
+            "pd.Index", "pd.MultiIndex", "pd.DatetimeIndex",
+            "scipy.sparse.csr_matrix", "scipy.sparse.csc_matrix",
+            "decimal.Decimal", "fractions.Fraction",
+            "datetime.date", "datetime.time", "datetime.datetime",
+            "datetime.timedelta", "datetime.timezone",
+            "uuid.UUID", "pathlib.Path", "pathlib.PosixPath", "pathlib.WindowsPath",
+            "io.StringIO", "io.BytesIO", "io.TextIOWrapper",
+            "typing.Any", "typing.Optional", "typing.Union",
+            "typing.List", "typing.Dict", "typing.Tuple", "typing.Set",
         ]
 
         exceptions = [
-            "ArithmeticError", "AssertionError", "AttributeError", "BaseException",
-            "Exception", "ImportError", "IndexError", "KeyError", "NameError",
-            "NotImplementedError", "OSError", "RuntimeError", "SyntaxError",
-            "TypeError", "ValueError", "ZeroDivisionError", "FileNotFoundError"
+            "BaseException", "Exception", "BaseExceptionGroup", "ExceptionGroup",
+            "ArithmeticError", "FloatingPointError", "OverflowError", "ZeroDivisionError",
+            "AssertionError", "AttributeError",
+            "BufferError", "EOFError",
+            "ImportError", "ModuleNotFoundError",
+            "LookupError", "IndexError", "KeyError",
+            "MemoryError", "NameError", "UnboundLocalError",
+            "OSError", "FileNotFoundError", "FileExistsError",
+            "PermissionError", "IsADirectoryError", "NotADirectoryError",
+            "InterruptedError", "BlockingIOError", "ChildProcessError",
+            "ConnectionError", "BrokenPipeError", "ConnectionAbortedError",
+            "ConnectionRefusedError", "ConnectionResetError",
+            "ProcessLookupError", "TimeoutError",
+            "ReferenceError", "RuntimeError", "NotImplementedError", "RecursionError",
+            "StopIteration", "StopAsyncIteration",
+            "SyntaxError", "IndentationError", "TabError",
+            "SystemError", "SystemExit", "KeyboardInterrupt", "GeneratorExit",
+            "TypeError", "ValueError",
+            "UnicodeError", "UnicodeDecodeError", "UnicodeEncodeError", "UnicodeTranslateError",
+            "Warning", "UserWarning", "DeprecationWarning",
+            "PendingDeprecationWarning", "SyntaxWarning", "RuntimeWarning",
+            "FutureWarning", "ImportWarning", "UnicodeWarning",
+            "BytesWarning", "ResourceWarning",
+            "EnvironmentError", "IOError", "WindowsError",
         ]
 
         modules = [
-            "argparse", "asyncio", "collections", "datetime", "decimal",
-            "functools", "importlib", "itertools", "json", "logging",
-            "math", "matplotlib", "numpy", "os", "pandas", "pathlib",
-            "pickle", "PyQt5", "random", "re", "requests", "scipy",
-            "seaborn", "sklearn", "subprocess", "sys", "tensorflow",
-            "threading", "time", "torch"
+            "os", "sys", "io", "re", "json", "math", "time", "datetime",
+            "random", "subprocess", "threading", "asyncio", "functools",
+            "itertools", "collections", "argparse", "logging", "pickle",
+            "pathlib", "importlib", "decimal", "fractions", "uuid",
+            "hashlib", "base64", "tempfile", "shutil", "glob", "csv",
+            "sqlite3", "socket", "ssl", "urllib", "http", "email",
+            "xml", "html", "unittest", "typing", "dataclasses", "enum",
+            "copy", "pprint", "traceback", "warnings", "contextlib",
+            "inspect", "platform", "signal", "queue", "abc", "operator",
+            "statistics", "secrets", "textwrap", "string", "struct",
+            "weakref", "gc", "atexit", "codecs", "unicodedata",
+            "numpy", "pandas", "scipy", "matplotlib", "seaborn",
+            "sklearn", "statsmodels", "sympy", "networkx",
+            "plotly", "bokeh", "dash", "pillow", "PIL", "cv2",
+            "tensorflow", "torch", "keras", "jax", "numba",
+            "requests", "flask", "django", "fastapi", "aiohttp",
+            "beautifulsoup4", "bs4", "scrapy", "selenium",
+            "PyQt5", "PyQt6", "PySide2", "PySide6", "tkinter", "kivy", "wx",
+            "jedi", "nbformat", "jupyter", "ipython", "IPython",
+            "markdown2", "markdown", "yaml", "toml", "dotenv",
+            "pytest", "nose", "mock", "hypothesis",
+            "dask", "ray", "pyspark", "polars",
         ]
 
         builtins = [
-            "abs", "all", "any", "bin", "callable", "chr", "classmethod",
-            "compile", "delattr", "dir", "divmod", "enumerate", "eval",
-            "exec", "filter", "format", "getattr", "globals", "hasattr",
-            "hash", "help", "hex", "id", "input", "isinstance", "issubclass",
-            "iter", "len", "locals", "map", "max", "min", "next", "oct",
-            "open", "ord", "pow", "print", "property", "repr", "reversed",
-            "round", "setattr", "sorted", "staticmethod", "sum", "super",
-            "type", "vars", "zip", "__import__", "range"
+            # Numeric & Math
+            "abs", "divmod", "pow", "round", "sum", "min", "max",
+            "bin", "oct", "hex",
+
+            # Type Conversion
+            "bool", "int", "float", "complex", "str", "bytes", "bytearray",
+            "list", "tuple", "set", "frozenset", "dict",
+            "chr", "ord", "repr", "ascii", "format",
+
+            # I/O
+            "input", "open", "print","close",
+
+            # Iteration & Sequence
+            "all", "any", "enumerate", "filter", "map", "reversed",
+            "sorted", "zip", "iter", "next", "len", "range", "slice",
+
+            # Object & Class
+            "callable", "classmethod", "staticmethod", "property",
+            "delattr", "getattr", "hasattr", "setattr",
+            "isinstance", "issubclass", "super",
+            "type", "vars", "dir", "id", "hash",
+
+            # Execution & Evaluation
+            "compile", "eval", "exec", "__import__", "globals", "locals",
+
+            # Async (Python 3.10+)
+            "aiter", "anext",
+
+            # Helpers
+            "help", "memoryview", "breakpoint",
         ]
 
-        structure_keywords = ["def", "class", "self", "args", "kwargs"]
+        methods = [
+            # String methods
+            "capitalize", "casefold", "center", "encode",
+            "endswith", "expandtabs", "format_map",
+            "isalnum", "isalpha", "isascii", "isdecimal",
+            "isdigit", "isidentifier", "islower", "isnumeric",
+            "isprintable", "isspace", "istitle", "isupper",
+            "join", "ljust", "lower", "lstrip", "maketrans",
+            "partition", "removeprefix", "removesuffix", "replace",
+            "rfind", "rindex", "rjust", "rpartition", "rsplit",
+            "rstrip", "split", "splitlines", "startswith", "strip",
+            "swapcase", "title", "translate", "upper", "zfill",
+
+            # List methods
+            "append", "extend", "insert", "reverse", "sort",
+
+            # Dict methods
+            "fromkeys", "items", "keys", "popitem",
+            "setdefault", "values",
+
+            # Set methods
+            "difference", "difference_update", "discard",
+            "intersection", "intersection_update", "isdisjoint",
+            "issubset", "issuperset", "symmetric_difference",
+            "symmetric_difference_update", "union",
+
+            # File methods
+            "fileno", "flush", "isatty", "readable","read",
+            "readline", "readlines", "seek", "seekable", "tell",
+            "truncate", "writable", "writelines", "write",
+
+            # Shared methods
+            "add", "clear", "copy", "count", "get", "index",
+            "pop", "remove", "update",
+        ]
+
+        structure_keywords = ["def", "class", "self", "args", "kwargs", "cls"]
 
         # ============================================================
         # ADD RULES TO THE HIGHLIGHTER
@@ -150,15 +251,15 @@ class CodeHighlighter(QSyntaxHighlighter):
         for bi in builtins:
             self.rules.append((QRegularExpression(r"\b" + bi + r"\b"), builtin_format))
 
+        for m in methods:
+            self.rules.append((QRegularExpression(r"\b" + m + r"\b"), method_format))
+
         for word in structure_keywords:
             self.rules.append((QRegularExpression(r"\b" + word + r"\b"), structure_format))
 
         # ============================================================
         # SPECIAL RULES (Strings, Numbers, Decorators)
         # ============================================================
-
-        # NOTE: String rules are now handled in highlightBlock() with state tracking
-        # We keep them here for fallback, but highlightBlock() will override
 
         # Numbers (integers and floats)
         self.rules.append((QRegularExpression(r"\b\d+(\.\d+)?\b"), number_format))

@@ -7,9 +7,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import  QFont
 from PyQt5.QtCore import Qt
 
-
 DEFAULT_SETTINGS = {
-    "theme": "light", 
+    "theme": "light",
     "colors": {
         "Back Ground Color Code": "#ffffff",
         "Back Ground Color MetaData": "#ffffff",
@@ -30,7 +29,62 @@ DEFAULT_SETTINGS = {
         "comment_color": "#696969",
         "structure_color": "#006400",
         "decorator_color": "#B22222",
-        "string_color": "#FF1493"
+        "string_color": "#FF1493",
+        "method_color": "#00897B"
+    },
+    "colors_ui": {
+        "statusbar_left_fg":       "#000000",
+        "statusbar_center_fg":     "#000000",
+        "statusbar_right_fg":      "#0000FF",
+        "statusbar_border":        "#808080",
+
+        "label_fg":                "#000000",
+        "label_bg":                "#ffffff",
+        "label_border":            "#aaaaaa",
+
+        "cell_status_bg":          "#6E6E6E",
+        "cell_status_fg":          "#000000",
+        "cell_line_number_bg":     "#E3E3E3",
+        "cell_line_number_fg":     "#000000",
+        "cell_timing_bg":          "#E3E3E3",
+        "cell_timing_fg":          "#000000",
+
+        "cell_border_default":     "#BEBDBD",
+        "cell_border_focused":     "#FF8800",
+
+        "tree_bg":                 "#ffffff",
+        "tree_fg":                 "#000000",
+        "tree_path_bg":            "#f0f0f0",
+        "tree_path_fg":            "#000000",
+
+        "line_number_bg":          "#2d1ad8",
+        "line_number_fg":          "#FFFFFF",
+
+        "detached_status_bg":      "#f0f0f0",
+        "detached_status_fg":      "#444444",
+
+        "autocomplete_bg":         "#1e1e1e",
+        "autocomplete_fg":         "#ffffff",
+        "autocomplete_selected":   "#264f78",
+        "autocomplete_border":     "#444444",
+        "autocomplete_doc_bg":     "#252526",
+        "autocomplete_doc_fg":     "#ffffff",
+
+        "analyzer_bg":             "#000000",
+        "analyzer_fg":             "#ffffff",
+        "analyzer_button_bg":      "#333333",
+        "analyzer_button_fg":      "#ffffff",
+
+        "toggle_bg":               "#ffffff",
+        "toggle_fg":               "#555555",
+        "toggle_border":           "#aaaaaa",
+
+        "selection_bg":            "#264f78",
+        "selection_fg":            "#ffffff",
+
+        "scrollbar_bg":            "#f0f0f0",
+        "scrollbar_handle":        "#999999",
+        "scrollbar_handle_border": "#666666",
     },
     "Code Font": "Space Mono",
     "Code Font Size": 13,
@@ -66,7 +120,62 @@ THEMES = {
             "comment_color": "#696969",
             "structure_color": "#006400",
             "decorator_color": "#B22222",
-            "string_color": "#FF1493"
+            "string_color": "#FF1493",
+            "method_color": "#00897B"
+        },
+        "colors_ui": {
+            "statusbar_left_fg":       "#000000",
+            "statusbar_center_fg":     "#000000",
+            "statusbar_right_fg":      "#0000FF",
+            "statusbar_border":        "#808080",
+
+            "label_fg":                "#000000",
+            "label_bg":                "#ffffff",
+            "label_border":            "#aaaaaa",
+
+            "cell_status_bg":          "#6E6E6E",
+            "cell_status_fg":          "#000000",
+            "cell_line_number_bg":     "#E3E3E3",
+            "cell_line_number_fg":     "#000000",
+            "cell_timing_bg":          "#E3E3E3",
+            "cell_timing_fg":          "#000000",
+
+            "cell_border_default":     "#BEBDBD",
+            "cell_border_focused":     "#FF8800",
+
+            "tree_bg":                 "#ffffff",
+            "tree_fg":                 "#000000",
+            "tree_path_bg":            "#f0f0f0",
+            "tree_path_fg":            "#000000",
+
+            "line_number_bg":          "#2d1ad8",
+            "line_number_fg":          "#FFFFFF",
+
+            "detached_status_bg":      "#f0f0f0",
+            "detached_status_fg":      "#444444",
+
+            "autocomplete_bg":         "#1e1e1e",
+            "autocomplete_fg":         "#ffffff",
+            "autocomplete_selected":   "#264f78",
+            "autocomplete_border":     "#444444",
+            "autocomplete_doc_bg":     "#252526",
+            "autocomplete_doc_fg":     "#ffffff",
+
+            "analyzer_bg":             "#000000",
+            "analyzer_fg":             "#ffffff",
+            "analyzer_button_bg":      "#333333",
+            "analyzer_button_fg":      "#ffffff",
+
+            "toggle_bg":               "#ffffff",
+            "toggle_fg":               "#555555",
+            "toggle_border":           "#aaaaaa",
+
+            "selection_bg":            "#264f78",
+            "selection_fg":            "#ffffff",
+
+            "scrollbar_bg":            "#f0f0f0",
+            "scrollbar_handle":        "#999999",
+            "scrollbar_handle_border": "#666666",
         }
     },
     "dark": {
@@ -75,22 +184,77 @@ THEMES = {
             "Back Ground Color MetaData": "#252526",
             "Back Ground Color OutPut": "#1e1e1e",
             "Back Ground Color WorkWindow": "#2d2d2d",
-            "Default Title Color": "#3a3a3a",
+            "Default Title Color": "#555555",
             "ForGround Color Code": "#d4d4d4",
-            "ForGround Color MetaData": "#cccccc",
-            "ForGround Color Output": "#cccccc"
+            "ForGround Color MetaData": "#d4d4d4",
+            "ForGround Color Output": "#d4d4d4"
         },
         "colors_syntax": {
-            "keyword_color": "#569cd6",
-            "builtin_color": "#4ec9b0",
-            "datatype_color": "#b5cea8",
-            "exception_color": "#f44747",
-            "module_color": "#c586c0",
-            "number_color": "#b5cea8",
-            "comment_color": "#6a9955",
-            "structure_color": "#dcdcaa",
-            "decorator_color": "#c586c0",
-            "string_color": "#ce9178"
+            "keyword_color":    "#C586C0",
+            "builtin_color":    "#4EC9B0",
+            "datatype_color":   "#569CD6",
+            "exception_color":  "#F44747",
+            "module_color":     "#C586C0",
+            "number_color":     "#B5CEA8",
+            "comment_color":    "#6A9955",
+            "structure_color":  "#DCDCAA",
+            "decorator_color":  "#DCDCAA",
+            "string_color":     "#CE9178",
+            "method_color":     "#9CDCFE"
+        },
+        "colors_ui": {
+            "statusbar_left_fg":       "#d4d4d4",
+            "statusbar_center_fg":     "#d4d4d4",
+            "statusbar_right_fg":      "#569CD6",
+            "statusbar_border":        "#444444",
+
+            "label_fg":                "#d4d4d4",
+            "label_bg":                "#2d2d2d",
+            "label_border":            "#555555",
+
+            "cell_status_bg":          "#4a4a4a",
+            "cell_status_fg":          "#ffffff",
+            "cell_line_number_bg":     "#3a3a3a",
+            "cell_line_number_fg":     "#d4d4d4",
+            "cell_timing_bg":          "#3a3a3a",
+            "cell_timing_fg":          "#d4d4d4",
+
+            "cell_border_default":     "#555555",
+            "cell_border_focused":     "#FF8800",
+
+            "tree_bg":                 "#252526",
+            "tree_fg":                 "#d4d4d4",
+            "tree_path_bg":            "#2d2d2d",
+            "tree_path_fg":            "#d4d4d4",
+
+            "line_number_bg":          "#1e1e1e",
+            "line_number_fg":          "#858585",
+
+            "detached_status_bg":      "#2d2d2d",
+            "detached_status_fg":      "#d4d4d4",
+
+            "autocomplete_bg":         "#252526",
+            "autocomplete_fg":         "#d4d4d4",
+            "autocomplete_selected":   "#094771",
+            "autocomplete_border":     "#555555",
+            "autocomplete_doc_bg":     "#1e1e1e",
+            "autocomplete_doc_fg":     "#d4d4d4",
+
+            "analyzer_bg":             "#1e1e1e",
+            "analyzer_fg":             "#d4d4d4",
+            "analyzer_button_bg":      "#3a3a3a",
+            "analyzer_button_fg":      "#d4d4d4",
+
+            "toggle_bg":               "#3a3a3a",
+            "toggle_fg":               "#d4d4d4",
+            "toggle_border":           "#555555",
+
+            "selection_bg":            "#264f78",
+            "selection_fg":            "#ffffff",
+
+            "scrollbar_bg":            "#2d2d2d",
+            "scrollbar_handle":        "#555555",
+            "scrollbar_handle_border": "#3a3a3a",
         }
     }
 }
@@ -111,7 +275,7 @@ def load_setting():
     with open(path, "r", encoding="utf-8") as f:
         setting = json.load(f)
 
-    # تکمیل کلیدهای ناقص
+    # Fill missing keys
     for key, value in DEFAULT_SETTINGS.items():
         if key not in setting:
             setting[key] = value
@@ -124,7 +288,6 @@ def load_setting():
                 if syntax_key not in setting["colors_syntax"]:
                     setting["colors_syntax"][syntax_key] = syntax_value
 
-    # اگر تم وجود نداشت، light رو به‌عنوان پیش‌فرض قرار بده
     if "theme" not in setting:
         setting["theme"] = "light"
 
@@ -133,24 +296,24 @@ def load_setting():
 class SettingsWindow(QWidget):
 
     def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Settings")
-        self.setFixedSize(500, 500)
-        self.settings = self.load_settings()
+            super().__init__()
+            self.setWindowTitle("Settings")
+            self.setFixedSize(500, 500)
+            self.settings = self.load_settings()
 
-        for key, value in DEFAULT_SETTINGS.items():
-            if key not in self.settings:
-                self.settings[key] = value
+            for key, value in DEFAULT_SETTINGS.items():
+                if key not in self.settings:
+                    self.settings[key] = value
 
-        for key, value in DEFAULT_SETTINGS["colors"].items():
-            if key not in self.settings["colors"]:
-                self.settings["colors"][key] = value
+            for key, value in DEFAULT_SETTINGS["colors"].items():
+                if key not in self.settings["colors"]:
+                    self.settings["colors"][key] = value
 
-        for key, value in DEFAULT_SETTINGS["colors_syntax"].items():
-            if key not in self.settings["colors_syntax"]:
-                self.settings["colors_syntax"][key] = value
+            for key, value in DEFAULT_SETTINGS["colors_syntax"].items():
+                if key not in self.settings["colors_syntax"]:
+                    self.settings["colors_syntax"][key] = value
 
-        self.init_ui()
+            self.init_ui()
 
     def init_ui(self):
         main_layout = QVBoxLayout()
@@ -168,7 +331,7 @@ class SettingsWindow(QWidget):
 
         main_layout.addWidget(self.tabs)
 
-        # ===== دکمه‌های پایین =====
+        # ===== Bottom Buttons =====
         button_row = QHBoxLayout()
 
         reset_btn = QPushButton("Reset to Defaults")
@@ -197,6 +360,9 @@ class SettingsWindow(QWidget):
         current_theme = self.settings.get("theme", "light")
         self.theme_combo.setCurrentText(current_theme.capitalize())
         self.theme_combo.currentTextChanged.connect(self.on_theme_changed)
+
+        # Temporary: disable theme selector until dark mode is fixed
+        self.theme_combo.setEnabled(False)
 
         theme_row.addWidget(theme_label)
         theme_row.addWidget(self.theme_combo)
@@ -328,9 +494,6 @@ class SettingsWindow(QWidget):
         header_height_row.addWidget(self.header_height_combo)
         layout.addLayout(header_height_row)
 
-
-
-
         self.tab_main.setLayout(layout)
 
     def init_syntax_tab(self):
@@ -359,11 +522,11 @@ class SettingsWindow(QWidget):
     def select_color(self, key):
         color = QColorDialog.getColor()
         if color.isValid():
-            if  self.settings["colors"].get(key,False):
+            if self.settings["colors"].get(key, False):
                 self.settings["colors"][key] = color.name()
                 self.color_previews[key].setStyleSheet(f"background-color: {color.name()}; border: 1px solid gray;")
 
-            elif  self.settings["colors_syntax"].get(key,False):
+            elif self.settings["colors_syntax"].get(key, False):
                 self.settings["colors_syntax"][key] = color.name()
                 self.syntax_color_previews[key].setStyleSheet(f"background-color: {color.name()}; border: 1px solid gray;")
 
@@ -388,7 +551,6 @@ class SettingsWindow(QWidget):
                 self.settings["Line Number Font"] = font.family()
                 self.line_number_font_preview.setText(font.family())
                 self.update_font_preview("LineNumber")
-
 
             self.save_settings()
 
@@ -427,7 +589,6 @@ class SettingsWindow(QWidget):
         for key in self.settings["colors_syntax"]:
             self.syntax_color_previews[key].setStyleSheet(f"background-color: {self.settings['colors_syntax'][key]}; border: 1px solid gray;")
 
-
         self.code_font_preview.setText(self.settings["Code Font"])
         self.code_font_size_spin.setValue(self.settings["Code Font Size"])
         self.meta_font_preview.setText(self.settings["Meta Font"])
@@ -446,10 +607,6 @@ class SettingsWindow(QWidget):
         self.save_settings()
 
     def update_Line_Number_Box_Height(self):
-        """
-            این متد مقادیر جدید از ویجت‌های تنظیمات را می‌خواند و در دیکشنری settings ذخیره می‌کند.
-        """
-
         header_height = self.header_height_combo.currentText()       
         self.settings["Line Number Box Height"] = int(header_height) 
         self.save_settings()
@@ -465,20 +622,38 @@ class SettingsWindow(QWidget):
     @staticmethod
 
     def load_settings():
-        path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "setting.json")  # ← مسیر src/
+        path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "setting.json")
         if not os.path.exists(path):
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(DEFAULT_SETTINGS, f, indent=4, ensure_ascii=False)
             return json.loads(json.dumps(DEFAULT_SETTINGS))
 
         with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
+            setting = json.load(f)
+
+        # Fill missing keys
+        for key, value in DEFAULT_SETTINGS.items():
+            if key not in setting:
+                setting[key] = value
+            elif key == "colors":
+                for color_key, color_value in DEFAULT_SETTINGS["colors"].items():
+                    if color_key not in setting["colors"]:
+                        setting["colors"][color_key] = color_value
+            elif key == "colors_syntax":
+                for syntax_key, syntax_value in DEFAULT_SETTINGS["colors_syntax"].items():
+                    if syntax_key not in setting["colors_syntax"]:
+                        setting["colors_syntax"][syntax_key] = syntax_value
+
+        if "theme" not in setting:
+            setting["theme"] = "light"
+
+        return setting
 
     def apply_theme(self):
         setting = load_setting()
         self.bg_main_window = setting["colors"]["Back Ground Color WorkWindow"]
 
-        # به‌روزرسانی استایل سلول
+        # Update cell style
         self.setStyleSheet(f"""
             QFrame {{
                 border: 2px solid {self.border_color or self.bg_border_color_default};
@@ -488,7 +663,7 @@ class SettingsWindow(QWidget):
             }}
         """)
 
-        # به‌روزرسانی استایل task_frame
+        # Update task_frame style
         self.task_frame.setStyleSheet(f"""
             QFrame {{
                 border: 0px solid {self.bg_border_color_default};
@@ -499,7 +674,7 @@ class SettingsWindow(QWidget):
             }}
         """)
 
-        # به‌روزرسانی دکمه‌های toggle
+        # Update toggle buttons
         button_style = """
             QLabel {
                 background-color: white;
@@ -520,21 +695,21 @@ class SettingsWindow(QWidget):
     def on_theme_changed(self, theme_name):
         theme_key = theme_name.lower()
 
-        # ذخیره تم انتخاب شده
+        # Save selected theme
         self.settings["theme"] = theme_key
 
-        # دریافت رنگ‌های تم جدید برای پیش‌نمایش
+        # Get new theme colors for preview
         theme_colors = THEMES[theme_key]["colors"]
         theme_syntax = THEMES[theme_key]["colors_syntax"]
 
-        # به‌روزرسانی دیکشنری settings (برای ذخیره)
+        # Update settings dictionary
         for key, value in theme_colors.items():
             self.settings["colors"][key] = value
 
         for key, value in theme_syntax.items():
             self.settings["colors_syntax"][key] = value
 
-        # به‌روزرسانی پیش‌نمایش رنگ‌ها (فقط برای نمایش)
+        # Update color previews
         for key, preview in self.color_previews.items():
             if key in theme_colors:
                 preview.setStyleSheet(f"background-color: {theme_colors[key]}; border: 1px solid gray;")
@@ -543,10 +718,10 @@ class SettingsWindow(QWidget):
             if key in theme_syntax:
                 preview.setStyleSheet(f"background-color: {theme_syntax[key]}; border: 1px solid gray;")
 
-        # ذخیره تنظیمات
+        # Save settings
         self.save_settings()
 
-        # ✅ نمایش پیام نیاز به ریستارت
+        # Show restart message
         QMessageBox.information(
             self,
             "Theme Changed",
