@@ -287,8 +287,10 @@ class MainWindow(QMainWindow):
         self.dock.setVisible(visible)
 
     def on_tree_item_double_clicked(self, index):
-        path = self.tree.tree.fs_model.filePath(index)
+        if self._handle_nav_row(index):
+            return
 
+        path = self.tree.tree.fs_model.filePath(index)
 
         if os.path.isfile(path):
             _, ext = os.path.splitext(path)
@@ -304,9 +306,9 @@ class MainWindow(QMainWindow):
                         self.ipynb_format_load_file(path)
 
                     else:
-                        work_widget = WorkWindow(file_path=path , status_l = self.set_status_left 
-                                                , status_c = self.set_status_center 
-                                                , status_r = self.set_status_right , mdi_area = self.mdi_area)
+                        work_widget = WorkWindow(file_path=path, status_l=self.set_status_left,
+                                                status_c=self.set_status_center,
+                                                status_r=self.set_status_right, mdi_area=self.mdi_area)
 
                         sub_window = self.mdi_area.addSubWindow(work_widget)
                         sub_window.destroyed.connect(lambda: MainWindow.open_files.pop(path, None))
@@ -314,7 +316,7 @@ class MainWindow(QMainWindow):
                         MainWindow.open_files[path] = sub_window
                         self.work_widget_list.append(work_widget)
 
-            elif ext == '.py' :
+            elif ext == '.py':
                 existing_subwindow = MainWindow.open_files.get(path)
                 if existing_subwindow and not sip.isdeleted(existing_subwindow):
                     self.mdi_area.setActiveSubWindow(existing_subwindow)
@@ -324,9 +326,9 @@ class MainWindow(QMainWindow):
                         self.py_format_load_file(path)
 
                     else:
-                        work_widget = WorkWindowPython(file_path=path , status_l = self.set_status_left 
-                                    , context = None, status_c = self.set_status_center 
-                                    , status_r = self.set_status_right, mdi_area = self.mdi_area)
+                        work_widget = WorkWindowPython(file_path=path, status_l=self.set_status_left,
+                                                    context=None, status_c=self.set_status_center,
+                                                    status_r=self.set_status_right, mdi_area=self.mdi_area)
 
                         sub_window = self.mdi_area.addSubWindow(work_widget)
                         sub_window.destroyed.connect(lambda: MainWindow.open_files.pop(path, None))
@@ -339,6 +341,10 @@ class MainWindow(QMainWindow):
             if event.key() in (Qt.Key_Return, Qt.Key_Enter):
                 index = self.tree.tree.currentIndex()
                 if index.isValid():
+
+                    if self._handle_nav_row(index):
+                        return True
+
                     path = self.tree.tree.fs_model.filePath(index)
                     if os.path.isfile(path):
                         self.on_tree_item_double_clicked(index)
@@ -596,3 +602,26 @@ class MainWindow(QMainWindow):
             if not sip.isdeleted(self.settings_window) and self.settings_window.isVisible():
                 self.settings_window.close()
         event.accept()
+
+    def _handle_nav_row(self, index):
+        if not index.isValid():
+            return False
+
+        tree = self.tree.tree
+        name = tree.fs_model.fileName(index)
+
+        if name == "..":
+            root = os.path.abspath(tree.project_root)
+            parent = os.path.dirname(root)
+            if parent and parent != root:     
+                self.select_project_folder(path=parent)
+            return True
+
+        if name == ".":
+            tree.clearSelection()
+            tree.setCurrentIndex(QModelIndex())
+            tree.path = tree.project_root
+            tree.pathChanged.emit(tree.project_root)
+            return True
+
+        return False
