@@ -1325,36 +1325,33 @@ class WorkWindow(QFrame):
             self.obj_table_window.add_objects(new_data)
 
     def closeEvent(self, event):
-            if self.fake_close :
-                self.fake_close = False
-                return
-
-            if  self.is_notebook_modified():
-                return 
-
-
-            msg = QMessageBox(self)            
-            msg.setIcon(QMessageBox.Question)
-            msg.setWindowTitle("Save File")
-            msg.setText(f"Do you want to save changes to:\n\n{self.name_only}")
-            msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
-            msg.setDefaultButton(QMessageBox.Save)
-
-            choice = msg.exec_()
-
-            if choice == QMessageBox.Save:              
-                    self.ipynb_format_save_file()            
-
-            elif choice == QMessageBox.Discard:
-                parent = self.parent() 
-                if parent :               
-                    parent.close()
-
-            elif choice == QMessageBox.Cancel:
-                event.ignore()
-                return
-
+        # فقط جابه‌جایی بین حالت detach/attach است، نه بستن واقعی
+        if self.fake_close:
+            self.fake_close = False
             event.accept()
+            return
+
+        # تغییری نشده → بدون پرسش ببند
+        if not self.is_notebook_modified():
+            event.accept()
+            return
+
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Question)
+        msg.setWindowTitle("Save File")
+        msg.setText(f"Do you want to save changes to:\n\n{self.name_only}")
+        msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+        msg.setDefaultButton(QMessageBox.Save)
+        choice = msg.exec_()
+
+        if choice == QMessageBox.Cancel:
+            event.ignore()          # پنجره باز می‌ماند
+            return
+
+        if choice == QMessageBox.Save:
+            self.ipynb_format_save_file()
+
+        event.accept()              # Save و Discard هر دو پنجره را می‌بندند
 
     def is_notebook_modified(self):
         self.ipynb_format_save_file(True)
