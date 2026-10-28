@@ -9,6 +9,8 @@ from PyQt5.QtCore import Qt
 
 DEFAULT_SETTINGS = {
     "theme": "light",
+    "last_path": "",
+    "Auto Save Interval": 5,      
     "colors": {
         "Back Ground Color Code": "#ffffff",
         "Back Ground Color MetaData": "#ffffff",
@@ -389,8 +391,6 @@ class SettingsWindow(QWidget):
             layout.addLayout(row)
             self.color_previews[key] = preview
 
-
-
         code_row = QHBoxLayout()
         code_row.setSpacing(6)
         code_label = QLabel("Code Font:")
@@ -435,7 +435,6 @@ class SettingsWindow(QWidget):
         meta_size_row.addWidget(self.meta_font_size_spin)
         layout.addLayout(meta_size_row)
 
-
         output_row = QHBoxLayout()
         output_row.setSpacing(6)
         output_label = QLabel("OutPut Font:")
@@ -457,7 +456,6 @@ class SettingsWindow(QWidget):
         output_size_row.addWidget(output_size_label)
         output_size_row.addWidget(self.output_font_size_spin)
         layout.addLayout(output_size_row)
-
 
         line_number_row = QHBoxLayout()
         line_number_row.setSpacing(6)
@@ -493,6 +491,19 @@ class SettingsWindow(QWidget):
         header_height_row.addWidget(header_height_label)
         header_height_row.addWidget(self.header_height_combo)
         layout.addLayout(header_height_row)
+
+        # ✅ Auto Save Interval
+        autosave_row = QHBoxLayout()
+        autosave_row.setSpacing(6)
+        autosave_label = QLabel("Auto Save Interval (min):")
+        self.autosave_spin = QSpinBox()
+        self.autosave_spin.setRange(0, 120)
+        self.autosave_spin.setSpecialValueText("Disabled (0)")
+        self.autosave_spin.setValue(int(self.settings.get("Auto Save Interval", 5)))
+        self.autosave_spin.valueChanged.connect(self.update_autosave_interval)
+        autosave_row.addWidget(autosave_label)
+        autosave_row.addWidget(self.autosave_spin)
+        layout.addLayout(autosave_row)
 
         self.tab_main.setLayout(layout)
 
@@ -597,8 +608,11 @@ class SettingsWindow(QWidget):
         self.output_font_size_spin.setValue(self.settings["OutPut Font Size"])
         self.line_number_font_preview.setText(self.settings["Line Number Font"])
         self.line_number_size_spin.setValue(self.settings["Line Number Font Size"])
-        default_height = self.settings.get("Line Number Box Height", 30)        
+        default_height = self.settings.get("Line Number Box Height", 30)
         self.header_height_combo.setCurrentText(str(default_height))
+
+        # ✅ Auto Save interval reset
+        self.autosave_spin.setValue(int(self.settings.get("Auto Save Interval", 5)))
 
         self.update_font_preview("code")
         self.update_font_preview("meta")
@@ -729,6 +743,11 @@ class SettingsWindow(QWidget):
             "🔄 Please restart the application for the changes to take effect.\n\n"
             "💡 All settings have been saved."
         )
+
+    def update_autosave_interval(self):
+        interval = self.autosave_spin.value()
+        self.settings["Auto Save Interval"] = interval
+        self.save_settings()
 
 # ==================== Entry Point برای تست مستقل ====================
 if __name__ == "__main__":

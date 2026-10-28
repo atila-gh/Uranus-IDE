@@ -961,8 +961,12 @@ class WorkWindow(QFrame):
     def run_focused_cell(self):
         if not self.focused_cell:
             return
-        # save File at First
-        self.ipynb_format_save_file()
+        try:
+            if self.file_path:
+                self.ipynb_format_save_file()
+        except Exception as e:
+            print(f"[WorkWindow.run_focused_cell] Pre-run save failed: {e}")
+
         # deactivate run button
         self.status_c("")
         self.status_l(self.file_path)        
@@ -1240,8 +1244,11 @@ class WorkWindow(QFrame):
                 self.set_focus(self.focused_cell)
 
     def run_all_cells(self):
-        # save File at First
-        self.ipynb_format_save_file()
+        try:
+            if self.file_path:
+                self.ipynb_format_save_file()
+        except Exception as e:
+            print(f"[run_all_cells] Pre-run save failed: {e}")
 
         self.run_btn.setEnabled(False)
         self.btn_run_all.setEnabled(False)

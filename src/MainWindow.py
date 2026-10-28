@@ -1,4 +1,6 @@
 import json , nbformat , os 
+from datetime import datetime
+
 
 from PyQt5 import sip
 from PyQt5.QtWidgets import  QMainWindow, QWidget, QVBoxLayout, QToolBar, QToolButton, QDockWidget  , QMessageBox , QMdiArea, QAction , QFileDialog ,QMessageBox , QLabel
@@ -32,6 +34,10 @@ class MainWindow(QMainWindow):
 
         self.work_widget_list = []
         self.setting = load_setting()
+        # ✅ Auto Save Timer
+        self.autosave_timer = QTimer(self)
+        self.autosave_timer.timeout.connect(self._auto_save_all)
+        self._apply_autosave_interval()
 
         self.setWindowTitle(f"Uranus IDE  V{get_version()}")
         self.setGeometry(100, 100, 1000, 1000)
@@ -430,6 +436,7 @@ class MainWindow(QMainWindow):
     def open_settings_window(self):
         self.settings_window = SettingsWindow()
         self.settings_window.show()
+        self.settings_window.destroyed.connect(self._reload_and_apply_autosave)
 
     def select_project_folder(self, path=None):
         folder_path = path or QFileDialog.getExistingDirectory(self, "Select Project Folder")
@@ -540,9 +547,18 @@ class MainWindow(QMainWindow):
         if not active_subwindow:
             return
         work_widget = active_subwindow.widget()
+
+        try:
+            if hasattr(work_widget, "ipynb_format_save_file") and getattr(work_widget, "file_path", None):
+                work_widget.ipynb_format_save_file()
+            elif hasattr(work_widget, "save_file") and getattr(work_widget, "file_path", None):
+                work_widget.save_file()
+        except Exception as e:
+            print(f"[PreRun Save] failed: {e}")
+
         if hasattr(work_widget, "run_focused_cell"):
             work_widget.run_focused_cell()
-        elif  hasattr(work_widget, "run"):
+        elif hasattr(work_widget, "run"):
             work_widget.run()
 
     def sync_working_directory(self, subwindow):
@@ -685,3 +701,53 @@ class MainWindow(QMainWindow):
         work_widget = active_subwindow.widget()
         if hasattr(work_widget, "save_as_file"):
             work_widget.save_as_file()
+
+    def _apply_autosave_interval(self):
+        try:
+            minutes = int(self.setting.get("Auto Save Interval", 5))
+        except (TypeError, ValueError):
+            minutes = 5
+
+        if minutes <= 0:
+            self.autosave_timer.stop()
+            return
+
+        self.autosave_timer.start(minutes * 60 * 1000)
+
+    def _auto_save_all(self):
+        saved_count = 0
+        failed_count = 0
+        skipped_count = 0
+
+        for sub in self.mdi_area.subWindowList():
+            w = sub.widget()
+            fpath = getattr(w, "file_path", None)
+            try:
+                if w.__class__.__name__ == "WorkWindow":
+                    if hasattr(w, "ipynb_format_save_file") and fpath:
+                        w.ipynb_format_save_file()
+                        saved_count += 1
+
+                    else:
+                        skipped_count += 1
+
+
+                elif w.__class__.__name__ == "WorkWindowPython":
+                    if hasattr(w, "save_file") and fpath:
+                        w.save_file()
+                        saved_count += 1
+
+                    else:
+                        skipped_count += 1
+
+
+            except Exception as e:
+                failed_count += 1
+                print(f"[AutoSave DEBUG] ❌ failed for {fpath}: {e}")
+
+        msg = f"[AutoSave] {datetime.now().strftime('%H:%M:%S')}"
+        self.set_status_left(msg)
+
+    def _reload_and_apply_autosave(self, *_):
+        self.setting = load_setting()
+        self._apply_autosave_interval()

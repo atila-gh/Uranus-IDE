@@ -587,20 +587,24 @@ class WorkWindowPython(QFrame):
                                         self.line_number_area.width(), rect.height())
 
     def run(self):
-        # fix indentation 
-        if hasattr(self,'editor') :
+        try:
+            if self.file_path:
+                self.save_file()
+        except Exception as e:
+            print(f"[WorkWindowPython.run] Pre-run save failed: {e}")
+
+        # fix indentation
+        if hasattr(self, 'editor'):
             self.editor.fix_indentation()
             self.save_file()
 
         editor_text = self.editor.toPlainText() if hasattr(self, "editor") else ""
         if not editor_text.strip():
-            return 
+            return
 
-
-        # set project folder as known path in terminal         
         terminal = TerminalRunner()
-        terminal.set_path(self.project_folder_path)        
-        terminal.run_code(editor_text)  
+        terminal.set_path(self.project_folder_path)
+        terminal.run_code(editor_text)
 
     def code_analyzer(self):
         self.save_file()     

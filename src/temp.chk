@@ -1,0 +1,38 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "f34d33bc",
+   "metadata": {
+    "bg": "#BEBDBD",
+    "uranus": {
+     "origin": "uranus"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "print('hi')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "69dd9c48",
+   "metadata": {
+    "bg": "#BEBDBD",
+    "uranus": {
+     "origin": "uranus"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "for i in range(10):\n",
+    "    print('hi')"
+   ]
+  }
+ ],
+ "metadata": {},
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
