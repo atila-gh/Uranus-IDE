@@ -191,6 +191,8 @@ This module provides a dedicated Python editor and console inside Uranus IDE.
 It can display and edit `.py` files, run them in Python kernel.
 
 
+
+
 ### 📝 Independent Markdown Editor
 
 Uranus IDE now includes a **dedicated Markdown editor** that operates independently from the code environment.  
