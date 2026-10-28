@@ -118,6 +118,12 @@ class FileTreeView(QTreeView):
         self.setIconSize(QSize(32, 32))
         self.fs_model.setReadOnly(False)
         self.setEditTriggers(QTreeView.EditKeyPressed | QTreeView.SelectedClicked)
+        # --------------
+        self.setDragEnabled(True)
+        self.setAcceptDrops(True)
+        self.setDropIndicatorShown(True)
+        self.setDragDropMode(QAbstractItemView.DragDrop)
+        self.setDefaultDropAction(Qt.MoveAction)
 
         # Clean UI
         self.setHeaderHidden(True)
