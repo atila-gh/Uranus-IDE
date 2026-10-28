@@ -226,8 +226,9 @@ class FileTreeView(QTreeView):
 
         menu.addSeparator()
 
-        # --- ساخت ---
-        add("Add File", self.create_file)
+        # --- ساخت ---    # --- ساخت ---
+        add("Add Notebook (.ipynb)", self.create_file)
+        add("Add Python File (.py)", self.create_py_file)
         add("New Folder", self.create_folder)
 
         menu.addSeparator()

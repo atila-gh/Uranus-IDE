@@ -45,6 +45,9 @@ class MainWindow(QMainWindow):
         self.mdi_area = QMdiArea()        
         self.setCentralWidget(self.mdi_area)
         self.mdi_area.subWindowActivated.connect(self.sync_working_directory)
+        self.mdi_area.setAcceptDrops(True)
+        self.mdi_area.viewport().setAcceptDrops(True)
+        self.mdi_area.viewport().installEventFilter(self)
 
         # Set up the status bar with 3 sections
         self.mainwindow_statusbar = self.statusBar()
@@ -286,11 +289,12 @@ class MainWindow(QMainWindow):
         visible = self.toggle_btn.isChecked()
         self.dock.setVisible(visible)
 
-    def on_tree_item_double_clicked(self, index):
-        if self._handle_nav_row(index):
-            return
-
-        path = self.tree.tree.fs_model.filePath(index)
+    def on_tree_item_double_clicked(self, index=None, path=None):
+        # حالت درگ‌ودراپ: مسیر مستقیم داده شده، ردیف ناوبری معنی ندارد
+        if path is None:
+            if self._handle_nav_row(index):
+                return
+            path = self.tree.tree.fs_model.filePath(index)
 
         if os.path.isfile(path):
             _, ext = os.path.splitext(path)
@@ -337,11 +341,31 @@ class MainWindow(QMainWindow):
                         self.work_widget_list.append(work_widget)
 
     def eventFilter(self, source, event):
+        # --- دراپ فایل روی ناحیهٔ MDI ---
+        if source is self.mdi_area.viewport():
+            et = event.type()
+            if et in (QEvent.DragEnter, QEvent.DragMove):
+                if self._dropped_openable_paths(event):
+                    event.acceptProposedAction()
+                else:
+                    event.ignore()
+                return True
+            if et == QEvent.Drop:
+                paths = self._dropped_openable_paths(event)
+                if paths:
+                    event.setDropAction(Qt.CopyAction)   # فقط باز می‌کنیم؛ مبدأ حذف نشود
+                    event.accept()
+                    for p in paths:
+                        self.on_tree_item_double_clicked(path=p)
+                else:
+                    event.ignore()
+                return True
+
+        # --- Enter در درخت (همان قبلی) ---
         if source == self.tree.tree and event.type() == QEvent.KeyPress:
             if event.key() in (Qt.Key_Return, Qt.Key_Enter):
                 index = self.tree.tree.currentIndex()
                 if index.isValid():
-
                     if self._handle_nav_row(index):
                         return True
 
@@ -625,3 +649,14 @@ class MainWindow(QMainWindow):
             return True
 
         return False
+
+    def _dropped_openable_paths(self, event):
+        md = event.mimeData()
+        if not md.hasUrls():
+            return []
+        paths = []
+        for url in md.urls():
+            p = url.toLocalFile()
+            if p and os.path.isfile(p) and p.lower().endswith((".ipynb", ".py")):
+                paths.append(p)
+        return paths
