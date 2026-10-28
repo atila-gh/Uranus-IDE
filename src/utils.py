@@ -354,48 +354,6 @@ class FileTreeView(QTreeView):
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Could not open:\n{e}")
 
-    def delete_item(self):
-        index = self.currentIndex()
-        if index.isValid():
-            path = self.fs_model.filePath(index)
-        else:
-            path = self.path  
-
-
-        reply = QMessageBox.question(self, "Delete", f"Are you sure you want to delete?\n{path}")
-        if reply == QMessageBox.Yes:
-            try:
-                if os.path.isfile(path):
-                    os.remove(path)
-                elif os.path.isdir(path):
-                    # handle read-only files and folders
-                    def on_rm_error(func, path, exc_info):
-                        os.chmod(path, stat.S_IWRITE)
-                        func(path)
-                    shutil.rmtree(path, onerror=on_rm_error)
-
-                self.clearSelection()
-                self.setCurrentIndex(QModelIndex())
-            except Exception as e:
-                QMessageBox.warning(self, "Error", f"Could not delete:\n{e}")
-
-    def rename_item(self):
-        index = self.currentIndex()
-        if index.isValid():
-            path = self.fs_model.filePath(index)
-        else:
-            path = self.path  
-
-        base_dir = os.path.dirname(path)
-        old_name = os.path.basename(path)
-        new_name, ok = QInputDialog.getText(self, "Rename", "Enter new name:", text=old_name)
-        if ok and new_name:
-            new_path = os.path.join(base_dir, new_name)
-            try:
-                os.rename(path, new_path)
-            except Exception as e:
-                QMessageBox.warning(self, "Error", f"Could not rename:\n{e}")
-
     def create_folder(self):
         index = self.currentIndex()
         if index.isValid():
@@ -428,30 +386,6 @@ class FileTreeView(QTreeView):
         if index.isValid():
             self.setCurrentIndex(index)
             self.edit(index)
-
-    def paste_item(self, target_path):
-        index = self.currentIndex()
-        if not index.isValid():
-            QMessageBox.warning(self, "Warning", "No item selected.")
-            return
-
-
-        source = QApplication.clipboard().text()
-        if not os.path.exists(source):
-            QMessageBox.warning(self, "Error", "Clipboard does not contain a valid path.")
-            return
-
-        try:
-            base_name = os.path.basename(source)
-            target_dir = target_path if os.path.isdir(target_path) else os.path.dirname(target_path)
-            dest_path = os.path.join(target_dir, base_name)
-
-            if os.path.isfile(source):
-                shutil.copy2(source, dest_path)
-            elif os.path.isdir(source):
-                shutil.copytree(source, dest_path)
-        except Exception as e:
-            QMessageBox.warning(self, "Error", f"Could not paste:\n{e}")
 
     def mousePressEvent(self, event):
         index = self.indexAt(event.pos())
@@ -602,15 +536,63 @@ class FileTreeView(QTreeView):
         if not path:
             return
 
-        if os.path.abspath(path) == os.path.abspath(self.project_root):
+        path_abs = os.path.abspath(path)
+
+        # ✅ پیدا کردن MainWindow از QApplication (مطمئن‌ترین راه)
+        main_window = None
+        for w in QApplication.topLevelWidgets():
+            if w.__class__.__name__ == "MainWindow":
+                main_window = w
+                break
+
+        # ✅ اگر پیدا نشد، از طریق parentها بالا برو
+        if main_window is None:
+            p = self
+            while p is not None:
+                if p.__class__.__name__ == "MainWindow":
+                    main_window = p
+                    break
+                p = p.parent()
+
+        # ✅ بررسی فایل‌های باز
+        if main_window is not None and hasattr(main_window, "mdi_area"):
+            for sub in main_window.mdi_area.subWindowList():
+                w = sub.widget()
+                fpath = getattr(w, "file_path", None)
+                if not fpath:
+                    continue
+                fpath_abs = os.path.abspath(fpath)
+                if fpath_abs == path_abs or fpath_abs.startswith(path_abs + os.sep):
+                    QMessageBox.warning(
+                        self, "Delete",
+                        f"This file is currently open in Uranus IDE:\n\n  • {fpath}\n\n"
+                        "Close it first, then try again."
+                    )
+                    return
+        else:
+            # اگر MainWindow پیدا نشد، برای اطمینان حذف را متوقف کن
+            QMessageBox.warning(
+                self, "Delete",
+                "Cannot verify open files. Deletion cancelled for safety."
+            )
+            return
+
+        # پوشه‌ی پروژه
+        if path_abs == os.path.abspath(self.project_root):
             QMessageBox.warning(self, "Delete", "The project root folder cannot be deleted from here.")
             return
 
+        # تأیید
         reply = QMessageBox.question(
             self, "Delete", f"Are you sure you want to delete?\n{path}",
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply != QMessageBox.Yes:
             return
+
+        # اگر CWD داخل پوشه‌ی در حال حذف است، یک سطح بالاتر برو
+        cwd_abs = os.path.abspath(os.getcwd())
+        if cwd_abs == path_abs or cwd_abs.startswith(path_abs + os.sep):
+            os.chdir(os.path.dirname(path_abs))
 
         try:
             if os.path.isfile(path):
@@ -620,6 +602,7 @@ class FileTreeView(QTreeView):
                     os.chmod(p, stat.S_IWRITE)
                     func(p)
                 shutil.rmtree(path, onerror=on_rm_error)
+
             self.clearSelection()
             self.setCurrentIndex(QModelIndex())
         except Exception as e:
