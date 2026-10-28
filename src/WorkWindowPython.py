@@ -447,26 +447,6 @@ class WorkWindowPython(QFrame):
         dialog = FindReplaceDialog(self.editor, self)
         dialog.exec_()
 
-    def save_as_file(self):
-        new_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Save As",
-            self.file_path or "",
-            "Python (*.py)"
-        )
-
-        if not new_path:
-            return  
-        content = self.editor.toPlainText()
-        if content : 
-            try :
-                with open(new_path , 'w' , encoding='utf-8') as f:
-                    f.write(content)
-                self.content = content # refresh last Content                 
-                self.status_bar.showMessage("File saved successfully", 2000)
-            except Exception  as e :
-                self.status_l(f'Not Saved {e}')
-
     def closeEvent(self, event):
         if self.fake_close :
             self.fake_close = False
@@ -645,3 +625,44 @@ class WorkWindowPython(QFrame):
         # به‌روزرسانی خط‌شماره
         if hasattr(self, 'line_number_area'):
             self.line_number_area.update()
+
+    def trigger_save_as_on_active_workwindow(self):
+        active_subwindow = self.mdi_area.activeSubWindow()
+        if not active_subwindow:
+            return
+        work_widget = active_subwindow.widget()
+        if hasattr(work_widget, "save_as_file"):
+            work_widget.save_as_file()
+
+    def save_as_file(self):
+        new_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save As",
+            self.file_path or "",
+            "Python (*.py)"
+        )
+
+        if not new_path:
+            return  
+
+        if not new_path.lower().endswith(".py"):
+            new_path += ".py"
+
+        content = self.editor.toPlainText()
+        try:
+            with open(new_path, "w", encoding="utf-8") as f:
+                f.write(content)
+        except Exception as e:
+            self.status_l(f"Not Saved: {e}")
+            return
+
+        self.file_path = new_path
+        self.content = content
+        self.project_folder_path = os.path.dirname(new_path)
+        self.name_only = os.path.splitext(os.path.basename(new_path))[0]
+        self.setWindowTitle(self.name_only)
+        if self.detached_window:
+            self.detached_window.setWindowTitle(self.name_only)
+
+        self.status_bar.showMessage("File saved successfully", 2000)
+        self.status_l("Saved As: " + new_path)

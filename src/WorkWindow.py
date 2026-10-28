@@ -1267,36 +1267,6 @@ class WorkWindow(QFrame):
                 dialog = FindReplaceDialog(editor, self)
                 dialog.exec_()
 
-    def save_as_file(self):
-        new_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Save As",
-            self.file_path or "",
-            "Jupyter Notebook (*.ipynb)"
-        )
-
-        if not new_path:
-            return  # کاربر لغو کرده
-
-        cells = []
-        for cell in self.cell_widgets:
-            if cell.editor_type == "code":
-                cells.append(cell.get_nb_code_cell())
-            elif cell.editor_type == "doc_editor":
-                cells.append(cell.get_nb_doc_editor_cell())
-
-        nb = nbformat.v4.new_notebook()
-        nb["cells"] = cells
-
-        try:
-            with open(new_path, "w", encoding="utf-8") as f:
-                nbformat.write(nb, f)
-        except Exception as e:
-            QMessageBox.warning(self, "Save Error", f"Could not save file:\n{e}")
-        else:
-            self.file_path = new_path
-            self.status_l("Saved As: " + new_path)
-
     def run_cell_blocking(self, cell):
         loop = QEventLoop()
 
@@ -1497,3 +1467,34 @@ class WorkWindow(QFrame):
         if self.focused_cell and hasattr(self.focused_cell, 'runner'):
             runner = self.focused_cell.runner
             runner.stop()    
+
+    def save_as_file(self):
+        new_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save As",
+            self.file_path or "",
+            "Jupyter Notebook (*.ipynb)"
+        )
+
+        if not new_path:
+            return 
+
+        if not new_path.lower().endswith(".ipynb"):
+            new_path += ".ipynb"
+
+        old_path = self.file_path
+        self.file_path = new_path
+
+        try:
+            self.ipynb_format_save_file()  
+        except Exception as e:
+            self.file_path = old_path       
+            QMessageBox.warning(self, "Save Error", f"Could not save file:\n{e}")
+            return
+
+        self.name_only = os.path.splitext(os.path.basename(new_path))[0]
+        self.setWindowTitle(self.name_only)
+        if self.detached_window:
+            self.detached_window.setWindowTitle(self.name_only)
+
+        self.status_l("Saved As: " + new_path)

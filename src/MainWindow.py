@@ -113,7 +113,7 @@ class MainWindow(QMainWindow):
 
         save_as = QAction("Save As", self)   
         save_as.setShortcut("Ctrl+Shift+S")     
-        save_as.triggered.connect(self.save_as_file)
+        save_as.triggered.connect(self.trigger_save_as_on_active_workwindow)
         file_menu.addAction(save_as)
 
         file_menu.addSeparator() 
@@ -400,29 +400,32 @@ class MainWindow(QMainWindow):
         MainWindow.open_files[path] = sub_window
         self.work_widget_list.append(work_widget)
 
-    def py_format_load_file(self,path):
+    def py_format_load_file(self, path):
         try:
             with open(path, "r", encoding="utf-8") as f:
                 py_code_context = f.read()
 
         except UnicodeDecodeError as e:
-            QMessageBox.warning(self, "Encoding Error", f"Cannot decode file:\n{e}")        
+            QMessageBox.warning(self, "Encoding Error", f"Cannot decode file:\n{e}")
+            return                                    # ← اضافه شد
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Unexpected error:\n{e}")
-        else :  
+            return                                    # ← اضافه شد
 
-            # Make Instance Object
-
-            work_widget = WorkWindowPython(file_path=path , status_l = self.set_status_left 
-                                        , context = py_code_context, status_c = self.set_status_center 
-                                        , status_r = self.set_status_right , mdi_area = self.mdi_area)
-
-            sub_window = self.mdi_area.addSubWindow(work_widget)
-            icon_path = os.path.join(os.path.dirname(__file__), "image", "python_icon.png")  
-            sub_window.setWindowIcon(QIcon(icon_path))  
-            sub_window.show()
-            MainWindow.open_files[path] = sub_window
-            self.work_widget_list.append(work_widget)
+        work_widget = WorkWindowPython(
+            file_path=path,
+            status_l=self.set_status_left,
+            context=py_code_context,
+            status_c=self.set_status_center,
+            status_r=self.set_status_right,
+            mdi_area=self.mdi_area
+        )
+        sub_window = self.mdi_area.addSubWindow(work_widget)
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "python_icon.png")
+        sub_window.setWindowIcon(QIcon(icon_path))
+        sub_window.show()
+        MainWindow.open_files[path] = sub_window
+        self.work_widget_list.append(work_widget)
 
     def open_settings_window(self):
         self.settings_window = SettingsWindow()
@@ -486,22 +489,6 @@ class MainWindow(QMainWindow):
     def on_path_changed(path):
         if os.path.isfile(path):
             path = os.path.dirname(path)
-
-    def save_as_file(self):
-        active_subwindow = self.mdi_area.activeSubWindow()
-        if not active_subwindow:
-            QMessageBox.warning(self, "No Active File", "No notebook is currently open.")
-            return
-
-        work_widget = active_subwindow.widget()
-
-        try:           
-
-            work_widget.save_as_file()
-
-
-        except Exception as e:
-            QMessageBox.warning(self, "Save Error", f"Could not save file:\n{e}")
 
     def open_file(self):
         path, _ = QFileDialog.getOpenFileName(
@@ -660,3 +647,41 @@ class MainWindow(QMainWindow):
             if p and os.path.isfile(p) and p.lower().endswith((".ipynb", ".py")):
                 paths.append(p)
         return paths
+
+    def ipynb_format_load_file(self, path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                nb = nbformat.read(f, as_version=4)
+
+        except UnicodeDecodeError as e:
+            QMessageBox.warning(self, "Encoding Error", f"Cannot decode file:\n{e}")
+            return                                   
+        except json.JSONDecodeError as e:
+            QMessageBox.warning(self, "JSON Error", f"Invalid JSON format:\n{e}")
+            return                                    
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Unexpected error:\n{e}")
+            return                                   
+
+        # Make Instance Object
+        work_widget = WorkWindow(
+            file_path=path, nb_content=nb,
+            status_l=self.set_status_left,
+            status_c=self.set_status_center,
+            status_r=self.set_status_right,
+            mdi_area=self.mdi_area
+        )
+        sub_window = self.mdi_area.addSubWindow(work_widget)
+        icon_path = os.path.join(os.path.dirname(__file__), "image", "ipynb_icon.png")
+        sub_window.setWindowIcon(QIcon(icon_path))
+        sub_window.show()
+        MainWindow.open_files[path] = sub_window
+        self.work_widget_list.append(work_widget)
+
+    def trigger_save_as_on_active_workwindow(self):
+        active_subwindow = self.mdi_area.activeSubWindow()
+        if not active_subwindow:
+            return
+        work_widget = active_subwindow.widget()
+        if hasattr(work_widget, "save_as_file"):
+            work_widget.save_as_file()
