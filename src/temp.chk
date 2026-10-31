@@ -3,32 +3,33 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "f34d33bc",
+   "id": "45ed44cc",
    "metadata": {
     "bg": "#BEBDBD",
     "uranus": {
      "origin": "uranus"
     }
    },
-   "outputs": [],
-   "source": [
-    "print('hi')"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 1,
-   "id": "69dd9c48",
-   "metadata": {
-    "bg": "#BEBDBD",
-    "uranus": {
-     "origin": "uranus"
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "An exception has occurred, use %tb to see the full traceback."
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[31mSystemExit\u001b[39m\u001b[31m:\u001b[39m تست توقف"
+     ]
     }
-   },
-   "outputs": [],
+   ],
    "source": [
-    "for i in range(10):\n",
-    "    print('hi')"
+    "import sys\n",
+    "sys.settrace(None)\n",
+    "raise SystemExit(\"تست توقف\")"
    ]
   }
  ],

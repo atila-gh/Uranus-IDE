@@ -45,7 +45,8 @@ class CodeRunner(QObject):
                 raise KeyboardInterrupt("Execution stopped by user")
             return trace_func
 
-        old_trace = sys.settrace(trace_func)        
+        old_trace = sys.settrace(trace_func)   
+        outputs = []     
         try:
             shell.showtraceback = dummy_showtb            
             outputs = self.kernel.run_cell(self.code, self.stream.emit)           
