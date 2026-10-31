@@ -31,7 +31,7 @@ class CodeEditor(QPlainTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
         setting = load_setting()
-        self.copy = self.my_copy()
+
         self.autocomplete_status = False 
 
         # ------ Setting 
@@ -91,6 +91,10 @@ class CodeEditor(QPlainTextEdit):
             line = _cursor.blockNumber() + 1
             column = self.get_visual_column(_cursor, self.tab_size)
             self.cursorPositionInfo.emit(line, column)
+
+        if event.key() == Qt.Key_C and event.modifiers() & Qt.ControlModifier:
+            self.my_copy()
+            return
 
 
         if hasattr(self, 'autocomplete') and self.autocomplete.active:

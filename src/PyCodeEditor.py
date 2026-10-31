@@ -29,7 +29,7 @@ class PyCodeEditor(QPlainTextEdit):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.copy = self.my_copy()
+
         setting = load_setting()
 
         # ------ Setting 
@@ -82,6 +82,10 @@ class PyCodeEditor(QPlainTextEdit):
             line = _cursor.blockNumber() + 1
             column = self.get_visual_column(_cursor, self.tab_size)
             self.cursorPositionInfo.emit(line, column)
+
+        if event.key() == Qt.Key_C and event.modifiers() & Qt.ControlModifier:
+            self.my_copy()
+            return
 
 
         if hasattr(self, 'autocomplete') and self.autocomplete.active:
